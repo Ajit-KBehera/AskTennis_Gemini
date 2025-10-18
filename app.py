@@ -55,8 +55,20 @@ def setup_langgraph_agent():
     system_prompt = f"""You are a helpful assistant designed to answer questions about tennis matches by querying a SQL database.
     Here is the schema for the `matches` table you can query:
     {db_schema}
-    - After running a query, analyze the results and provide a clear, natural language answer.
+    
+    CRITICAL INSTRUCTIONS:
+    - To answer questions, you MUST use the sql_db_query tool to execute your SQL query and get results.
+    - Do NOT use sql_db_query_checker - that only validates queries but doesn't return data.
+    - After getting query results with sql_db_query, analyze the results and provide a clear, natural language answer.
+    - Always provide a final response to the user, even if the query returns no results.
     - Do not make up information. If the database does not contain the answer, say so.
+    
+    WORKFLOW:
+    1. Write a SQL query to answer the user's question
+    2. Use sql_db_query tool to execute the query and get results
+    3. Analyze the results and provide a clear answer to the user
+    
+    REMEMBER: Always use sql_db_query (not sql_db_query_checker) to get actual data from the database!
     """
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -149,9 +161,30 @@ if user_question:
             else:
                 # Fallback for standard string content
                 final_answer = last_message.content
+            
+            # If no final answer found, try to extract from tool messages
+            if not final_answer or not final_answer.strip():
+                for message in reversed(response["messages"]):
+                    if hasattr(message, 'type') and message.type == 'tool' and 'sql_db_query' in str(message.name):
+                        try:
+                            import ast
+                            if message.content.startswith('[') and message.content.endswith(']'):
+                                data = ast.literal_eval(message.content)
+                                if data and len(data) > 0:
+                                    if isinstance(data[0], (list, tuple)) and len(data[0]) > 0:
+                                        count = data[0][0]
+                                        final_answer = f"Based on the database query, I found {count} result(s)."
+                                    else:
+                                        final_answer = f"Based on the database query, I found {len(data)} result(s)."
+                                    break
+                        except:
+                            continue
 
-            st.success("Here's what I found:")
-            st.markdown(final_answer)
+            if final_answer and final_answer.strip():
+                st.success("Here's what I found:")
+                st.markdown(final_answer)
+            else:
+                st.warning("I processed your request but couldn't generate a clear response. Please check the conversation flow below for details.")
 
             # Optional: Show the full conversation history for debugging
             with st.expander("🧠 Show Full Conversation Flow", expanded=False):
