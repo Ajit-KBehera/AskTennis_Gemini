@@ -32,12 +32,22 @@
 ## **📈 Data Statistics**
 
 ### **Scale & Coverage**
-- **Total Matches**: 112,257 matches
+- **Total Matches**: 353,088 matches
 - **Total Players**: 136,025 players
 - **Total Rankings**: 5,335,249 ranking records
-- **Match Date Range**: 2005-01-03 to 2024-12-18 (20 years)
+- **Match Date Range**: 1967-12-25 to 2024-12-18 (57 years)
 - **Ranking Date Range**: 1973-08-27 to 2024-12-30 (51 years)
 - **Tournament Levels**: 15 different levels (A, G, I, M, D, P, PM, T1-T5, F, O, W)
+- **Historical Coverage**: Complete professional tennis history (1968-2024)
+
+### **Historical Distribution by Decade**
+- **1960s**: 13,675 matches (3.9%)
+- **1970s**: 65,895 matches (18.7%)
+- **1980s**: 65,210 matches (18.5%)
+- **1990s**: 64,778 matches (18.3%)
+- **2000s**: 61,125 matches (17.3%)
+- **2010s**: 57,265 matches (16.2%)
+- **2020s**: 25,140 matches (7.1%)
 
 ### **Surface Distribution**
 - **Hard**: 65,635 matches (58.4%)
@@ -132,6 +142,13 @@ ranking_date, rank, player, points, tournaments, tour
 - **Ranking Trends**: Evolution of player rankings over time
 - **Tour Comparison**: ATP vs WTA ranking patterns
 
+### **6. Historical Analysis**
+- **Complete Tennis History**: 57 years of professional tennis (1968-2024)
+- **Decade Evolution**: How tennis has changed across different eras
+- **Tournament History**: Complete Grand Slam and major tournament records
+- **Player Careers**: Full career trajectories from debut to retirement
+- **Tennis Evolution**: Analysis of how the game has developed over time
+
 ---
 
 ## **🔍 Query Capabilities**
@@ -200,6 +217,36 @@ SELECT name_first, name_last, rank, ranking_date
 FROM player_rankings_history WHERE player = 104925 ORDER BY ranking_date;
 ```
 
+### **Historical Analysis**
+```sql
+-- Historical tournament winners
+SELECT winner_name, tourney_name, tourney_date 
+FROM matches WHERE tourney_name LIKE '%Wimbledon%' 
+AND strftime('%Y', tourney_date) = '1970';
+
+-- Decade-based analysis
+SELECT strftime('%Y', tourney_date) as decade, COUNT(*) as matches 
+FROM matches WHERE strftime('%Y', tourney_date) BETWEEN '1980' AND '1989' 
+GROUP BY decade ORDER BY decade;
+
+-- Tennis evolution analysis
+SELECT strftime('%Y', tourney_date) as year, 
+       COUNT(*) as total_matches,
+       COUNT(DISTINCT winner_name) as unique_winners
+FROM matches 
+WHERE strftime('%Y', tourney_date) BETWEEN '1970' AND '2020'
+GROUP BY year ORDER BY year;
+
+-- Historical player dominance
+SELECT winner_name, COUNT(*) as wins, 
+       MIN(tourney_date) as first_win, 
+       MAX(tourney_date) as last_win
+FROM matches 
+WHERE strftime('%Y', tourney_date) BETWEEN '1990' AND '1999'
+GROUP BY winner_name 
+ORDER BY wins DESC LIMIT 10;
+```
+
 ---
 
 ## **🎯 AI System Integration**
@@ -229,7 +276,15 @@ The AI can now answer complex questions like:
    - "Who had the highest ranking points in history?"
    - "Compare the ranking trajectories of two players"
 
-5. **Comparative Analysis**
+5. **Historical Analysis**
+   - "Who won Wimbledon in 1970?"
+   - "How many matches were played in the 1980s?"
+   - "Which players dominated the 1990s?"
+   - "Compare tennis evolution across decades"
+   - "What was the tennis landscape like in the 1970s?"
+   - "How has the game changed from the 1960s to today?"
+
+6. **Comparative Analysis**
    - "Compare Federer vs Nadal head-to-head on different surfaces"
    - "Which players have the best Grand Slam records?"
    - "How do different playing styles perform?"
@@ -239,7 +294,9 @@ The AI can now answer complex questions like:
 - **100% Player Names**: No missing winner/loser names
 - **Complete Player Metadata**: 136,025 players with full details
 - **Comprehensive Rankings**: 5,335,249 ranking records (1973-2024)
+- **Complete Historical Coverage**: 353,088 matches (1968-2024)
 - **203.8% Match-Ranking Coverage**: Enhanced match context with rankings
+- **57-Year Tennis History**: Complete professional tennis database
 - **Comprehensive Statistics**: Detailed match statistics available
 
 ---
@@ -287,13 +344,14 @@ The AI can now answer complex questions like:
 
 The `tennis_data.db` database is a **comprehensive, production-ready** tennis database with:
 
-- ✅ **Complete match data** (2005-2024, 112,257 matches)
+- ✅ **Complete historical match data** (1968-2024, 353,088 matches)
 - ✅ **Full player metadata** (136,025 players)
 - ✅ **Historical rankings data** (1973-2024, 5,335,249 records)
 - ✅ **Enhanced match context** (203.8% ranking coverage)
+- ✅ **57-year tennis history** (Complete professional tennis coverage)
 - ✅ **Optimized performance** (8 indexes for fast queries)
 - ✅ **AI integration** (enhanced query capabilities)
 - ✅ **Data quality** (99.9% completeness)
 - ✅ **Scalable architecture** (ready for additional data)
 
-**Ready for advanced tennis analytics, ranking analysis, and AI-powered insights!** 🎾
+**Ready for advanced tennis analytics, historical analysis, ranking analysis, and AI-powered insights!** 🎾

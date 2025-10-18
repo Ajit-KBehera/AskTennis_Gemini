@@ -5,7 +5,7 @@ import os
 
 # --- Configuration ---
 DATA_DIRS = ["data/tennis_atp", "data/tennis_wta"]
-YEARS = list(range(2005, 2026)) 
+YEARS = list(range(1968, 2026))  # Complete historical coverage: 1968-2024
 DB_FILE = "tennis_data.db"
 
 def load_players_data():
@@ -178,9 +178,10 @@ def load_matches_data():
 
 def create_database_with_players():
     """
-    Creates the enhanced database with matches, player information, and rankings.
+    Creates the enhanced database with complete historical matches (1968-2024), 
+    player information, and rankings.
     """
-    print("=== Enhanced Data Loading with Player Information and Rankings ===")
+    print("=== Enhanced Data Loading with Complete Historical Coverage (1968-2024) ===")
     
     # Load player data
     players_df = load_players_data()
@@ -331,7 +332,7 @@ def create_database_with_players():
     conn.close()
     
     print(f"\n✅ Successfully created enhanced database '{DB_FILE}' with:")
-    print(f"   - {len(matches_df)} matches")
+    print(f"   - {len(matches_df)} matches (Complete historical coverage: 1968-2024)")
     print(f"   - {len(players_df)} players")
     if not rankings_df.empty:
         print(f"   - {len(rankings_df)} ranking records")
@@ -339,12 +340,13 @@ def create_database_with_players():
     print(f"   - Rankings data integration")
     print(f"   - Performance indexes")
     print(f"   - Enhanced views with rankings")
+    print(f"   - Complete historical tennis database")
 
 def verify_enhancement():
     """
-    Verifies that the player and rankings integration worked correctly.
+    Verifies that the player, rankings, and historical data integration worked correctly.
     """
-    print("\n--- Verifying Enhanced Integration ---")
+    print("\n--- Verifying Complete Historical Integration ---")
     conn = sqlite3.connect(DB_FILE)
     
     # Check player count
@@ -371,6 +373,32 @@ def verify_enhancement():
     """).fetchone()[0]
     
     total_matches = conn.execute("SELECT COUNT(*) FROM matches").fetchone()[0]
+    
+    # Check historical coverage
+    date_range = conn.execute("SELECT MIN(tourney_date), MAX(tourney_date) FROM matches").fetchone()
+    print(f"Historical coverage: {date_range[0]} to {date_range[1]}")
+    
+    # Check matches by decade
+    decade_counts = conn.execute("""
+        SELECT 
+            CASE 
+                WHEN strftime('%Y', tourney_date) < '1970' THEN '1960s'
+                WHEN strftime('%Y', tourney_date) < '1980' THEN '1970s'
+                WHEN strftime('%Y', tourney_date) < '1990' THEN '1980s'
+                WHEN strftime('%Y', tourney_date) < '2000' THEN '1990s'
+                WHEN strftime('%Y', tourney_date) < '2010' THEN '2000s'
+                WHEN strftime('%Y', tourney_date) < '2020' THEN '2010s'
+                ELSE '2020s'
+            END as decade,
+            COUNT(*) as matches
+        FROM matches 
+        GROUP BY decade 
+        ORDER BY decade
+    """).fetchall()
+    
+    print("Matches by decade:")
+    for decade, count in decade_counts:
+        print(f"  {decade}: {count:,} matches")
     
     print(f"Matches with winner info: {matches_with_winner_info}/{total_matches} ({matches_with_winner_info/total_matches*100:.1f}%)")
     print(f"Matches with loser info: {matches_with_loser_info}/{total_matches} ({matches_with_loser_info/total_matches*100:.1f}%)")
@@ -428,6 +456,27 @@ def verify_enhancement():
                 print("No rankings results found")
         except Exception as e:
             print(f"Rankings query error: {e}")
+    
+    # Sample historical query
+    print("\n--- Sample Historical Query Test ---")
+    historical_query = """
+        SELECT winner_name, loser_name, tourney_name, tourney_date, surface
+        FROM matches 
+        WHERE strftime('%Y', tourney_date) = '1970'
+        ORDER BY tourney_date DESC
+        LIMIT 5
+    """
+    
+    try:
+        historical_results = conn.execute(historical_query).fetchall()
+        if historical_results:
+            print("Sample 1970 matches:")
+            for row in historical_results:
+                print(f"  {row[0]} vs {row[1]} - {row[2]} ({row[3]}) - {row[4]}")
+        else:
+            print("No historical results found")
+    except Exception as e:
+        print(f"Historical query error: {e}")
     
     conn.close()
 

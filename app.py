@@ -60,11 +60,13 @@ def setup_langgraph_agent():
     ENHANCED DATABASE FEATURES:
     - The database now includes a `players` table with player metadata (handedness, nationality, height, birth date, etc.)
     - The database includes a `rankings` table with historical ranking data (1973-2024, 5.3M+ records)
+    - The database includes COMPLETE HISTORICAL MATCH DATA (1968-2024, 353K+ matches)
     - Use `matches_with_full_info` view for queries that need player details
     - Use `matches_with_rankings` view for queries that need ranking context
     - Use `player_rankings_history` view for ranking analysis
     - Available player fields: winner_hand, winner_ioc, winner_height, winner_dob, loser_hand, loser_ioc, loser_height, loser_dob
     - Available ranking fields: winner_rank_at_time, winner_points_at_time, loser_rank_at_time, loser_points_at_time
+    - Historical coverage: 57 years of professional tennis (1968-2024)
     
     CRITICAL INSTRUCTIONS:
     - To answer questions, you MUST use the sql_db_query tool to execute your SQL query and get results.
@@ -93,6 +95,13 @@ def setup_langgraph_agent():
     - Example: "Which top 10 players won the most matches?" - use matches_with_rankings WHERE winner_rank_at_time <= 10
     - Example: "How many upsets happened in Grand Slams?" - use matches_with_rankings WHERE winner_rank_at_time > loser_rank_at_time
     - Example: "Who had the highest ranking points?" - use player_rankings_history ORDER BY points DESC
+    
+    HISTORICAL QUERIES:
+    - For questions about tennis history, use the complete historical database (1968-2024)
+    - Example: "Who won Wimbledon in 1970?" - use matches WHERE tourney_name LIKE '%Wimbledon%' AND strftime('%Y', tourney_date) = '1970'
+    - Example: "How many matches were played in the 1980s?" - use matches WHERE strftime('%Y', tourney_date) BETWEEN '1980' AND '1989'
+    - Example: "Which players dominated the 1990s?" - use matches WHERE strftime('%Y', tourney_date) BETWEEN '1990' AND '1999'
+    - Example: "Compare tennis evolution across decades" - use decade-based analysis with strftime functions
     
     WORKFLOW:
     1. Write a SQL query to answer the user's question
