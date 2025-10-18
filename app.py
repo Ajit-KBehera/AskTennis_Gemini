@@ -57,6 +57,11 @@ def setup_langgraph_agent():
     Here is the schema for the `matches` table you can query:
     {db_schema}
     
+    ENHANCED DATABASE FEATURES:
+    - The database now includes a `players` table with player metadata (handedness, nationality, height, birth date, etc.)
+    - Use `matches_with_full_info` view for queries that need player details
+    - Available player fields: winner_hand, winner_ioc, winner_height, winner_dob, loser_hand, loser_ioc, loser_height, loser_dob
+    
     CRITICAL INSTRUCTIONS:
     - To answer questions, you MUST use the sql_db_query tool to execute your SQL query and get results.
     - Do NOT use sql_db_query_checker - that only validates queries but doesn't return data.
@@ -70,6 +75,12 @@ def setup_langgraph_agent():
     - Use this query format: SELECT winner_name, loser_name, tourney_name, tourney_date, score, surface FROM matches WHERE...
     - Include match details like year, tournament, surface, score, and winner.
     - Format the response to show both the overall record and individual match details.
+    
+    PLAYER METADATA QUERIES:
+    - For questions about player characteristics (handedness, nationality, height, age), use the `matches_with_full_info` view
+    - Example: "Which left-handed players won the most matches?" - use winner_hand = 'L'
+    - Example: "How many matches did Spanish players win?" - use winner_ioc = 'ESP'
+    - Example: "Who are the tallest players?" - use winner_height or loser_height columns
     
     WORKFLOW:
     1. Write a SQL query to answer the user's question
