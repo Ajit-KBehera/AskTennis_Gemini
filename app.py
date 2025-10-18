@@ -1,173 +1,162 @@
 import streamlit as st
-import pandas as pd
-import sqlite3
-import spacy
-import plotly.express as px  # --- NEW: Import Plotly ---
+from sqlalchemy import create_engine
+from typing import TypedDict, Annotated, List
+from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
+import operator
 
-# Load the spaCy model
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    st.error("SpaCy model not found. Please run 'python -m spacy download en_core_web_sm'")
-    st.stop()
-
-# --- Database Connection ---
-DB_FILE = "tennis_data.db"
-conn = sqlite3.connect(DB_FILE, check_same_thread=False)
-
-# --- Player Name Lookup Functions (No changes here) ---
-@st.cache_data
-def create_player_lookup():
-    query = "SELECT DISTINCT winner_name FROM matches UNION SELECT DISTINCT loser_name FROM matches"
-    df = pd.read_sql_query(query, conn)
-    names = df['winner_name'].dropna().unique()
-    lookup = {}
-    for name in names:
-        lookup[name] = name
-        parts = name.split()
-        if len(parts) > 1:
-            last_name = parts[-1]
-            if last_name not in lookup:
-                 lookup[last_name] = name
-    return lookup
-
-PLAYER_LOOKUP = create_player_lookup()
-PLAYER_SEARCH_LIST = sorted(PLAYER_LOOKUP.keys(), key=len, reverse=True)
-
+# Modern imports for LangChain & LangGraph
+from langchain_community.agent_toolkits import SQLDatabaseToolkit
+from langchain_community.utilities import SQLDatabase
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langgraph.graph import StateGraph, END
+from langgraph.prebuilt import ToolNode
+from langchain_core.prompts import ChatPromptTemplate
+# Removed create_react_agent import - using custom agent pattern instead
+from langgraph.checkpoint.memory import MemorySaver
 
 # --- Page Configuration ---
-st.set_page_config(page_title="AskTennis Viz", layout="wide")
-st.title("🎾 AskTennis: AI-Powered Tennis Statistics")
-st.markdown("Phase 3: Beautiful Visualizations. Ask a question below!")
+st.set_page_config(page_title="AskTennis AI", layout="wide")
+st.title("🎾 AskTennis: The Advanced AI Engine")
+st.markdown("#### Powered by Gemini & LangGraph (Stateful Agent)")
+st.markdown("This app uses a state-of-the-art AI agent to answer natural language questions about tennis data.")
 
+# --- Define the Agent's State ---
+class AgentState(TypedDict):
+    messages: Annotated[List[BaseMessage], operator.add]
 
-# --- NLP Parsing Function (No changes here) ---
-def parse_question(question):
-    intent = "unknown"
-    entities = {"players": [], "year": None}
+# --- Database and LLM Setup (Cached for performance) ---
+
+@st.cache_resource
+def setup_langgraph_agent():
+    """
+    Sets up the database, LLM, tools, and compiles the LangGraph ReAct agent.
+    This is cached to avoid re-initializing on every interaction.
+    """
+    print("--- Initializing LangGraph Agent with Gemini ---")
+
+    # Check for the API key in Streamlit's secrets
+    try:
+        google_api_key = st.secrets["GOOGLE_API_KEY"]
+    except (KeyError, FileNotFoundError):
+        st.error("Google API key not found! Please create a `.streamlit/secrets.toml` file and add your GOOGLE_API_KEY.")
+        st.stop()
+
+    # Setup database connection and tools
+    db_engine = create_engine("sqlite:///tennis_data.db")
+    db = SQLDatabase(engine=db_engine)
+    # --- REFINEMENT 1: Use the official, version-stable model name ---
+    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash-lite", google_api_key=google_api_key, temperature=0)
+    toolkit = SQLDatabaseToolkit(db=db, llm=llm)
+    tools = toolkit.get_tools()
     
-    if "most wins" in question or "top winners" in question:
-        intent = "top_winners"
-    elif "head-to-head" in question.lower() or "vs" in question.lower() or "versus" in question.lower():
-        intent = "h2h"
-    elif "tournament winners" in question or "won which tournaments" in question:
-        intent = "tournament_winners"
-
-    question_title_case = question.title()
-    found_canonical_names = set()
-    for search_name in PLAYER_SEARCH_LIST:
-        if search_name in question_title_case:
-            canonical_name = PLAYER_LOOKUP[search_name]
-            found_canonical_names.add(canonical_name)
-            question_title_case = question_title_case.replace(search_name, "")
-    entities["players"] = list(found_canonical_names)
-
-    doc = nlp(question)
-    for ent in doc.ents:
-        if ent.label_ == "DATE" and ent.text.isdigit() and len(ent.text) == 4:
-            entities["year"] = ent.text
-            
-    return intent, entities
-
-
-# --- Functions to answer questions (No changes here) ---
-def get_top_winners(year="2024"):
-    query = f"""
-    SELECT winner_name AS player, COUNT(*) AS wins
-    FROM matches WHERE strftime('%Y', tourney_date) = '{year}'
-    GROUP BY winner_name ORDER BY wins DESC LIMIT 10;
+    # --- Custom agent pattern using llm.bind_tools() ---
+    # This is the modern approach for tool-calling models like Gemini
+    db_schema = db.get_table_info()
+    system_prompt = f"""You are a helpful assistant designed to answer questions about tennis matches by querying a SQL database.
+    Here is the schema for the `matches` table you can query:
+    {db_schema}
+    - After running a query, analyze the results and provide a clear, natural language answer.
+    - Do not make up information. If the database does not contain the answer, say so.
     """
-    return pd.read_sql_query(query, conn)
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", system_prompt),
+            ("placeholder", "{messages}"),
+        ]
+    )
+    
+    # Bind tools to the LLM for native tool calling
+    llm_with_tools = llm.bind_tools(tools)
 
-def get_head_to_head(player1, player2):
-    query = """
-    SELECT tourney_name, strftime('%Y-%m-%d', tourney_date) as match_date, round,
-           winner_name, loser_name, score
-    FROM matches WHERE (winner_name = ? AND loser_name = ?) OR (winner_name = ? AND loser_name = ?)
-    ORDER BY tourney_date DESC;
-    """
-    return pd.read_sql_query(query, conn, params=(player1, player2, player2, player1))
+    # --- Define the Nodes for the LangGraph ---
 
-def get_tournament_winners(year):
-    query = f"""
-    SELECT tourney_name, winner_name as champion FROM matches
-    WHERE round = 'F' AND strftime('%Y', tourney_date) = '{year}'
-    ORDER BY tourney_name;
-    """
-    return pd.read_sql_query(query, conn)
+    # The 'agent' node uses the LLM with bound tools
+    def call_agent(state: AgentState):
+        """Calls the LLM to decide the next step."""
+        messages = state["messages"]
+        # Use the LLM with bound tools to get the response
+        response = llm_with_tools.invoke(prompt.format_prompt(messages=messages))
+        return {"messages": [response]}
 
+    # The 'tools' node is the pre-built ToolNode.
+    tool_node = ToolNode(tools)
+
+    def should_continue(state: AgentState):
+        """Decide whether to continue with tools or finish."""
+        # The ReAct agent returns an AIMessage with tool_calls if it needs to act.
+        if isinstance(state["messages"][-1], AIMessage) and hasattr(state["messages"][-1], 'tool_calls') and state["messages"][-1].tool_calls:
+            return "tools"
+        return "end"
+
+    # --- Build the LangGraph ---
+    graph = StateGraph(AgentState)
+    
+    graph.add_node("agent", call_agent)
+    graph.add_node("tools", tool_node)
+    
+    graph.set_entry_point("agent")
+    
+    graph.add_conditional_edges("agent", should_continue, {"tools": "tools", "end": END})
+    
+    graph.add_edge("tools", "agent")
+    
+    memory = MemorySaver()
+    runnable_graph = graph.compile(checkpointer=memory)
+    
+    print("--- LangGraph Agent Compiled Successfully with Gemini ---")
+    return runnable_graph
+
+# Initialize the LangGraph agent
+try:
+    agent_graph = setup_langgraph_agent()
+except Exception as e:
+    st.error(f"Failed to initialize the AI agent: {e}")
+    st.stop()
 
 # --- Main App UI & Logic ---
+
+st.markdown("##### Example Questions:")
+st.markdown("""
+- *How many matches did Roger Federer win in 2006?*
+- *Who won the most matches on clay in 2010?*
+- *What was the score of the Wimbledon final in 2008?*
+""")
+
 user_question = st.text_input(
     "Ask your tennis question:",
-    placeholder="e.g., 'Who had the most wins in 2023?' or 'Nadal vs Djokovic h2h'"
+    placeholder="e.g., 'How many tournaments did Serena Williams win on hard court?'"
 )
 
 if user_question:
-    intent, entities = parse_question(user_question)
-    
-    st.write(f"🔍 **Intent:** `{intent}`")
-    st.write(f"**Entities:** `{entities}`")
-    
-    if intent == "top_winners":
-        year = entities.get("year", "2024") # Default to current year if not specified
-        st.subheader(f"Top 10 Players by Wins in {year}")
-        results_df = get_top_winners(year)
-        
-        # --- VISUALIZATION ---
-        fig = px.bar(results_df, 
-                     x='player', 
-                     y='wins',
-                     title=f"Most Match Wins ({year})",
-                     labels={'player': 'Player', 'wins': 'Number of Wins'},
-                     template="streamlit")
-        st.plotly_chart(fig, use_container_width=True)
-        # --- END VISUALIZATION ---
-        
-        st.dataframe(results_df, use_container_width=True)
-
-    elif intent == "h2h":
-        if len(entities["players"]) >= 2:
-            player1 = entities["players"][0]
-            player2 = entities["players"][1]
-            st.subheader(f"Head-to-Head: {player1} vs. {player2}")
-            results_df = get_head_to_head(player1, player2)
+    with st.spinner("The AI is analyzing your question and querying the database..."):
+        try:
+            # The config dictionary ensures each user gets their own conversation history.
+            config = {"configurable": {"thread_id": "user_session"}}
             
-            if not results_df.empty:
-                p1_wins = len(results_df[results_df['winner_name'] == player1])
-                p2_wins = len(results_df[results_df['winner_name'] == player2])
-                
-                # --- VISUALIZATION ---
-                chart_data = pd.DataFrame({
-                    'Player': [player1, player2],
-                    'Wins': [p1_wins, p2_wins]
-                })
-                fig = px.bar(chart_data, 
-                             x='Player', 
-                             y='Wins', 
-                             title=f'Head-to-Head Wins: {player1} vs {player2}',
-                             color='Player', # Assign different colors to each player
-                             text_auto=True, # Display the win count on the bars
-                             template="streamlit")
-                st.plotly_chart(fig, use_container_width=True)
-                # --- END VISUALIZATION ---
-                
-                st.markdown("#### Match History")
-                st.dataframe(results_df, use_container_width=True)
+            # --- REFINEMENT 3: The stateful graph only needs the new human message. ---
+            # It loads the history from memory automatically via the checkpointer.
+            response = agent_graph.invoke(
+                {"messages": [HumanMessage(content=user_question)]},
+                config=config
+            )
+            
+            # The final answer is in the content of the last AIMessage.
+            # Parse Gemini's structured output format
+            last_message = response["messages"][-1]
+            if isinstance(last_message.content, list) and last_message.content:
+                # For Gemini, content is a list of dicts. We want the text from the first part.
+                final_answer = last_message.content[0].get("text", "")
             else:
-                st.info(f"No match history found between {player1} and {player2} in the dataset.")
-        else:
-            st.warning(f"I found these players: `{entities['players']}`. Please specify two distinct player names for a head-to-head comparison.")
+                # Fallback for standard string content
+                final_answer = last_message.content
 
-    elif intent == "tournament_winners":
-        year = entities.get("year")
-        if year:
-            st.subheader(f"Tournament Winners in {year}")
-            results_df = get_tournament_winners(year)
-            # A table is best for this data, so no chart is needed.
-            st.dataframe(results_df, use_container_width=True)
-        else:
-            st.warning("Please specify a year to find tournament winners.")
-            
-    else:
-        st.error("Sorry, I didn't understand that question. Please try rephrasing.")
+            st.success("Here's what I found:")
+            st.markdown(final_answer)
+
+            # Optional: Show the full conversation history for debugging
+            with st.expander("🧠 Show Full Conversation Flow", expanded=False):
+                st.json(response['messages'])
+
+        except Exception as e:
+            st.error(f"An error occurred while processing your request: {e}")
+
