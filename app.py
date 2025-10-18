@@ -9,8 +9,8 @@ from langchain_perplexity.chat_models import ChatPerplexity
 # --- Page Configuration ---
 st.set_page_config(page_title="AskTennis AI", layout="wide")
 st.title("🎾 AskTennis: The Advanced AI Engine")
-st.markdown("#### Powered by Perplexity & LangChain")
-st.markdown("This app uses a Large Language Model to answer natural language questions about tennis data.")
+st.markdown("#### Powered by Perplexity & LangGraph (Stateful Agent)")
+st.markdown("This app uses a state-of-the-art AI agent to answer natural language questions about tennis data.")
 
 # --- Database and LLM Setup (Cached for performance) ---
 
@@ -21,7 +21,7 @@ def setup_agent():
     This is cached to avoid re-initializing on every interaction.
     """
     print("--- Initializing AI Agent ---")
-    
+
     # Check for the API key in Streamlit's secrets
     try:
         pplx_api_key = st.secrets["PPLX_API_KEY"]
@@ -33,7 +33,7 @@ def setup_agent():
     db_engine = create_engine("sqlite:///tennis_data.db")
     db = SQLDatabase(engine=db_engine)
 
-    # Instantiate the Perplexity Chat Model with the ideal reasoning model
+    # Instantiate the Perplexity Chat Model
     llm = ChatPerplexity(pplx_api_key=pplx_api_key, model="sonar-reasoning-pro", temperature=0)
 
     # --- Build the Agent using the ReAct Framework ---
@@ -44,52 +44,52 @@ def setup_agent():
 
     # 2. Get the ReAct Agent Prompt: A battle-tested prompt for reasoning.
     prompt = """You are a helpful assistant that can answer questions about tennis data using SQL queries.
-    
+
     You have access to a SQL database with tennis match data. When answering questions:
     1. Think step by step about what information you need
     2. Use the available SQL tools to query the database
     3. Analyze the results and provide a clear, helpful answer
     4. If you need to make multiple queries, do so systematically
-    
+
     Always be helpful and provide detailed explanations of your findings."""
 
     # 3. Create a simple function-based agent that works with Perplexity
     print("Creating simple agent...")
-    
+
     def process_question_with_tools(question):
         """Process a question using SQL tools in a ReAct-like manner"""
         conversation_history = []
         max_iterations = 5
         iteration = 0
-        
+
         while iteration < max_iterations:
             # Create context from conversation history
             context = ""
             if conversation_history:
                 context = "\n\nPrevious steps:\n" + "\n".join(conversation_history)
-            
+
             # Create prompt for the LLM
             available_tools = [tool.name for tool in tools]
             prompt_text = f"""You are a helpful assistant that can answer questions about tennis data using SQL queries.
 
-Current question: {question}
-{context}
+            Current question: {question}
+            {context}
 
-Available tools: {available_tools}
+            Available tools: {available_tools}
 
-Think step by step. If you need to use a tool, respond with:
-TOOL: tool_name
-INPUT: tool_input
+            Think step by step. If you need to use a tool, respond with:
+            TOOL: tool_name
+            INPUT: tool_input
 
-If you have enough information to answer the question, respond with:
-FINAL_ANSWER: your answer
+            If you have enough information to answer the question, respond with:
+            FINAL_ANSWER: your answer
 
-What should you do next?"""
+            What should you do next?"""
 
             # Get LLM response
             response = llm.invoke(prompt_text)
             response_text = response.content if hasattr(response, 'content') else str(response)
-            
+
             # Check if it's a tool call
             if "TOOL:" in response_text:
                 try:
@@ -99,7 +99,7 @@ What should you do next?"""
                     if tool_match:
                         tool_name = tool_match.group(1).strip()
                         tool_input = tool_match.group(2).strip()
-                        
+
                         # Find and execute the tool
                         tool_lookup = {tool.name: tool for tool in tools}
                         if tool_name in tool_lookup:
@@ -123,14 +123,14 @@ What should you do next?"""
                     return response_text
             else:
                 conversation_history.append(f"LLM response: {response_text}")
-            
+
             iteration += 1
-        
+
         return "I was unable to find a complete answer to your question."
-    
+
     # 4. The agent is ready to use directly
     agent_executor = process_question_with_tools
-    
+
     print("--- AI Agent Initialized Successfully ---")
     return agent_executor
 
@@ -147,7 +147,6 @@ st.markdown("##### Example Questions:")
 st.markdown("""
 - *How many matches did Roger Federer win in 2006?*
 - *Who won the most matches on clay in 2010?*
-- *Compare the number of wins for Iga Swiatek and Aryna Sabalenka in 2023.*
 - *What was the score of the Wimbledon final in 2008?*
 """)
 
@@ -161,7 +160,7 @@ if user_question:
         try:
             # Invoke the agent with the user's question
             answer = agent_executor(user_question)
-            
+
             st.success("Here's what I found:")
             st.markdown(answer)
 
