@@ -60,7 +60,8 @@ def setup_langgraph_agent():
     ENHANCED DATABASE FEATURES:
     - The database now includes a `players` table with player metadata (handedness, nationality, height, birth date, etc.)
     - The database includes a `rankings` table with historical ranking data (1973-2024, 5.3M+ records)
-    - The database includes COMPLETE TOURNAMENT COVERAGE (1877-2024, 628K+ matches)
+    - The database includes COMPLETE TOURNAMENT COVERAGE (1877-2024, 1.7M+ matches)
+    - The database includes a `doubles_matches` table with doubles match data (2000-2020, 26K+ matches)
     - Use `matches_with_full_info` view for queries that need player details
     - Use `matches_with_rankings` view for queries that need ranking context
     - Use `player_rankings_history` view for ranking analysis
@@ -68,6 +69,7 @@ def setup_langgraph_agent():
     - Available ranking fields: winner_rank_at_time, winner_points_at_time, loser_rank_at_time, loser_points_at_time
     - Era classification: Amateur (1877-1967), Professional (1968-2024)
     - Tournament types: Main_Tour, ATP_Qual_Chall, ATP_Futures, WTA_Qual_ITF
+    - Match types: Singles (matches table), Doubles (doubles_matches table)
     - Historical coverage: 147 years of complete tennis history (1877-2024)
     
     CRITICAL INSTRUCTIONS:
@@ -114,6 +116,15 @@ def setup_langgraph_agent():
     - Example: "Compare main tour vs qualifying results" - use tournament_type to filter Main_Tour vs ATP_Qual_Chall
     - Example: "How many ITF matches were played by women?" - use matches WHERE tournament_type = 'WTA_Qual_ITF'
     - Example: "Which tournament level has the most matches?" - use GROUP BY tournament_type
+    
+    DOUBLES MATCH QUERIES:
+    - For questions about doubles matches, use the `doubles_matches` table
+    - Doubles table has 4 players: winner1_name, winner2_name, loser1_name, loser2_name
+    - Example: "How many doubles matches were played?" - use SELECT COUNT(*) FROM doubles_matches
+    - Example: "Which doubles team won the most matches?" - use GROUP BY winner1_name, winner2_name
+    - Example: "Who are the most successful doubles players?" - use winner1_name, winner2_name, loser1_name, loser2_name
+    - Example: "Doubles matches by surface" - use SELECT surface, COUNT(*) FROM doubles_matches GROUP BY surface
+    - Example: "Recent doubles champions" - use ORDER BY tourney_date DESC
     
     WORKFLOW:
     1. Write a SQL query to answer the user's question

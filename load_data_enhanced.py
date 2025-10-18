@@ -292,6 +292,44 @@ def load_matches_data():
     print(f"\nTotal matches loaded (Complete Tournament Coverage): {len(matches_df)}")
     return matches_df
 
+def load_doubles_data():
+    """
+    Loads doubles match data from ATP doubles files.
+    Returns a DataFrame with doubles matches.
+    """
+    print("\n--- Loading Doubles Match Data ---")
+    
+    # Find all ATP doubles files
+    doubles_files = glob.glob("data/tennis_atp/atp_matches_doubles_*.csv")
+    
+    if not doubles_files:
+        print("No doubles match files found.")
+        return pd.DataFrame()
+    
+    print(f"Loading ATP Doubles data ({len(doubles_files)} files)...")
+    doubles_dfs = []
+    
+    for i, file_path in enumerate(sorted(doubles_files), 1):
+        try:
+            if i % 5 == 0:  # Progress indicator every 5 files
+                print(f"  Processing file {i}/{len(doubles_files)}: {os.path.basename(file_path)}")
+            
+            df = pd.read_csv(file_path, low_memory=False)
+            df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
+            df['match_type'] = 'Doubles'
+            doubles_dfs.append(df)
+            
+        except Exception as e:
+            print(f"  Error loading {file_path}: {e}")
+    
+    if doubles_dfs:
+        doubles_df = pd.concat(doubles_dfs, ignore_index=True)
+        print(f"  ATP Doubles matches loaded: {len(doubles_df)}")
+        return doubles_df
+    else:
+        print("  No doubles data could be loaded.")
+        return pd.DataFrame()
+
 def fix_missing_surface_data(matches_df):
     """
     Fixes missing surface data by inferring surface from tournament names and historical data.
@@ -394,6 +432,9 @@ def create_database_with_players():
     # Load match data
     matches_df = load_matches_data()
     
+    # Load doubles data
+    doubles_df = load_doubles_data()
+    
     # Fix missing surface data
     matches_df = fix_missing_surface_data(matches_df)
     
@@ -420,6 +461,13 @@ def create_database_with_players():
     else:
         print("No rankings data to write.")
     
+    # Write doubles data
+    if not doubles_df.empty:
+        print("Writing doubles data...")
+        doubles_df.to_sql('doubles_matches', conn, if_exists='replace', index=False)
+    else:
+        print("No doubles data to write.")
+    
     # Create indexes for better performance
     print("Creating indexes...")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_matches_winner_id ON matches(winner_id)")
@@ -434,6 +482,14 @@ def create_database_with_players():
         conn.execute("CREATE INDEX IF NOT EXISTS idx_rankings_date ON rankings(ranking_date)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_rankings_rank ON rankings(rank)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_rankings_tour ON rankings(tour)")
+    
+    # Doubles indexes
+    if not doubles_df.empty:
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_doubles_winner1_id ON doubles_matches(winner1_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_doubles_winner2_id ON doubles_matches(winner2_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_doubles_loser1_id ON doubles_matches(loser1_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_doubles_loser2_id ON doubles_matches(loser2_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_doubles_date ON doubles_matches(tourney_date)")
     
     # Create a view for easy player-match joins
     print("Creating player-match views...")
@@ -537,7 +593,9 @@ def create_database_with_players():
     conn.close()
     
     print(f"\n✅ Successfully created enhanced database '{DB_FILE}' with:")
-    print(f"   - {len(matches_df)} matches (COMPLETE tournament coverage: 1877-2024)")
+    print(f"   - {len(matches_df)} singles matches (COMPLETE tournament coverage: 1877-2024)")
+    if not doubles_df.empty:
+        print(f"   - {len(doubles_df)} doubles matches (2000-2020)")
     print(f"   - {len(players_df)} players")
     if not rankings_df.empty:
         print(f"   - {len(rankings_df)} ranking records")
@@ -548,6 +606,7 @@ def create_database_with_players():
     print(f"   - Professional era tennis (1968-2024)")
     print(f"   - Main tour matches (Grand Slams, Masters, etc.)")
     print(f"   - Qualifying/Challenger/Futures matches")
+    print(f"   - Doubles matches (separate table)")
     print(f"   - Performance indexes")
     print(f"   - Enhanced views with rankings")
     print(f"   - COMPLETE tennis tournament database (147 years)")
@@ -680,6 +739,27 @@ def verify_enhancement():
     print("Surface distribution:")
     for surface, count in surface_counts:
         print(f"  {surface}: {count:,} matches")
+    
+    # Check doubles data
+    try:
+        doubles_count = conn.execute("SELECT COUNT(*) FROM doubles_matches").fetchone()[0]
+        print(f"Doubles matches: {doubles_count:,} matches")
+        
+        if doubles_count > 0:
+            # Sample doubles query
+            doubles_sample = conn.execute("""
+                SELECT winner1_name, winner2_name, loser1_name, loser2_name, 
+                       tourney_name, tourney_date, surface
+                FROM doubles_matches 
+                ORDER BY tourney_date DESC 
+                LIMIT 3
+            """).fetchall()
+            
+            print("Sample doubles matches:")
+            for row in doubles_sample:
+                print(f"  {row[0]} & {row[1]} vs {row[2]} & {row[3]} - {row[4]} ({row[5]}) - {row[6]}")
+    except:
+        print("No doubles matches found")
     
     # Sample query to test functionality
     print("\n--- Sample Player Query Test ---")
