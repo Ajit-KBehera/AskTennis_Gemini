@@ -292,6 +292,92 @@ def load_matches_data():
     print(f"\nTotal matches loaded (Complete Tournament Coverage): {len(matches_df)}")
     return matches_df
 
+def fix_missing_surface_data(matches_df):
+    """
+    Fixes missing surface data by inferring surface from tournament names and historical data.
+    """
+    print("\n--- Fixing Missing Surface Data ---")
+    
+    # Count missing surface data
+    missing_before = len(matches_df[matches_df['surface'].isna() | (matches_df['surface'] == '')])
+    print(f"Missing surface data before fix: {missing_before:,} matches")
+    
+    if missing_before == 0:
+        print("No missing surface data found!")
+        return matches_df
+    
+    # Create a copy to avoid modifying original
+    df = matches_df.copy()
+    
+    # Surface inference rules based on tournament names and historical data
+    def infer_surface(row):
+        tourney_name = str(row['tourney_name']).lower()
+        tourney_date = row['tourney_date']
+        
+        # Grand Slam surface inference
+        if 'wimbledon' in tourney_name:
+            return 'Grass'
+        elif any(name in tourney_name for name in ['french', 'roland', 'paris']):
+            return 'Clay'
+        elif any(name in tourney_name for name in ['us open', 'australian', 'melbourne']):
+            return 'Hard'
+        
+        # Historical surface inference based on era
+        if pd.notna(tourney_date):
+            year = tourney_date.year
+            
+            # Pre-1970s: Mostly grass and clay
+            if year < 1970:
+                if any(name in tourney_name for name in ['grass', 'lawn', 'wimbledon']):
+                    return 'Grass'
+                elif any(name in tourney_name for name in ['clay', 'dirt', 'red']):
+                    return 'Clay'
+                else:
+                    return 'Grass'  # Default for pre-1970s
+            
+            # 1970s-1980s: Introduction of hard courts
+            elif year < 1990:
+                if any(name in tourney_name for name in ['hard', 'concrete', 'asphalt']):
+                    return 'Hard'
+                elif any(name in tourney_name for name in ['grass', 'lawn']):
+                    return 'Grass'
+                elif any(name in tourney_name for name in ['clay', 'dirt', 'red']):
+                    return 'Clay'
+                else:
+                    return 'Hard'  # Default for 1970s-1980s
+            
+            # 1990s+: Mostly hard courts
+            else:
+                if any(name in tourney_name for name in ['grass', 'lawn', 'wimbledon']):
+                    return 'Grass'
+                elif any(name in tourney_name for name in ['clay', 'dirt', 'red', 'french']):
+                    return 'Clay'
+                elif any(name in tourney_name for name in ['carpet', 'indoor']):
+                    return 'Carpet'
+                else:
+                    return 'Hard'  # Default for modern era
+        
+        return 'Hard'  # Final default
+    
+    # Apply surface inference to missing data
+    missing_mask = df['surface'].isna() | (df['surface'] == '')
+    df.loc[missing_mask, 'surface'] = df[missing_mask].apply(infer_surface, axis=1)
+    
+    # Count remaining missing surface data
+    missing_after = len(df[df['surface'].isna() | (df['surface'] == '')])
+    fixed_count = missing_before - missing_after
+    
+    print(f"Fixed surface data: {fixed_count:,} matches")
+    print(f"Remaining missing surface data: {missing_after:,} matches")
+    
+    if missing_after > 0:
+        print("Surface distribution after fix:")
+        surface_dist = df['surface'].value_counts()
+        for surface, count in surface_dist.items():
+            print(f"  {surface}: {count:,} matches")
+    
+    return df
+
 def create_database_with_players():
     """
     Creates the enhanced database with COMPLETE tennis history (1877-2024), 
@@ -307,6 +393,9 @@ def create_database_with_players():
     
     # Load match data
     matches_df = load_matches_data()
+    
+    # Fix missing surface data
+    matches_df = fix_missing_surface_data(matches_df)
     
     if players_df.empty or matches_df.empty:
         print("Error: Could not load required data. Exiting.")
@@ -454,6 +543,7 @@ def create_database_with_players():
         print(f"   - {len(rankings_df)} ranking records")
     print(f"   - Player metadata integration")
     print(f"   - Rankings data integration")
+    print(f"   - Surface data quality fix (missing surface inference)")
     print(f"   - Amateur era tennis (1877-1967)")
     print(f"   - Professional era tennis (1968-2024)")
     print(f"   - Main tour matches (Grand Slams, Masters, etc.)")
@@ -566,6 +656,30 @@ def verify_enhancement():
             print(f"Matches with rankings data: {matches_with_rankings}/{total_matches} ({matches_with_rankings/total_matches*100:.1f}%)")
         except:
             print("Rankings view not available")
+    
+    # Check surface data quality
+    missing_surface = conn.execute("""
+        SELECT COUNT(*) FROM matches 
+        WHERE surface IS NULL OR surface = '' OR surface = 'Unknown'
+    """).fetchone()[0]
+    
+    print(f"Missing surface data: {missing_surface:,} matches")
+    if missing_surface == 0:
+        print("✅ All surface data is complete!")
+    else:
+        print(f"⚠️  {missing_surface:,} matches still have missing surface data")
+    
+    # Surface distribution
+    surface_counts = conn.execute("""
+        SELECT surface, COUNT(*) as matches 
+        FROM matches 
+        GROUP BY surface 
+        ORDER BY matches DESC
+    """).fetchall()
+    
+    print("Surface distribution:")
+    for surface, count in surface_counts:
+        print(f"  {surface}: {count:,} matches")
     
     # Sample query to test functionality
     print("\n--- Sample Player Query Test ---")
