@@ -45,7 +45,7 @@ def setup_langgraph_agent():
     db_engine = create_engine("sqlite:///tennis_data.db")
     db = SQLDatabase(engine=db_engine)
     # --- REFINEMENT 1: Use the official, version-stable model name ---
-    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash-lite", google_api_key=google_api_key, temperature=0)
+    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite", google_api_key=google_api_key, temperature=0)
     toolkit = SQLDatabaseToolkit(db=db, llm=llm)
     tools = toolkit.get_tools()
     
