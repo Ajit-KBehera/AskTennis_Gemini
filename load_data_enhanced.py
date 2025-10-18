@@ -8,6 +8,10 @@ DATA_DIRS = ["data/tennis_atp", "data/tennis_wta"]
 YEARS = list(range(1968, 2026))  # Complete historical coverage: 1968-2024
 DB_FILE = "tennis_data.db"
 
+# Option to load only recent years for testing (set to False for complete data)
+LOAD_RECENT_ONLY = False  # Set to True to load only 2020-2024 for testing
+RECENT_YEARS = list(range(2020, 2026)) if LOAD_RECENT_ONLY else YEARS
+
 def load_players_data():
     """
     Loads player information from ATP and WTA player files.
@@ -180,24 +184,120 @@ def load_matches_data():
     else:
         print(f"Amateur tennis file not found: {amateur_file}")
     
+    # Load qualifying/challenger/futures data
+    print(f"\n--- Loading Qualifying/Challenger/Futures Data ---")
+    
+    # ATP Qualifying/Challenger data
+    atp_qual_chall_files = glob.glob("data/tennis_atp/atp_matches_qual_chall_*.csv")
+    if atp_qual_chall_files:
+        # Filter files by recent years if LOAD_RECENT_ONLY is True
+        if LOAD_RECENT_ONLY:
+            filtered_files = []
+            for file_path in atp_qual_chall_files:
+                year = int(file_path.split('_')[-1].split('.')[0])
+                if year in RECENT_YEARS:
+                    filtered_files.append(file_path)
+            atp_qual_chall_files = filtered_files
+        
+        print(f"Loading ATP Qualifying/Challenger data ({len(atp_qual_chall_files)} files)...")
+        atp_qual_chall_dfs = []
+        for i, file_path in enumerate(sorted(atp_qual_chall_files), 1):
+            try:
+                if i % 10 == 0:  # Progress indicator every 10 files
+                    print(f"  Processing file {i}/{len(atp_qual_chall_files)}: {os.path.basename(file_path)}")
+                df = pd.read_csv(file_path, low_memory=False)
+                df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
+                df['tournament_type'] = 'ATP_Qual_Chall'
+                atp_qual_chall_dfs.append(df)
+            except Exception as e:
+                print(f"  Error loading {file_path}: {e}")
+        
+        if atp_qual_chall_dfs:
+            atp_qual_chall_df = pd.concat(atp_qual_chall_dfs, ignore_index=True)
+            master_df_list.append(atp_qual_chall_df)
+            print(f"  ATP Qualifying/Challenger matches loaded: {len(atp_qual_chall_df)}")
+    
+    # ATP Futures data
+    atp_futures_files = glob.glob("data/tennis_atp/atp_matches_futures_*.csv")
+    if atp_futures_files:
+        # Filter files by recent years if LOAD_RECENT_ONLY is True
+        if LOAD_RECENT_ONLY:
+            filtered_files = []
+            for file_path in atp_futures_files:
+                year = int(file_path.split('_')[-1].split('.')[0])
+                if year in RECENT_YEARS:
+                    filtered_files.append(file_path)
+            atp_futures_files = filtered_files
+        
+        print(f"Loading ATP Futures data ({len(atp_futures_files)} files)...")
+        atp_futures_dfs = []
+        for i, file_path in enumerate(sorted(atp_futures_files), 1):
+            try:
+                if i % 10 == 0:  # Progress indicator every 10 files
+                    print(f"  Processing file {i}/{len(atp_futures_files)}: {os.path.basename(file_path)}")
+                df = pd.read_csv(file_path, low_memory=False)
+                df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
+                df['tournament_type'] = 'ATP_Futures'
+                atp_futures_dfs.append(df)
+            except Exception as e:
+                print(f"  Error loading {file_path}: {e}")
+        
+        if atp_futures_dfs:
+            atp_futures_df = pd.concat(atp_futures_dfs, ignore_index=True)
+            master_df_list.append(atp_futures_df)
+            print(f"  ATP Futures matches loaded: {len(atp_futures_df)}")
+    
+    # WTA Qualifying/ITF data
+    wta_qual_itf_files = glob.glob("data/tennis_wta/wta_matches_qual_itf_*.csv")
+    if wta_qual_itf_files:
+        # Filter files by recent years if LOAD_RECENT_ONLY is True
+        if LOAD_RECENT_ONLY:
+            filtered_files = []
+            for file_path in wta_qual_itf_files:
+                year = int(file_path.split('_')[-1].split('.')[0])
+                if year in RECENT_YEARS:
+                    filtered_files.append(file_path)
+            wta_qual_itf_files = filtered_files
+        
+        print(f"Loading WTA Qualifying/ITF data ({len(wta_qual_itf_files)} files)...")
+        wta_qual_itf_dfs = []
+        for i, file_path in enumerate(sorted(wta_qual_itf_files), 1):
+            try:
+                if i % 10 == 0:  # Progress indicator every 10 files
+                    print(f"  Processing file {i}/{len(wta_qual_itf_files)}: {os.path.basename(file_path)}")
+                df = pd.read_csv(file_path, low_memory=False)
+                df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
+                df['tournament_type'] = 'WTA_Qual_ITF'
+                wta_qual_itf_dfs.append(df)
+            except Exception as e:
+                print(f"  Error loading {file_path}: {e}")
+        
+        if wta_qual_itf_dfs:
+            wta_qual_itf_df = pd.concat(wta_qual_itf_dfs, ignore_index=True)
+            master_df_list.append(wta_qual_itf_df)
+            print(f"  WTA Qualifying/ITF matches loaded: {len(wta_qual_itf_df)}")
+    
     # Combine the ATP, WTA, and amateur dataframes into one master dataframe
     matches_df = pd.concat(master_df_list, ignore_index=True)
     
     # Add era classification for all matches
     matches_df['era'] = matches_df['era'].fillna('Professional')  # Default to professional era
     
+    # Add tournament type classification for all matches
+    matches_df['tournament_type'] = matches_df['tournament_type'].fillna('Main_Tour')  # Default to main tour
+    
     # Convert tourney_date to datetime objects for proper sorting/filtering
     matches_df['tourney_date'] = pd.to_datetime(matches_df['tourney_date'], format='%Y%m%d', errors='coerce')
 
-    print(f"\nTotal matches loaded (ATP, WTA & Amateur): {len(matches_df)}")
+    print(f"\nTotal matches loaded (Complete Tournament Coverage): {len(matches_df)}")
     return matches_df
 
 def create_database_with_players():
     """
     Creates the enhanced database with COMPLETE tennis history (1877-2024), 
-    player information, and rankings.
+    including all tournament levels, player information, and rankings.
     """
-    print("=== Enhanced Data Loading with COMPLETE Tennis History (1877-2024) ===")
+    print("=== Enhanced Data Loading with COMPLETE Tournament Coverage (1877-2024) ===")
     
     # Load player data
     players_df = load_players_data()
@@ -348,7 +448,7 @@ def create_database_with_players():
     conn.close()
     
     print(f"\n✅ Successfully created enhanced database '{DB_FILE}' with:")
-    print(f"   - {len(matches_df)} matches (COMPLETE tennis history: 1877-2024)")
+    print(f"   - {len(matches_df)} matches (COMPLETE tournament coverage: 1877-2024)")
     print(f"   - {len(players_df)} players")
     if not rankings_df.empty:
         print(f"   - {len(rankings_df)} ranking records")
@@ -356,9 +456,11 @@ def create_database_with_players():
     print(f"   - Rankings data integration")
     print(f"   - Amateur era tennis (1877-1967)")
     print(f"   - Professional era tennis (1968-2024)")
+    print(f"   - Main tour matches (Grand Slams, Masters, etc.)")
+    print(f"   - Qualifying/Challenger/Futures matches")
     print(f"   - Performance indexes")
     print(f"   - Enhanced views with rankings")
-    print(f"   - COMPLETE tennis history database (147 years)")
+    print(f"   - COMPLETE tennis tournament database (147 years)")
 
 def verify_enhancement():
     """
@@ -407,6 +509,18 @@ def verify_enhancement():
     print("Matches by era:")
     for era, count in era_counts:
         print(f"  {era}: {count:,} matches")
+    
+    # Check tournament type distribution
+    tournament_type_counts = conn.execute("""
+        SELECT tournament_type, COUNT(*) as matches 
+        FROM matches 
+        GROUP BY tournament_type 
+        ORDER BY matches DESC
+    """).fetchall()
+    
+    print("Matches by tournament type:")
+    for tournament_type, count in tournament_type_counts:
+        print(f"  {tournament_type}: {count:,} matches")
     
     # Check matches by decade (expanded for complete history)
     decade_counts = conn.execute("""
@@ -537,6 +651,27 @@ def verify_enhancement():
             print("No amateur era results found")
     except Exception as e:
         print(f"Amateur era query error: {e}")
+    
+    # Sample qualifying/challenger query
+    print("\n--- Sample Qualifying/Challenger Query Test ---")
+    qualifying_query = """
+        SELECT winner_name, loser_name, tourney_name, tourney_date, tournament_type, tourney_level
+        FROM matches 
+        WHERE tournament_type = 'ATP_Qual_Chall'
+        ORDER BY tourney_date DESC
+        LIMIT 5
+    """
+    
+    try:
+        qualifying_results = conn.execute(qualifying_query).fetchall()
+        if qualifying_results:
+            print("Sample ATP Qualifying/Challenger matches:")
+            for row in qualifying_results:
+                print(f"  {row[0]} vs {row[1]} - {row[2]} ({row[3]}) - {row[4]} - {row[5]}")
+        else:
+            print("No qualifying/challenger results found")
+    except Exception as e:
+        print(f"Qualifying/challenger query error: {e}")
     
     conn.close()
 
