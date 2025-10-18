@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from typing import TypedDict, Annotated, List
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 import operator
+import pandas as pd
 
 # Modern imports for LangChain & LangGraph
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
@@ -62,6 +63,13 @@ def setup_langgraph_agent():
     - After getting query results with sql_db_query, analyze the results and provide a clear, natural language answer.
     - Always provide a final response to the user, even if the query returns no results.
     - Do not make up information. If the database does not contain the answer, say so.
+    
+    SPECIAL INSTRUCTIONS FOR HEAD-TO-HEAD QUERIES:
+    - For head-to-head questions (e.g., "Player A vs Player B h2h"), provide both a summary AND detailed match information.
+    - ALWAYS include the surface column in your SQL queries for head-to-head matches.
+    - Use this query format: SELECT winner_name, loser_name, tourney_name, tourney_date, score, surface FROM matches WHERE...
+    - Include match details like year, tournament, surface, score, and winner.
+    - Format the response to show both the overall record and individual match details.
     
     WORKFLOW:
     1. Write a SQL query to answer the user's question
@@ -176,6 +184,44 @@ if user_question:
                                         final_answer = f"Based on the database query, I found {count} result(s)."
                                     else:
                                         final_answer = f"Based on the database query, I found {len(data)} result(s)."
+                                    break
+                        except:
+                            continue
+            
+            # Check if this is a head-to-head query and display detailed results
+            if 'h2h' in user_question.lower() or 'head to head' in user_question.lower() or 'vs' in user_question.lower():
+                # Look for detailed match data in tool messages
+                for message in response["messages"]:
+                    if hasattr(message, 'type') and message.type == 'tool' and 'sql_db_query' in str(message.name):
+                        try:
+                            import ast
+                            if message.content.startswith('[') and message.content.endswith(']'):
+                                data = ast.literal_eval(message.content)
+                                if data and len(data) > 0 and isinstance(data[0], (list, tuple)) and len(data[0]) > 3:
+                                    # This looks like detailed match data (winner, loser, score, etc.)
+                                    st.markdown("### 📊 Detailed Head-to-Head Matches")
+                                    
+                                    
+                                    # Convert to DataFrame for better display
+                                    df_data = []
+                                    for row in data:
+                                        if len(row) >= 4:  # Ensure we have enough columns
+                                            # Map columns based on the ACTUAL database query result:
+                                            # Index 0: winner_name, Index 1: loser_name, Index 2: tourney_name, Index 3: tourney_date, Index 4: score, Index 5: surface
+                                            df_data.append({
+                                                'Winner': row[0],
+                                                'Loser': row[1], 
+                                                'Tournament': row[2],
+                                                'Date': row[3] if len(row) > 3 else 'N/A',
+                                                'Score': row[4] if len(row) > 4 else 'N/A',
+                                                'Surface': row[5] if len(row) > 5 else 'N/A'
+                                            })
+                                    
+                                    if df_data:
+                                        df = pd.DataFrame(df_data)
+                                        st.dataframe(df, use_container_width=True)
+                                    else:
+                                        st.warning("No detailed match data found in the expected format.")
                                     break
                         except:
                             continue
