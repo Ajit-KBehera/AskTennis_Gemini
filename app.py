@@ -27,7 +27,7 @@ class AgentState(TypedDict):
 @st.cache_resource
 def setup_langgraph_agent():
     """
-    Sets up the database, LLM, tools, and compiles the LangGraph.
+    Sets up the database, LLM, tools, and compiles the LangGraph ReAct agent.
     This is cached to avoid re-initializing on every interaction.
     """
     print("--- Initializing LangGraph Agent ---")
