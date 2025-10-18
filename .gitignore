@@ -6,3 +6,7 @@ data/
 
 # Database files
 tennis_data.db
+
+# Streamlit configuration
+.streamlit/
+

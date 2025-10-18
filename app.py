@@ -1,173 +1,161 @@
 import streamlit as st
-import pandas as pd
-import sqlite3
-import spacy
-import plotly.express as px  # --- NEW: Import Plotly ---
+from sqlalchemy import create_engine
 
-# Load the spaCy model
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    st.error("SpaCy model not found. Please run 'python -m spacy download en_core_web_sm'")
-    st.stop()
-
-# --- Database Connection ---
-DB_FILE = "tennis_data.db"
-conn = sqlite3.connect(DB_FILE, check_same_thread=False)
-
-# --- Player Name Lookup Functions (No changes here) ---
-@st.cache_data
-def create_player_lookup():
-    query = "SELECT DISTINCT winner_name FROM matches UNION SELECT DISTINCT loser_name FROM matches"
-    df = pd.read_sql_query(query, conn)
-    names = df['winner_name'].dropna().unique()
-    lookup = {}
-    for name in names:
-        lookup[name] = name
-        parts = name.split()
-        if len(parts) > 1:
-            last_name = parts[-1]
-            if last_name not in lookup:
-                 lookup[last_name] = name
-    return lookup
-
-PLAYER_LOOKUP = create_player_lookup()
-PLAYER_SEARCH_LIST = sorted(PLAYER_LOOKUP.keys(), key=len, reverse=True)
-
+# Import the necessary components for the ReAct Agent framework
+from langchain_community.agent_toolkits import SQLDatabaseToolkit
+from langchain_community.utilities import SQLDatabase
+from langchain_perplexity.chat_models import ChatPerplexity
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
+import json
+import re
 
 # --- Page Configuration ---
-st.set_page_config(page_title="AskTennis Viz", layout="wide")
-st.title("🎾 AskTennis: AI-Powered Tennis Statistics")
-st.markdown("Phase 3: Beautiful Visualizations. Ask a question below!")
+st.set_page_config(page_title="AskTennis AI", layout="wide")
+st.title("🎾 AskTennis: The Advanced AI Engine")
+st.markdown("#### Powered by Perplexity & LangChain")
+st.markdown("This app uses a Large Language Model to answer natural language questions about tennis data.")
 
+# --- Database and LLM Setup (Cached for performance) ---
 
-# --- NLP Parsing Function (No changes here) ---
-def parse_question(question):
-    intent = "unknown"
-    entities = {"players": [], "year": None}
+@st.cache_resource
+def setup_agent():
+    """
+    Sets up the database, LLM, and the ReAct agent.
+    This is cached to avoid re-initializing on every interaction.
+    """
+    print("--- Initializing AI Agent ---")
     
-    if "most wins" in question or "top winners" in question:
-        intent = "top_winners"
-    elif "head-to-head" in question.lower() or "vs" in question.lower() or "versus" in question.lower():
-        intent = "h2h"
-    elif "tournament winners" in question or "won which tournaments" in question:
-        intent = "tournament_winners"
+    # Check for the API key in Streamlit's secrets
+    try:
+        pplx_api_key = st.secrets["PPLX_API_KEY"]
+    except (KeyError, FileNotFoundError):
+        st.error("Perplexity API key not found! Please create a `.streamlit/secrets.toml` file and add your key.")
+        st.stop()
 
-    question_title_case = question.title()
-    found_canonical_names = set()
-    for search_name in PLAYER_SEARCH_LIST:
-        if search_name in question_title_case:
-            canonical_name = PLAYER_LOOKUP[search_name]
-            found_canonical_names.add(canonical_name)
-            question_title_case = question_title_case.replace(search_name, "")
-    entities["players"] = list(found_canonical_names)
+    # Setup database connection
+    db_engine = create_engine("sqlite:///tennis_data.db")
+    db = SQLDatabase(engine=db_engine)
 
-    doc = nlp(question)
-    for ent in doc.ents:
-        if ent.label_ == "DATE" and ent.text.isdigit() and len(ent.text) == 4:
-            entities["year"] = ent.text
+    # Instantiate the Perplexity Chat Model
+    llm = ChatPerplexity(pplx_api_key=pplx_api_key, model="sonar-reasoning-pro", temperature=0)
+
+    # --- Build the Agent using the ReAct Framework ---
+
+    # 1. Create the SQL Toolkit and tools
+    toolkit = SQLDatabaseToolkit(db=db, llm=llm)
+    tools = toolkit.get_tools()
+    
+    # Create a tool lookup dictionary
+    tool_lookup = {tool.name: tool for tool in tools}
+    
+    def process_question_with_tools(question):
+        """Process a question using SQL tools in a ReAct-like manner"""
+        conversation_history = []
+        max_iterations = 5
+        iteration = 0
+        
+        while iteration < max_iterations:
+            # Create context from conversation history
+            context = ""
+            if conversation_history:
+                context = "\\n\\nPrevious steps:\\n" + "\\n".join(conversation_history)
             
-    return intent, entities
+            # Create prompt for the LLM
+            prompt_text = f"""You are a helpful assistant that can answer questions about tennis data using SQL queries.
 
+You have access to these SQL tools:
+- sql_db_list_tables: List all tables in the database
+- sql_db_schema: Get schema and sample data for specific tables  
+- sql_db_query: Execute SQL queries
+- sql_db_query_checker: Check if a SQL query is valid before executing
 
-# --- Functions to answer questions (No changes here) ---
-def get_top_winners(year="2024"):
-    query = f"""
-    SELECT winner_name AS player, COUNT(*) AS wins
-    FROM matches WHERE strftime('%Y', tourney_date) = '{year}'
-    GROUP BY winner_name ORDER BY wins DESC LIMIT 10;
-    """
-    return pd.read_sql_query(query, conn)
+Current question: {question}
+{context}
 
-def get_head_to_head(player1, player2):
-    query = """
-    SELECT tourney_name, strftime('%Y-%m-%d', tourney_date) as match_date, round,
-           winner_name, loser_name, score
-    FROM matches WHERE (winner_name = ? AND loser_name = ?) OR (winner_name = ? AND loser_name = ?)
-    ORDER BY tourney_date DESC;
-    """
-    return pd.read_sql_query(query, conn, params=(player1, player2, player2, player1))
+Think step by step. If you need to use a tool, respond with:
+TOOL: tool_name
+INPUT: tool_input
 
-def get_tournament_winners(year):
-    query = f"""
-    SELECT tourney_name, winner_name as champion FROM matches
-    WHERE round = 'F' AND strftime('%Y', tourney_date) = '{year}'
-    ORDER BY tourney_name;
-    """
-    return pd.read_sql_query(query, conn)
+If you have enough information to answer the question, respond with:
+FINAL_ANSWER: your answer
 
+What should you do next?"""
+            
+            # Get LLM response
+            response = llm.invoke(prompt_text)
+            response_text = response.content if hasattr(response, 'content') else str(response)
+            
+            # Check if it's a tool call
+            if "TOOL:" in response_text:
+                try:
+                    # Extract tool name and input
+                    tool_match = re.search(r"TOOL:\\s*(\\w+)\\s*\\nINPUT:\\s*(.+)", response_text, re.DOTALL)
+                    if tool_match:
+                        tool_name = tool_match.group(1).strip()
+                        tool_input = tool_match.group(2).strip()
+                        
+                        if tool_name in tool_lookup:
+                            tool = tool_lookup[tool_name]
+                            result = tool.invoke(tool_input)
+                            conversation_history.append(f"Used {tool_name} with input: {tool_input}")
+                            conversation_history.append(f"Result: {result}")
+                        else:
+                            conversation_history.append(f"Unknown tool: {tool_name}")
+                    else:
+                        conversation_history.append(f"Could not parse tool call: {response_text}")
+                except Exception as e:
+                    conversation_history.append(f"Error using tool: {str(e)}")
+            elif "FINAL_ANSWER:" in response_text:
+                # Extract final answer
+                answer_match = re.search(r"FINAL_ANSWER:\\s*(.+)", response_text, re.DOTALL)
+                if answer_match:
+                    return answer_match.group(1).strip()
+                else:
+                    return response_text
+            else:
+                conversation_history.append(f"LLM response: {response_text}")
+            
+            iteration += 1
+        
+        return "I was unable to find a complete answer to your question."
+    
+    print("--- AI Agent Initialized Successfully ---")
+    return process_question_with_tools
+
+# Initialize the agent
+try:
+    agent = setup_agent()
+except Exception as e:
+    st.error(f"Failed to initialize the AI agent: {e}")
+    st.stop()
 
 # --- Main App UI & Logic ---
+
+st.markdown("##### Example Questions:")
+st.markdown("""
+- *How many matches did Roger Federer win in 2006?*
+- *Who won the most matches on clay in 2010?*
+- *Compare the number of wins for Iga Swiatek and Aryna Sabalenka in 2023.*
+- *What was the score of the Wimbledon final in 2008?*
+""")
+
 user_question = st.text_input(
     "Ask your tennis question:",
-    placeholder="e.g., 'Who had the most wins in 2023?' or 'Nadal vs Djokovic h2h'"
+    placeholder="e.g., 'How many tournaments did Serena Williams win on hard court?'"
 )
 
 if user_question:
-    intent, entities = parse_question(user_question)
-    
-    st.write(f"🔍 **Intent:** `{intent}`")
-    st.write(f"**Entities:** `{entities}`")
-    
-    if intent == "top_winners":
-        year = entities.get("year", "2024") # Default to current year if not specified
-        st.subheader(f"Top 10 Players by Wins in {year}")
-        results_df = get_top_winners(year)
-        
-        # --- VISUALIZATION ---
-        fig = px.bar(results_df, 
-                     x='player', 
-                     y='wins',
-                     title=f"Most Match Wins ({year})",
-                     labels={'player': 'Player', 'wins': 'Number of Wins'},
-                     template="streamlit")
-        st.plotly_chart(fig, use_container_width=True)
-        # --- END VISUALIZATION ---
-        
-        st.dataframe(results_df, use_container_width=True)
-
-    elif intent == "h2h":
-        if len(entities["players"]) >= 2:
-            player1 = entities["players"][0]
-            player2 = entities["players"][1]
-            st.subheader(f"Head-to-Head: {player1} vs. {player2}")
-            results_df = get_head_to_head(player1, player2)
+    with st.spinner("The AI is analyzing your question and querying the database..."):
+        try:
+            # Invoke the agent with the user's question
+            answer = agent(user_question)
             
-            if not results_df.empty:
-                p1_wins = len(results_df[results_df['winner_name'] == player1])
-                p2_wins = len(results_df[results_df['winner_name'] == player2])
-                
-                # --- VISUALIZATION ---
-                chart_data = pd.DataFrame({
-                    'Player': [player1, player2],
-                    'Wins': [p1_wins, p2_wins]
-                })
-                fig = px.bar(chart_data, 
-                             x='Player', 
-                             y='Wins', 
-                             title=f'Head-to-Head Wins: {player1} vs {player2}',
-                             color='Player', # Assign different colors to each player
-                             text_auto=True, # Display the win count on the bars
-                             template="streamlit")
-                st.plotly_chart(fig, use_container_width=True)
-                # --- END VISUALIZATION ---
-                
-                st.markdown("#### Match History")
-                st.dataframe(results_df, use_container_width=True)
-            else:
-                st.info(f"No match history found between {player1} and {player2} in the dataset.")
-        else:
-            st.warning(f"I found these players: `{entities['players']}`. Please specify two distinct player names for a head-to-head comparison.")
+            st.success("Here's what I found:")
+            st.markdown(answer)
 
-    elif intent == "tournament_winners":
-        year = entities.get("year")
-        if year:
-            st.subheader(f"Tournament Winners in {year}")
-            results_df = get_tournament_winners(year)
-            # A table is best for this data, so no chart is needed.
-            st.dataframe(results_df, use_container_width=True)
-        else:
-            st.warning("Please specify a year to find tournament winners.")
-            
-    else:
-        st.error("Sorry, I didn't understand that question. Please try rephrasing.")
+        except Exception as e:
+            st.error(f"An error occurred while processing your request: {e}")
+            st.error(f"Error details: {str(e)}")
+

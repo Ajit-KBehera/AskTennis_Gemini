@@ -1,0 +1,5 @@
+{
+    "python.defaultInterpreterPath": "/opt/miniconda3/envs/asktennis/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "python.terminal.activateEnvInCurrentTerminal": true
+}
