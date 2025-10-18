@@ -59,8 +59,12 @@ def setup_langgraph_agent():
     
     ENHANCED DATABASE FEATURES:
     - The database now includes a `players` table with player metadata (handedness, nationality, height, birth date, etc.)
+    - The database includes a `rankings` table with historical ranking data (1973-2024, 5.3M+ records)
     - Use `matches_with_full_info` view for queries that need player details
+    - Use `matches_with_rankings` view for queries that need ranking context
+    - Use `player_rankings_history` view for ranking analysis
     - Available player fields: winner_hand, winner_ioc, winner_height, winner_dob, loser_hand, loser_ioc, loser_height, loser_dob
+    - Available ranking fields: winner_rank_at_time, winner_points_at_time, loser_rank_at_time, loser_points_at_time
     
     CRITICAL INSTRUCTIONS:
     - To answer questions, you MUST use the sql_db_query tool to execute your SQL query and get results.
@@ -81,6 +85,14 @@ def setup_langgraph_agent():
     - Example: "Which left-handed players won the most matches?" - use winner_hand = 'L'
     - Example: "How many matches did Spanish players win?" - use winner_ioc = 'ESP'
     - Example: "Who are the tallest players?" - use winner_height or loser_height columns
+    
+    RANKINGS QUERIES:
+    - For questions about player rankings, use the `player_rankings_history` view
+    - For questions about matches with ranking context, use the `matches_with_rankings` view
+    - Example: "Who was ranked #1 in 2020?" - use player_rankings_history WHERE rank = 1 AND ranking_date LIKE '2020%'
+    - Example: "Which top 10 players won the most matches?" - use matches_with_rankings WHERE winner_rank_at_time <= 10
+    - Example: "How many upsets happened in Grand Slams?" - use matches_with_rankings WHERE winner_rank_at_time > loser_rank_at_time
+    - Example: "Who had the highest ranking points?" - use player_rankings_history ORDER BY points DESC
     
     WORKFLOW:
     1. Write a SQL query to answer the user's question

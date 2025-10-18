@@ -57,6 +57,80 @@ def load_players_data():
     print(f"Total players loaded: {len(all_players)}")
     return all_players
 
+def load_rankings_data():
+    """
+    Loads rankings data from ATP and WTA ranking files.
+    """
+    print("--- Loading Rankings Data ---")
+    
+    # Define ranking file patterns
+    ranking_files = [
+        "data/tennis_atp/atp_rankings_70s.csv",
+        "data/tennis_atp/atp_rankings_80s.csv", 
+        "data/tennis_atp/atp_rankings_90s.csv",
+        "data/tennis_atp/atp_rankings_00s.csv",
+        "data/tennis_atp/atp_rankings_10s.csv",
+        "data/tennis_atp/atp_rankings_20s.csv",
+        "data/tennis_atp/atp_rankings_current.csv",
+        "data/tennis_wta/wta_rankings_80s.csv",
+        "data/tennis_wta/wta_rankings_90s.csv", 
+        "data/tennis_wta/wta_rankings_00s.csv",
+        "data/tennis_wta/wta_rankings_10s.csv",
+        "data/tennis_wta/wta_rankings_20s.csv",
+        "data/tennis_wta/wta_rankings_current.csv"
+    ]
+    
+    all_rankings = []
+    
+    for file_path in ranking_files:
+        if os.path.exists(file_path):
+            print(f"Reading {file_path}...")
+            try:
+                df = pd.read_csv(file_path)
+                
+                # Determine tour based on file path
+                if 'atp' in file_path:
+                    df['tour'] = 'ATP'
+                elif 'wta' in file_path:
+                    df['tour'] = 'WTA'
+                else:
+                    df['tour'] = 'Unknown'
+                
+                # Standardize column names
+                if 'tours' in df.columns:
+                    df = df.rename(columns={'tours': 'tournaments'})
+                else:
+                    df['tournaments'] = None
+                
+                all_rankings.append(df)
+                print(f"  Loaded {len(df)} ranking records")
+                
+            except Exception as e:
+                print(f"  Error loading {file_path}: {e}")
+        else:
+            print(f"  File not found: {file_path}")
+    
+    if not all_rankings:
+        print("No rankings data found!")
+        return pd.DataFrame()
+    
+    # Combine all rankings data
+    rankings_df = pd.concat(all_rankings, ignore_index=True)
+    
+    # Clean and standardize rankings data
+    rankings_df['ranking_date'] = pd.to_datetime(rankings_df['ranking_date'], format='%Y%m%d', errors='coerce')
+    rankings_df['rank'] = pd.to_numeric(rankings_df['rank'], errors='coerce')
+    rankings_df['points'] = pd.to_numeric(rankings_df['points'], errors='coerce')
+    rankings_df['player'] = pd.to_numeric(rankings_df['player'], errors='coerce')
+    
+    # Remove invalid data
+    rankings_df = rankings_df.dropna(subset=['ranking_date', 'rank', 'player'])
+    
+    print(f"Total rankings loaded: {len(rankings_df)}")
+    print(f"Date range: {rankings_df['ranking_date'].min()} to {rankings_df['ranking_date'].max()}")
+    
+    return rankings_df
+
 def load_matches_data():
     """
     Loads match data from ATP and WTA files.
@@ -104,12 +178,15 @@ def load_matches_data():
 
 def create_database_with_players():
     """
-    Creates the enhanced database with both matches and player information.
+    Creates the enhanced database with matches, player information, and rankings.
     """
-    print("=== Enhanced Data Loading with Player Information ===")
+    print("=== Enhanced Data Loading with Player Information and Rankings ===")
     
     # Load player data
     players_df = load_players_data()
+    
+    # Load rankings data
+    rankings_df = load_rankings_data()
     
     # Load match data
     matches_df = load_matches_data()
@@ -130,6 +207,13 @@ def create_database_with_players():
     print("Writing players data...")
     players_df.to_sql('players', conn, if_exists='replace', index=False)
     
+    # Write rankings data
+    if not rankings_df.empty:
+        print("Writing rankings data...")
+        rankings_df.to_sql('rankings', conn, if_exists='replace', index=False)
+    else:
+        print("No rankings data to write.")
+    
     # Create indexes for better performance
     print("Creating indexes...")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_matches_winner_id ON matches(winner_id)")
@@ -137,6 +221,13 @@ def create_database_with_players():
     conn.execute("CREATE INDEX IF NOT EXISTS idx_matches_date ON matches(tourney_date)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_players_id ON players(player_id)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_players_name ON players(full_name)")
+    
+    # Rankings indexes
+    if not rankings_df.empty:
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_rankings_player ON rankings(player)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_rankings_date ON rankings(ranking_date)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_rankings_rank ON rankings(rank)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_rankings_tour ON rankings(tour)")
     
     # Create a view for easy player-match joins
     print("Creating player-match views...")
@@ -190,25 +281,83 @@ def create_database_with_players():
         LEFT JOIN players p2 ON m.loser_id = p2.player_id
     """)
     
+    # Create rankings-enhanced views
+    if not rankings_df.empty:
+        print("Creating rankings-enhanced views...")
+        conn.execute("""
+            CREATE VIEW IF NOT EXISTS matches_with_rankings AS
+            SELECT m.*,
+                   p1.name_first as winner_first_name,
+                   p1.name_last as winner_last_name,
+                   p1.hand as winner_hand,
+                   p1.dob as winner_dob,
+                   p1.ioc as winner_ioc,
+                   p1.height as winner_height,
+                   p1.tour as winner_tour,
+                   p2.name_first as loser_first_name,
+                   p2.name_last as loser_last_name,
+                   p2.hand as loser_hand,
+                   p2.dob as loser_dob,
+                   p2.ioc as loser_ioc,
+                   p2.height as loser_height,
+                   p2.tour as loser_tour,
+                   r1.rank as winner_rank_at_time,
+                   r1.points as winner_points_at_time,
+                   r2.rank as loser_rank_at_time,
+                   r2.points as loser_points_at_time
+            FROM matches m
+            LEFT JOIN players p1 ON m.winner_id = p1.player_id
+            LEFT JOIN players p2 ON m.loser_id = p2.player_id
+            LEFT JOIN rankings r1 ON m.winner_id = r1.player 
+                AND DATE(m.tourney_date) = DATE(r1.ranking_date)
+            LEFT JOIN rankings r2 ON m.loser_id = r2.player 
+                AND DATE(m.tourney_date) = DATE(r2.ranking_date)
+        """)
+        
+        conn.execute("""
+            CREATE VIEW IF NOT EXISTS player_rankings_history AS
+            SELECT r.*,
+                   p.name_first,
+                   p.name_last,
+                   p.hand,
+                   p.ioc,
+                   p.height,
+                   p.tour
+            FROM rankings r
+            LEFT JOIN players p ON r.player = p.player_id
+            ORDER BY r.ranking_date DESC, r.rank ASC
+        """)
+    
     conn.close()
     
     print(f"\n✅ Successfully created enhanced database '{DB_FILE}' with:")
     print(f"   - {len(matches_df)} matches")
     print(f"   - {len(players_df)} players")
+    if not rankings_df.empty:
+        print(f"   - {len(rankings_df)} ranking records")
     print(f"   - Player metadata integration")
+    print(f"   - Rankings data integration")
     print(f"   - Performance indexes")
-    print(f"   - Player-match join views")
+    print(f"   - Enhanced views with rankings")
 
 def verify_enhancement():
     """
-    Verifies that the player integration worked correctly.
+    Verifies that the player and rankings integration worked correctly.
     """
-    print("\n--- Verifying Player Integration ---")
+    print("\n--- Verifying Enhanced Integration ---")
     conn = sqlite3.connect(DB_FILE)
     
     # Check player count
     player_count = conn.execute("SELECT COUNT(*) FROM players").fetchone()[0]
     print(f"Players in database: {player_count}")
+    
+    # Check rankings count
+    try:
+        rankings_count = conn.execute("SELECT COUNT(*) FROM rankings").fetchone()[0]
+        print(f"Rankings in database: {rankings_count}")
+    except:
+        print("No rankings table found")
+        rankings_count = 0
     
     # Check matches with player info
     matches_with_winner_info = conn.execute("""
@@ -225,6 +374,17 @@ def verify_enhancement():
     
     print(f"Matches with winner info: {matches_with_winner_info}/{total_matches} ({matches_with_winner_info/total_matches*100:.1f}%)")
     print(f"Matches with loser info: {matches_with_loser_info}/{total_matches} ({matches_with_loser_info/total_matches*100:.1f}%)")
+    
+    # Check rankings integration
+    if rankings_count > 0:
+        try:
+            matches_with_rankings = conn.execute("""
+                SELECT COUNT(*) FROM matches_with_rankings 
+                WHERE winner_rank_at_time IS NOT NULL
+            """).fetchone()[0]
+            print(f"Matches with rankings data: {matches_with_rankings}/{total_matches} ({matches_with_rankings/total_matches*100:.1f}%)")
+        except:
+            print("Rankings view not available")
     
     # Sample query to test functionality
     print("\n--- Sample Player Query Test ---")
@@ -246,6 +406,28 @@ def verify_enhancement():
             print(f"    {row[8]} - {row[9]} - {row[10]}")
     else:
         print("No sample results found")
+    
+    # Sample rankings query
+    if rankings_count > 0:
+        print("\n--- Sample Rankings Query Test ---")
+        rankings_query = """
+            SELECT name_first, name_last, rank, points, ranking_date, tour
+            FROM player_rankings_history 
+            WHERE rank <= 5
+            ORDER BY ranking_date DESC, rank ASC
+            LIMIT 10
+        """
+        
+        try:
+            rankings_results = conn.execute(rankings_query).fetchall()
+            if rankings_results:
+                print("Top 5 rankings sample:")
+                for row in rankings_results:
+                    print(f"  #{row[2]} {row[0]} {row[1]} - {row[3]} points ({row[4]}) - {row[5]}")
+            else:
+                print("No rankings results found")
+        except Exception as e:
+            print(f"Rankings query error: {e}")
     
     conn.close()
 
