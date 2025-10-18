@@ -167,21 +167,37 @@ def load_matches_data():
         print("No data found in any directory. Exiting.")
         return pd.DataFrame()
 
-    # Combine the ATP and WTA dataframes into one master dataframe
+    # Load amateur tennis data (1877-1967)
+    amateur_file = "data/tennis_atp/atp_matches_amateur.csv"
+    if os.path.exists(amateur_file):
+        print(f"\n--- Loading Amateur Tennis Data (1877-1967) ---")
+        print(f"Reading {amateur_file}...")
+        amateur_df = pd.read_csv(amateur_file, low_memory=False)
+        amateur_df['tourney_date'] = pd.to_datetime(amateur_df['tourney_date'], format='%Y%m%d')
+        amateur_df['era'] = 'Amateur'  # Mark as amateur era
+        master_df_list.append(amateur_df)
+        print(f"Amateur matches loaded: {len(amateur_df)}")
+    else:
+        print(f"Amateur tennis file not found: {amateur_file}")
+    
+    # Combine the ATP, WTA, and amateur dataframes into one master dataframe
     matches_df = pd.concat(master_df_list, ignore_index=True)
     
+    # Add era classification for all matches
+    matches_df['era'] = matches_df['era'].fillna('Professional')  # Default to professional era
+    
     # Convert tourney_date to datetime objects for proper sorting/filtering
-    matches_df['tourney_date'] = pd.to_datetime(matches_df['tourney_date'], format='%Y%m%d')
+    matches_df['tourney_date'] = pd.to_datetime(matches_df['tourney_date'], format='%Y%m%d', errors='coerce')
 
-    print(f"\nTotal matches loaded (ATP & WTA): {len(matches_df)}")
+    print(f"\nTotal matches loaded (ATP, WTA & Amateur): {len(matches_df)}")
     return matches_df
 
 def create_database_with_players():
     """
-    Creates the enhanced database with complete historical matches (1968-2024), 
+    Creates the enhanced database with COMPLETE tennis history (1877-2024), 
     player information, and rankings.
     """
-    print("=== Enhanced Data Loading with Complete Historical Coverage (1968-2024) ===")
+    print("=== Enhanced Data Loading with COMPLETE Tennis History (1877-2024) ===")
     
     # Load player data
     players_df = load_players_data()
@@ -332,15 +348,17 @@ def create_database_with_players():
     conn.close()
     
     print(f"\n✅ Successfully created enhanced database '{DB_FILE}' with:")
-    print(f"   - {len(matches_df)} matches (Complete historical coverage: 1968-2024)")
+    print(f"   - {len(matches_df)} matches (COMPLETE tennis history: 1877-2024)")
     print(f"   - {len(players_df)} players")
     if not rankings_df.empty:
         print(f"   - {len(rankings_df)} ranking records")
     print(f"   - Player metadata integration")
     print(f"   - Rankings data integration")
+    print(f"   - Amateur era tennis (1877-1967)")
+    print(f"   - Professional era tennis (1968-2024)")
     print(f"   - Performance indexes")
     print(f"   - Enhanced views with rankings")
-    print(f"   - Complete historical tennis database")
+    print(f"   - COMPLETE tennis history database (147 years)")
 
 def verify_enhancement():
     """
@@ -378,10 +396,31 @@ def verify_enhancement():
     date_range = conn.execute("SELECT MIN(tourney_date), MAX(tourney_date) FROM matches").fetchone()
     print(f"Historical coverage: {date_range[0]} to {date_range[1]}")
     
-    # Check matches by decade
+    # Check era distribution
+    era_counts = conn.execute("""
+        SELECT era, COUNT(*) as matches 
+        FROM matches 
+        GROUP BY era 
+        ORDER BY era
+    """).fetchall()
+    
+    print("Matches by era:")
+    for era, count in era_counts:
+        print(f"  {era}: {count:,} matches")
+    
+    # Check matches by decade (expanded for complete history)
     decade_counts = conn.execute("""
         SELECT 
             CASE 
+                WHEN strftime('%Y', tourney_date) < '1880' THEN '1870s'
+                WHEN strftime('%Y', tourney_date) < '1890' THEN '1880s'
+                WHEN strftime('%Y', tourney_date) < '1900' THEN '1890s'
+                WHEN strftime('%Y', tourney_date) < '1910' THEN '1900s'
+                WHEN strftime('%Y', tourney_date) < '1920' THEN '1910s'
+                WHEN strftime('%Y', tourney_date) < '1930' THEN '1920s'
+                WHEN strftime('%Y', tourney_date) < '1940' THEN '1930s'
+                WHEN strftime('%Y', tourney_date) < '1950' THEN '1940s'
+                WHEN strftime('%Y', tourney_date) < '1960' THEN '1950s'
                 WHEN strftime('%Y', tourney_date) < '1970' THEN '1960s'
                 WHEN strftime('%Y', tourney_date) < '1980' THEN '1970s'
                 WHEN strftime('%Y', tourney_date) < '1990' THEN '1980s'
@@ -477,6 +516,27 @@ def verify_enhancement():
             print("No historical results found")
     except Exception as e:
         print(f"Historical query error: {e}")
+    
+    # Sample amateur era query
+    print("\n--- Sample Amateur Era Query Test ---")
+    amateur_query = """
+        SELECT winner_name, loser_name, tourney_name, tourney_date, surface, era
+        FROM matches 
+        WHERE strftime('%Y', tourney_date) = '1877'
+        ORDER BY tourney_date DESC
+        LIMIT 5
+    """
+    
+    try:
+        amateur_results = conn.execute(amateur_query).fetchall()
+        if amateur_results:
+            print("Sample 1877 matches (First Wimbledon):")
+            for row in amateur_results:
+                print(f"  {row[0]} vs {row[1]} - {row[2]} ({row[3]}) - {row[4]} - {row[5]}")
+        else:
+            print("No amateur era results found")
+    except Exception as e:
+        print(f"Amateur era query error: {e}")
     
     conn.close()
 
