@@ -1,6 +1,0 @@
-streamlit
-sqlalchemy
-langchain
-langchain-community
-langchain-perplexity
-langchain-hub
