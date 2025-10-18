@@ -2,8 +2,6 @@ import streamlit as st
 from sqlalchemy import create_engine
 
 # Modern imports for the LangChain Agent framework
-from langsmith import Client
-from langchain.agents import create_agent
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_community.utilities import SQLDatabase
 from langchain_perplexity.chat_models import ChatPerplexity
@@ -38,37 +36,22 @@ def setup_agent():
     # Instantiate the Perplexity Chat Model with the ideal reasoning model
     llm = ChatPerplexity(pplx_api_key=pplx_api_key, model="sonar-reasoning-pro", temperature=0)
 
-    # --- Build the Agent using the Modern LangChain Framework ---
+    # --- Build the Agent using the ReAct Framework ---
 
     # 1. Create the SQL Toolkit: This contains tools the agent can use (e.g., query SQL).
-    print("Creating SQL toolkit...")
     toolkit = SQLDatabaseToolkit(db=db, llm=llm)
     tools = toolkit.get_tools()
-    print(f"Created {len(tools)} tools: {[tool.name for tool in tools]}")
 
     # 2. Get the ReAct Agent Prompt: A battle-tested prompt for reasoning.
-    try:
-        client = Client()
-        prompt = client.pull_prompt("hwchase17/react-chat")
-    except Exception as e:
-        print(f"Warning: Could not pull prompt from langsmith: {e}")
-        print("Using default ReAct prompt...")
-        # Fallback to a basic system prompt
-        prompt = """You are a helpful assistant that can answer questions about tennis data using SQL queries.
-
-You have access to these SQL tools:
-- sql_db_list_tables: List all tables in the database
-- sql_db_schema: Get schema and sample data for specific tables  
-- sql_db_query: Execute SQL queries
-- sql_db_query_checker: Check if a SQL query is valid before executing
-
-When answering questions about tennis data:
-1. First, explore the database structure to understand what data is available
-2. Then formulate appropriate SQL queries to answer the user's question
-3. Execute the queries and provide clear, informative answers
-4. If you're unsure about the data structure, use the schema tools to investigate
-
-Always be helpful and provide detailed explanations of your findings."""
+    prompt = """You are a helpful assistant that can answer questions about tennis data using SQL queries.
+    
+    You have access to a SQL database with tennis match data. When answering questions:
+    1. Think step by step about what information you need
+    2. Use the available SQL tools to query the database
+    3. Analyze the results and provide a clear, helpful answer
+    4. If you need to make multiple queries, do so systematically
+    
+    Always be helpful and provide detailed explanations of your findings."""
 
     # 3. Create a simple function-based agent that works with Perplexity
     print("Creating simple agent...")
@@ -83,11 +66,11 @@ Always be helpful and provide detailed explanations of your findings."""
             # Create context from conversation history
             context = ""
             if conversation_history:
-                context = "\\n\\nPrevious steps:\\n" + "\\n".join(conversation_history)
+                context = "\n\nPrevious steps:\n" + "\n".join(conversation_history)
             
             # Create prompt for the LLM
             available_tools = [tool.name for tool in tools]
-            prompt_text = f"""{prompt}
+            prompt_text = f"""You are a helpful assistant that can answer questions about tennis data using SQL queries.
 
 Current question: {question}
 {context}
@@ -102,7 +85,7 @@ If you have enough information to answer the question, respond with:
 FINAL_ANSWER: your answer
 
 What should you do next?"""
-            
+
             # Get LLM response
             response = llm.invoke(prompt_text)
             response_text = response.content if hasattr(response, 'content') else str(response)
@@ -112,7 +95,7 @@ What should you do next?"""
                 try:
                     # Extract tool name and input
                     import re
-                    tool_match = re.search(r"TOOL:\\s*(\\w+)\\s*\\nINPUT:\\s*(.+)", response_text, re.DOTALL)
+                    tool_match = re.search(r"TOOL:\s*(\w+)\s*\nINPUT:\s*(.+)", response_text, re.DOTALL)
                     if tool_match:
                         tool_name = tool_match.group(1).strip()
                         tool_input = tool_match.group(2).strip()
@@ -133,7 +116,7 @@ What should you do next?"""
             elif "FINAL_ANSWER:" in response_text:
                 # Extract final answer
                 import re
-                answer_match = re.search(r"FINAL_ANSWER:\\s*(.+)", response_text, re.DOTALL)
+                answer_match = re.search(r"FINAL_ANSWER:\s*(.+)", response_text, re.DOTALL)
                 if answer_match:
                     return answer_match.group(1).strip()
                 else:
