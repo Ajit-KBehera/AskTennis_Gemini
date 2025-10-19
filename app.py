@@ -289,8 +289,8 @@ if user_question:
                 st.warning("I processed your request but couldn't generate a clear response. Please check the conversation flow below for details.")
 
             # Optional: Show the full conversation history for debugging
-            with st.expander("🧠 Show Full Conversation Flow", expanded=False):
-                st.json(response['messages'])
+            # with st.expander("🧠 Show Full Conversation Flow", expanded=False):
+            #     st.json(response['messages'])
 
         except Exception as e:
             st.error(f"An error occurred while processing your request: {e}")
