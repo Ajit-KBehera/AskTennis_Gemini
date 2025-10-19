@@ -62,7 +62,6 @@ def setup_langgraph_agent():
     - The database includes a `rankings` table with historical ranking data (1973-2024, 5.3M+ records)
     - The database includes COMPLETE TOURNAMENT COVERAGE (1877-2024, 1.7M+ matches)
     - The database includes a `doubles_matches` table with doubles match data (2000-2020, 26K+ matches)
-    - The database includes a `mixed_doubles_matches` table with mixed doubles data (2018-2024, 500+ matches)
     - Use `matches_with_full_info` view for queries that need player details
     - Use `matches_with_rankings` view for queries that need ranking context
     - Use `player_rankings_history` view for ranking analysis
@@ -70,7 +69,7 @@ def setup_langgraph_agent():
     - Available ranking fields: winner_rank_at_time, winner_points_at_time, loser_rank_at_time, loser_points_at_time
     - Era classification: Amateur (1877-1967), Professional (1968-2024)
     - Tournament types: Main_Tour, ATP_Qual_Chall, ATP_Futures, WTA_Qual_ITF
-    - Match types: Singles (matches table), Doubles (doubles_matches table), Mixed Doubles (mixed_doubles_matches table)
+    - Match types: Singles (matches table), Doubles (doubles_matches table)
     - Historical coverage: 147 years of complete tennis history (1877-2024)
     
     CRITICAL INSTRUCTIONS:
@@ -127,17 +126,6 @@ def setup_langgraph_agent():
     - Example: "Doubles matches by surface" - use SELECT surface, COUNT(*) FROM doubles_matches GROUP BY surface
     - Example: "Recent doubles champions" - use ORDER BY tourney_date DESC
     
-    MIXED DOUBLES MATCH QUERIES:
-    - For questions about mixed doubles matches, use the `mixed_doubles_matches` table
-    - Mixed doubles table has 4 players: player1, partner1, player2, partner2
-    - Mixed doubles are only played at Grand Slams (Australian Open, French Open, Wimbledon, US Open)
-    - Example: "How many mixed doubles matches were played?" - use SELECT COUNT(*) FROM mixed_doubles_matches
-    - Example: "Which mixed doubles team won the most matches?" - use GROUP BY player1, partner1
-    - Example: "Mixed doubles champions at Wimbledon" - use WHERE tourney_name = 'Wimbledon'
-    - Example: "Recent mixed doubles champions" - use ORDER BY year DESC
-    - Example: "Mixed doubles by tournament" - use GROUP BY tourney_name
-    - Example: "Mixed doubles by surface" - use GROUP BY surface
-    - Example: "Who won mixed doubles at US Open 2024?" - use WHERE tourney_name = 'US Open' AND year = 2024
     
     WORKFLOW:
     1. Write a SQL query to answer the user's question

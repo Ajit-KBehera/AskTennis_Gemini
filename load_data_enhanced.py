@@ -390,69 +390,6 @@ def load_doubles_data():
         print("  No doubles data could be loaded.")
         return pd.DataFrame()
 
-def load_mixed_doubles_data():
-    """
-    Loads Grand Slam mixed doubles match data from CSV files.
-    Returns a DataFrame with mixed doubles matches.
-    """
-    print("\n--- Loading Mixed Doubles Match Data ---")
-    
-    # Find all mixed doubles files
-    mixed_doubles_files = glob.glob("data/tennis_slam_pointbypoint/*matches-mixed.csv")
-    
-    if not mixed_doubles_files:
-        print("No mixed doubles match files found.")
-        return pd.DataFrame()
-    
-    print(f"Loading Grand Slam Mixed Doubles data ({len(mixed_doubles_files)} files)...")
-    mixed_doubles_dfs = []
-    
-    # Initialize progress tracker for mixed doubles files
-    progress = ProgressTracker(len(mixed_doubles_files), "Mixed Doubles Loading")
-    
-    for i, file_path in enumerate(sorted(mixed_doubles_files), 1):
-        try:
-            progress.update(1, f"Loading {os.path.basename(file_path)}...")
-            df = pd.read_csv(file_path, low_memory=False)
-            
-            # Add tournament information from filename
-            filename = os.path.basename(file_path)
-            if 'ausopen' in filename:
-                df['tourney_name'] = 'Australian Open'
-                df['tourney_level'] = 'G'
-                df['surface'] = 'Hard'
-            elif 'frenchopen' in filename:
-                df['tourney_name'] = 'French Open'
-                df['tourney_level'] = 'G'
-                df['surface'] = 'Clay'
-            elif 'wimbledon' in filename:
-                df['tourney_name'] = 'Wimbledon'
-                df['tourney_level'] = 'G'
-                df['surface'] = 'Grass'
-            elif 'usopen' in filename:
-                df['tourney_name'] = 'US Open'
-                df['tourney_level'] = 'G'
-                df['surface'] = 'Hard'
-            
-            # Add match type
-            df['match_type'] = 'Mixed Doubles'
-            
-            # Convert year to tourney_date if available
-            if 'year' in df.columns:
-                df['tourney_date'] = pd.to_datetime(df['year'].astype(str) + '-01-01', errors='coerce')
-            
-            mixed_doubles_dfs.append(df)
-            
-        except Exception as e:
-            print(f"  Error loading {file_path}: {e}")
-    
-    if mixed_doubles_dfs:
-        mixed_doubles_df = pd.concat(mixed_doubles_dfs, ignore_index=True)
-        print(f"  Grand Slam Mixed Doubles matches loaded: {len(mixed_doubles_df)}")
-        return mixed_doubles_df
-    else:
-        print("  No mixed doubles data could be loaded.")
-        return pd.DataFrame()
 
 def parse_date_components(df):
     """
@@ -715,7 +652,7 @@ def create_database_with_players():
     print("=== Enhanced Data Loading with COMPLETE Tournament Coverage (1877-2024) ===")
     
     # Initialize progress tracker for main steps
-    main_steps = 9  # players, rankings, matches, doubles, mixed_doubles, surface_fix, date_parsing, score_parsing, database_creation
+    main_steps = 8  # players, rankings, matches, doubles, surface_fix, date_parsing, score_parsing, database_creation
     progress = ProgressTracker(main_steps, "Database Creation")
     
     # Load player data
@@ -734,9 +671,6 @@ def create_database_with_players():
     progress.update(1, "Loading doubles data...")
     doubles_df = load_doubles_data()
     
-    # Load mixed doubles data
-    progress.update(1, "Loading mixed doubles data...")
-    mixed_doubles_df = load_mixed_doubles_data()
     
     # Fix missing surface data
     progress.update(1, "Fixing surface data...")
@@ -754,13 +688,12 @@ def create_database_with_players():
     if not doubles_df.empty:
         print("Parsing doubles data...")
         doubles_df = parse_date_components(doubles_df)
-        doubles_df = parse_score_data(doubles_df)
+        # Only parse score data if 'score' column exists
+        if 'score' in doubles_df.columns:
+            doubles_df = parse_score_data(doubles_df)
+        else:
+            print("  No 'score' column found in doubles data, skipping score parsing.")
     
-    # Apply same parsing to mixed doubles data if it exists
-    if not mixed_doubles_df.empty:
-        print("Parsing mixed doubles data...")
-        mixed_doubles_df = parse_date_components(mixed_doubles_df)
-        mixed_doubles_df = parse_score_data(mixed_doubles_df)
     
     if players_df.empty or matches_df.empty:
         print("Error: Could not load required data. Exiting.")
@@ -792,12 +725,6 @@ def create_database_with_players():
     else:
         print("No doubles data to write.")
     
-    # Write mixed doubles data
-    if not mixed_doubles_df.empty:
-        print("Writing mixed doubles data...")
-        mixed_doubles_df.to_sql('mixed_doubles_matches', conn, if_exists='replace', index=False)
-    else:
-        print("No mixed doubles data to write.")
     
     # Create indexes for better performance
     print("Creating indexes...")
@@ -824,15 +751,6 @@ def create_database_with_players():
         conn.execute("CREATE INDEX IF NOT EXISTS idx_doubles_year ON doubles_matches(event_year)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_doubles_month ON doubles_matches(event_month)")
     
-    # Create indexes for mixed doubles
-    if not mixed_doubles_df.empty:
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_player1 ON mixed_doubles_matches(player1)")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_player2 ON mixed_doubles_matches(player2)")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_partner1 ON mixed_doubles_matches(partner1)")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_partner2 ON mixed_doubles_matches(partner2)")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_year ON mixed_doubles_matches(event_year)")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_month ON mixed_doubles_matches(event_month)")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_slam ON mixed_doubles_matches(slam)")
     
     # Create a view for easy player-match joins
     print("Creating player-match views...")
@@ -943,8 +861,6 @@ def create_database_with_players():
     print(f"   - {len(matches_df)} singles matches (COMPLETE tournament coverage: 1877-2024)")
     if not doubles_df.empty:
         print(f"   - {len(doubles_df)} doubles matches (2000-2020)")
-    if not mixed_doubles_df.empty:
-        print(f"   - {len(mixed_doubles_df)} mixed doubles matches (Grand Slams)")
     print(f"   - {len(players_df)} players")
     if not rankings_df.empty:
         print(f"   - {len(rankings_df)} ranking records")
@@ -956,7 +872,6 @@ def create_database_with_players():
     print(f"   - Main tour matches (Grand Slams, Masters, etc.)")
     print(f"   - Qualifying/Challenger/Futures matches")
     print(f"   - Doubles matches (separate table)")
-    print(f"   - Mixed doubles matches (Grand Slams)")
     print(f"   - Performance indexes")
     print(f"   - Enhanced views with rankings")
     print(f"   - COMPLETE tennis tournament database (147 years)")
@@ -1111,26 +1026,6 @@ def verify_enhancement():
     except:
         print("No doubles matches found")
     
-    # Check mixed doubles data
-    try:
-        mixed_doubles_count = conn.execute("SELECT COUNT(*) FROM mixed_doubles_matches").fetchone()[0]
-        print(f"Mixed doubles matches: {mixed_doubles_count:,} matches")
-        
-        if mixed_doubles_count > 0:
-            # Sample mixed doubles query
-            mixed_doubles_sample = conn.execute("""
-                SELECT player1, partner1, player2, partner2, 
-                       tourney_name, year, slam, surface
-                FROM mixed_doubles_matches 
-                ORDER BY year DESC 
-                LIMIT 3
-            """).fetchall()
-            
-            print("Sample mixed doubles matches:")
-            for row in mixed_doubles_sample:
-                print(f"  {row[0]} & {row[1]} vs {row[2]} & {row[3]} - {row[4]} ({row[5]}) - {row[6]} - {row[7]}")
-    except:
-        print("No mixed doubles matches found")
     
     # Sample query to test functionality
     print("\n--- Sample Player Query Test ---")
