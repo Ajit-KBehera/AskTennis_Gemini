@@ -2,6 +2,8 @@ import pandas as pd
 import sqlite3
 import glob
 import os
+import time
+from datetime import datetime, timedelta
 
 # --- Configuration ---
 DATA_DIRS = ["data/tennis_atp", "data/tennis_wta"]
@@ -11,6 +13,47 @@ DB_FILE = "tennis_data.db"
 # Option to load only recent years for testing (set to False for complete data)
 LOAD_RECENT_ONLY = False  # Set to True to load only 2020-2024 for testing
 RECENT_YEARS = list(range(2020, 2026)) if LOAD_RECENT_ONLY else YEARS
+
+class ProgressTracker:
+    """Track and display loading progress with time estimates."""
+    
+    def __init__(self, total_steps, step_name="Loading"):
+        self.total_steps = total_steps
+        self.current_step = 0
+        self.step_name = step_name
+        self.start_time = time.time()
+        self.last_update = time.time()
+        
+    def update(self, step_increment=1, message=""):
+        """Update progress and display status."""
+        self.current_step += step_increment
+        percentage = (self.current_step / self.total_steps) * 100
+        
+        current_time = time.time()
+        elapsed_time = current_time - self.start_time
+        
+        if self.current_step > 0:
+            # Calculate estimated total time
+            estimated_total_time = elapsed_time * (self.total_steps / self.current_step)
+            remaining_time = estimated_total_time - elapsed_time
+            
+            # Format time strings
+            elapsed_str = str(timedelta(seconds=int(elapsed_time)))
+            remaining_str = str(timedelta(seconds=int(remaining_time)))
+            
+            # Update display every 2 seconds or on completion
+            if current_time - self.last_update >= 2 or self.current_step == self.total_steps:
+                print(f"\r{self.step_name}: {self.current_step}/{self.total_steps} ({percentage:.1f}%) | "
+                      f"Elapsed: {elapsed_str} | ETA: {remaining_str} | {message}", end="", flush=True)
+                self.last_update = current_time
+        
+        if self.current_step == self.total_steps:
+            print()  # New line when complete
+    
+    def complete(self, message=""):
+        """Mark as complete and show final stats."""
+        total_time = time.time() - self.start_time
+        print(f"\n✅ {self.step_name} completed in {str(timedelta(seconds=int(total_time)))} | {message}")
 
 def load_players_data():
     """
@@ -85,10 +128,14 @@ def load_rankings_data():
     ]
     
     all_rankings = []
+    existing_files = [f for f in ranking_files if os.path.exists(f)]
+    
+    # Initialize progress tracker for ranking files
+    progress = ProgressTracker(len(existing_files), "Rankings Loading")
     
     for file_path in ranking_files:
         if os.path.exists(file_path):
-            print(f"Reading {file_path}...")
+            progress.update(1, f"Loading {os.path.basename(file_path)}...")
             try:
                 df = pd.read_csv(file_path)
                 
@@ -142,6 +189,17 @@ def load_matches_data():
     print("--- Loading Match Data ---")
     master_df_list = []
     
+    # Calculate total files to process
+    total_files = 0
+    for data_dir in DATA_DIRS:
+        for year in YEARS:
+            file_pattern = os.path.join(data_dir, f"*_matches_{year}.csv")
+            if glob.glob(file_pattern):
+                total_files += 1
+    
+    # Initialize progress tracker for match files
+    progress = ProgressTracker(total_files, "Match Loading")
+    
     # Loop through each data directory (ATP and WTA)
     for data_dir in DATA_DIRS:
         print(f"\n--- Processing directory: {data_dir} ---")
@@ -155,8 +213,9 @@ def load_matches_data():
             
             if matching_files:
                 file_path = matching_files[0] # Use the first match found
-                print(f"Reading {file_path}...")
+                progress.update(1, f"Loading {os.path.basename(file_path)}...")
                 df = pd.read_csv(file_path, low_memory=False)
+                df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d')
                 df_list.append(df)
             else:
                 # This is not an error, just means data for that year/tour doesn't exist
@@ -309,11 +368,12 @@ def load_doubles_data():
     print(f"Loading ATP Doubles data ({len(doubles_files)} files)...")
     doubles_dfs = []
     
+    # Initialize progress tracker for doubles files
+    progress = ProgressTracker(len(doubles_files), "Doubles Loading")
+    
     for i, file_path in enumerate(sorted(doubles_files), 1):
         try:
-            if i % 5 == 0:  # Progress indicator every 5 files
-                print(f"  Processing file {i}/{len(doubles_files)}: {os.path.basename(file_path)}")
-            
+            progress.update(1, f"Loading {os.path.basename(file_path)}...")
             df = pd.read_csv(file_path, low_memory=False)
             df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
             df['match_type'] = 'Doubles'
@@ -328,6 +388,70 @@ def load_doubles_data():
         return doubles_df
     else:
         print("  No doubles data could be loaded.")
+        return pd.DataFrame()
+
+def load_mixed_doubles_data():
+    """
+    Loads Grand Slam mixed doubles match data from CSV files.
+    Returns a DataFrame with mixed doubles matches.
+    """
+    print("\n--- Loading Mixed Doubles Match Data ---")
+    
+    # Find all mixed doubles files
+    mixed_doubles_files = glob.glob("data/tennis_slam_pointbypoint/*matches-mixed.csv")
+    
+    if not mixed_doubles_files:
+        print("No mixed doubles match files found.")
+        return pd.DataFrame()
+    
+    print(f"Loading Grand Slam Mixed Doubles data ({len(mixed_doubles_files)} files)...")
+    mixed_doubles_dfs = []
+    
+    # Initialize progress tracker for mixed doubles files
+    progress = ProgressTracker(len(mixed_doubles_files), "Mixed Doubles Loading")
+    
+    for i, file_path in enumerate(sorted(mixed_doubles_files), 1):
+        try:
+            progress.update(1, f"Loading {os.path.basename(file_path)}...")
+            df = pd.read_csv(file_path, low_memory=False)
+            
+            # Add tournament information from filename
+            filename = os.path.basename(file_path)
+            if 'ausopen' in filename:
+                df['tourney_name'] = 'Australian Open'
+                df['tourney_level'] = 'G'
+                df['surface'] = 'Hard'
+            elif 'frenchopen' in filename:
+                df['tourney_name'] = 'French Open'
+                df['tourney_level'] = 'G'
+                df['surface'] = 'Clay'
+            elif 'wimbledon' in filename:
+                df['tourney_name'] = 'Wimbledon'
+                df['tourney_level'] = 'G'
+                df['surface'] = 'Grass'
+            elif 'usopen' in filename:
+                df['tourney_name'] = 'US Open'
+                df['tourney_level'] = 'G'
+                df['surface'] = 'Hard'
+            
+            # Add match type
+            df['match_type'] = 'Mixed Doubles'
+            
+            # Convert year to tourney_date if available
+            if 'year' in df.columns:
+                df['tourney_date'] = pd.to_datetime(df['year'].astype(str) + '-01-01', errors='coerce')
+            
+            mixed_doubles_dfs.append(df)
+            
+        except Exception as e:
+            print(f"  Error loading {file_path}: {e}")
+    
+    if mixed_doubles_dfs:
+        mixed_doubles_df = pd.concat(mixed_doubles_dfs, ignore_index=True)
+        print(f"  Grand Slam Mixed Doubles matches loaded: {len(mixed_doubles_df)}")
+        return mixed_doubles_df
+    else:
+        print("  No mixed doubles data could be loaded.")
         return pd.DataFrame()
 
 def fix_missing_surface_data(matches_df):
@@ -423,19 +547,32 @@ def create_database_with_players():
     """
     print("=== Enhanced Data Loading with COMPLETE Tournament Coverage (1877-2024) ===")
     
+    # Initialize progress tracker for main steps
+    main_steps = 6  # players, rankings, matches, doubles, mixed_doubles, database_creation
+    progress = ProgressTracker(main_steps, "Database Creation")
+    
     # Load player data
+    progress.update(1, "Loading player data...")
     players_df = load_players_data()
     
     # Load rankings data
+    progress.update(1, "Loading rankings data...")
     rankings_df = load_rankings_data()
     
     # Load match data
+    progress.update(1, "Loading match data...")
     matches_df = load_matches_data()
     
     # Load doubles data
+    progress.update(1, "Loading doubles data...")
     doubles_df = load_doubles_data()
     
+    # Load mixed doubles data
+    progress.update(1, "Loading mixed doubles data...")
+    mixed_doubles_df = load_mixed_doubles_data()
+    
     # Fix missing surface data
+    progress.update(1, "Fixing surface data...")
     matches_df = fix_missing_surface_data(matches_df)
     
     if players_df.empty or matches_df.empty:
@@ -468,6 +605,13 @@ def create_database_with_players():
     else:
         print("No doubles data to write.")
     
+    # Write mixed doubles data
+    if not mixed_doubles_df.empty:
+        print("Writing mixed doubles data...")
+        mixed_doubles_df.to_sql('mixed_doubles_matches', conn, if_exists='replace', index=False)
+    else:
+        print("No mixed doubles data to write.")
+    
     # Create indexes for better performance
     print("Creating indexes...")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_matches_winner_id ON matches(winner_id)")
@@ -490,6 +634,15 @@ def create_database_with_players():
         conn.execute("CREATE INDEX IF NOT EXISTS idx_doubles_loser1_id ON doubles_matches(loser1_id)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_doubles_loser2_id ON doubles_matches(loser2_id)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_doubles_date ON doubles_matches(tourney_date)")
+    
+    # Create indexes for mixed doubles
+    if not mixed_doubles_df.empty:
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_player1 ON mixed_doubles_matches(player1)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_player2 ON mixed_doubles_matches(player2)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_partner1 ON mixed_doubles_matches(partner1)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_partner2 ON mixed_doubles_matches(partner2)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_date ON mixed_doubles_matches(tourney_date)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_slam ON mixed_doubles_matches(slam)")
     
     # Create a view for easy player-match joins
     print("Creating player-match views...")
@@ -592,10 +745,14 @@ def create_database_with_players():
     
     conn.close()
     
+    progress.complete("Database creation completed!")
+    
     print(f"\n✅ Successfully created enhanced database '{DB_FILE}' with:")
     print(f"   - {len(matches_df)} singles matches (COMPLETE tournament coverage: 1877-2024)")
     if not doubles_df.empty:
         print(f"   - {len(doubles_df)} doubles matches (2000-2020)")
+    if not mixed_doubles_df.empty:
+        print(f"   - {len(mixed_doubles_df)} mixed doubles matches (Grand Slams)")
     print(f"   - {len(players_df)} players")
     if not rankings_df.empty:
         print(f"   - {len(rankings_df)} ranking records")
@@ -607,6 +764,7 @@ def create_database_with_players():
     print(f"   - Main tour matches (Grand Slams, Masters, etc.)")
     print(f"   - Qualifying/Challenger/Futures matches")
     print(f"   - Doubles matches (separate table)")
+    print(f"   - Mixed doubles matches (Grand Slams)")
     print(f"   - Performance indexes")
     print(f"   - Enhanced views with rankings")
     print(f"   - COMPLETE tennis tournament database (147 years)")
@@ -760,6 +918,27 @@ def verify_enhancement():
                 print(f"  {row[0]} & {row[1]} vs {row[2]} & {row[3]} - {row[4]} ({row[5]}) - {row[6]}")
     except:
         print("No doubles matches found")
+    
+    # Check mixed doubles data
+    try:
+        mixed_doubles_count = conn.execute("SELECT COUNT(*) FROM mixed_doubles_matches").fetchone()[0]
+        print(f"Mixed doubles matches: {mixed_doubles_count:,} matches")
+        
+        if mixed_doubles_count > 0:
+            # Sample mixed doubles query
+            mixed_doubles_sample = conn.execute("""
+                SELECT player1, partner1, player2, partner2, 
+                       tourney_name, year, slam, surface
+                FROM mixed_doubles_matches 
+                ORDER BY year DESC 
+                LIMIT 3
+            """).fetchall()
+            
+            print("Sample mixed doubles matches:")
+            for row in mixed_doubles_sample:
+                print(f"  {row[0]} & {row[1]} vs {row[2]} & {row[3]} - {row[4]} ({row[5]}) - {row[6]} - {row[7]}")
+    except:
+        print("No mixed doubles matches found")
     
     # Sample query to test functionality
     print("\n--- Sample Player Query Test ---")
