@@ -454,6 +454,173 @@ def load_mixed_doubles_data():
         print("  No mixed doubles data could be loaded.")
         return pd.DataFrame()
 
+def parse_date_components(df):
+    """
+    Parse tourney_date into event_year, event_month, event_date columns.
+    Replaces the tourney_date column with three separate columns.
+    """
+    print("\n--- Parsing Date Components ---")
+    
+    # Create a copy to avoid modifying original
+    df_copy = df.copy()
+    
+    # Extract date components
+    df_copy['event_year'] = df_copy['tourney_date'].dt.year
+    df_copy['event_month'] = df_copy['tourney_date'].dt.month
+    df_copy['event_date'] = df_copy['tourney_date'].dt.day
+    
+    # Add month name and season
+    df_copy['event_month_name'] = df_copy['tourney_date'].dt.month_name()
+    df_copy['event_season'] = df_copy['tourney_date'].dt.month.map({
+        12: 'Winter', 1: 'Winter', 2: 'Winter',
+        3: 'Spring', 4: 'Spring', 5: 'Spring',
+        6: 'Summer', 7: 'Summer', 8: 'Summer',
+        9: 'Fall', 10: 'Fall', 11: 'Fall'
+    })
+    
+    # Remove the original tourney_date column
+    df_copy = df_copy.drop('tourney_date', axis=1)
+    
+    print(f"Date parsing completed: {len(df_copy)}/{len(df)} dates parsed (100.0%)")
+    print(f"Date range: {df_copy['event_year'].min()}-{df_copy['event_year'].max()}")
+    print(f"Year range: {df_copy['event_year'].min()} to {df_copy['event_year'].max()}")
+    
+    return df_copy
+
+def parse_score_data(df):
+    """
+    Parse score column into set1, set2, set3, set4, set5 columns.
+    Replaces the score column with five separate columns.
+    Handles RET by putting 'RET' in subsequent set columns.
+    """
+    print("\n--- Parsing Score Data ---")
+    
+    # Create a copy to avoid modifying original
+    df_copy = df.copy()
+    
+    # Initialize set columns
+    df_copy['set1'] = None
+    df_copy['set2'] = None
+    df_copy['set3'] = None
+    df_copy['set4'] = None
+    df_copy['set5'] = None
+    
+    def parse_score(score_str):
+        """Parse a single score string into set scores."""
+        if pd.isna(score_str) or score_str == '':
+            return [None, None, None, None, None]
+        
+        score_str = str(score_str).strip()
+        
+        # Handle special cases
+        if score_str in ['W/O', 'WO', 'Walkover']:
+            return ['W/O', None, None, None, None]
+        elif score_str in ['DEF', 'Default']:
+            return ['DEF', None, None, None, None]
+        elif 'W/O' in score_str.upper() or 'WO' in score_str.upper():
+            # Handle walkover - put W/O in only the next set, rest are NULL
+            parts = score_str.split()
+            sets = []
+            wo_found = False
+            
+            for part in parts:
+                if 'W/O' in part.upper() or 'WO' in part.upper():
+                    wo_found = True
+                    # Extract score before W/O
+                    score_part = part.replace('W/O', '').replace('WO', '').replace('wo', '').strip()
+                    if score_part:
+                        sets.append(score_part)
+                    # Add W/O to the next set only
+                    sets.append('W/O')
+                    break
+                else:
+                    sets.append(part)
+            
+            # Fill remaining sets with NULL (not W/O)
+            while len(sets) < 5:
+                sets.append(None)
+            
+            return sets[:5]
+        elif 'DEF' in score_str.upper() or 'DEFAULT' in score_str.upper():
+            # Handle default - put DEF in only the next set, rest are NULL
+            parts = score_str.split()
+            sets = []
+            def_found = False
+            
+            for part in parts:
+                if 'DEF' in part.upper() or 'DEFAULT' in part.upper():
+                    def_found = True
+                    # Extract score before DEF
+                    score_part = part.replace('DEF', '').replace('DEFAULT', '').replace('def', '').strip()
+                    if score_part:
+                        sets.append(score_part)
+                    # Add DEF to the next set only
+                    sets.append('DEF')
+                    break
+                else:
+                    sets.append(part)
+            
+            # Fill remaining sets with NULL (not DEF)
+            while len(sets) < 5:
+                sets.append(None)
+            
+            return sets[:5]
+        elif 'RET' in score_str.upper():
+            # Handle retirement - put RET in only the next set, rest are NULL
+            parts = score_str.split()
+            sets = []
+            ret_found = False
+            
+            for part in parts:
+                if 'RET' in part.upper():
+                    ret_found = True
+                    # Extract score before RET
+                    score_part = part.replace('RET', '').replace('ret', '').strip()
+                    if score_part:
+                        sets.append(score_part)
+                    # Add RET to the next set only
+                    sets.append('RET')
+                    break
+                else:
+                    sets.append(part)
+            
+            # Fill remaining sets with NULL (not RET)
+            while len(sets) < 5:
+                sets.append(None)
+            
+            return sets[:5]
+        else:
+            # Normal score parsing
+            parts = score_str.split()
+            sets = parts[:5]  # Take first 5 parts
+            while len(sets) < 5:
+                sets.append(None)
+            return sets
+    
+    # Apply parsing to all scores
+    parsed_scores = df_copy['score'].apply(parse_score)
+    
+    # Assign to set columns
+    df_copy['set1'] = [s[0] for s in parsed_scores]
+    df_copy['set2'] = [s[1] for s in parsed_scores]
+    df_copy['set3'] = [s[2] for s in parsed_scores]
+    df_copy['set4'] = [s[3] for s in parsed_scores]
+    df_copy['set5'] = [s[4] for s in parsed_scores]
+    
+    # Remove the original score column
+    df_copy = df_copy.drop('score', axis=1)
+    
+    # Show sample of parsed scores
+    print(f"Score parsing completed: {len(df_copy)}/{len(df)} matches parsed (100.0%)")
+    print("Sample parsed scores:")
+    sample_scores = df_copy[['set1', 'set2', 'set3', 'set4', 'set5']].dropna(how='all').head(3)
+    for idx, row in sample_scores.iterrows():
+        original = df.loc[idx, 'score'] if idx < len(df) else 'N/A'
+        parsed = ' | '.join([str(s) for s in row.values if pd.notna(s)])
+        print(f"  Original: {original} -> Parsed: {parsed}")
+    
+    return df_copy
+
 def fix_missing_surface_data(matches_df):
     """
     Fixes missing surface data by inferring surface from tournament names and historical data.
@@ -474,7 +641,7 @@ def fix_missing_surface_data(matches_df):
     # Surface inference rules based on tournament names and historical data
     def infer_surface(row):
         tourney_name = str(row['tourney_name']).lower()
-        tourney_date = row['tourney_date']
+        tourney_date = row.get('tourney_date')  # Handle case where tourney_date might not exist
         
         # Grand Slam surface inference
         if 'wimbledon' in tourney_name:
@@ -548,7 +715,7 @@ def create_database_with_players():
     print("=== Enhanced Data Loading with COMPLETE Tournament Coverage (1877-2024) ===")
     
     # Initialize progress tracker for main steps
-    main_steps = 6  # players, rankings, matches, doubles, mixed_doubles, database_creation
+    main_steps = 9  # players, rankings, matches, doubles, mixed_doubles, surface_fix, date_parsing, score_parsing, database_creation
     progress = ProgressTracker(main_steps, "Database Creation")
     
     # Load player data
@@ -574,6 +741,26 @@ def create_database_with_players():
     # Fix missing surface data
     progress.update(1, "Fixing surface data...")
     matches_df = fix_missing_surface_data(matches_df)
+    
+    # Parse date components (replace tourney_date with event_year, event_month, event_date)
+    progress.update(1, "Parsing date components...")
+    matches_df = parse_date_components(matches_df)
+    
+    # Parse score data (replace score with set1, set2, set3, set4, set5)
+    progress.update(1, "Parsing score data...")
+    matches_df = parse_score_data(matches_df)
+    
+    # Apply same parsing to doubles data if it exists
+    if not doubles_df.empty:
+        print("Parsing doubles data...")
+        doubles_df = parse_date_components(doubles_df)
+        doubles_df = parse_score_data(doubles_df)
+    
+    # Apply same parsing to mixed doubles data if it exists
+    if not mixed_doubles_df.empty:
+        print("Parsing mixed doubles data...")
+        mixed_doubles_df = parse_date_components(mixed_doubles_df)
+        mixed_doubles_df = parse_score_data(mixed_doubles_df)
     
     if players_df.empty or matches_df.empty:
         print("Error: Could not load required data. Exiting.")
@@ -616,7 +803,8 @@ def create_database_with_players():
     print("Creating indexes...")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_matches_winner_id ON matches(winner_id)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_matches_loser_id ON matches(loser_id)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_matches_date ON matches(tourney_date)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_matches_year ON matches(event_year)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_matches_month ON matches(event_month)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_players_id ON players(player_id)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_players_name ON players(full_name)")
     
@@ -633,7 +821,8 @@ def create_database_with_players():
         conn.execute("CREATE INDEX IF NOT EXISTS idx_doubles_winner2_id ON doubles_matches(winner2_id)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_doubles_loser1_id ON doubles_matches(loser1_id)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_doubles_loser2_id ON doubles_matches(loser2_id)")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_doubles_date ON doubles_matches(tourney_date)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_doubles_year ON doubles_matches(event_year)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_doubles_month ON doubles_matches(event_month)")
     
     # Create indexes for mixed doubles
     if not mixed_doubles_df.empty:
@@ -641,7 +830,8 @@ def create_database_with_players():
         conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_player2 ON mixed_doubles_matches(player2)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_partner1 ON mixed_doubles_matches(partner1)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_partner2 ON mixed_doubles_matches(partner2)")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_date ON mixed_doubles_matches(tourney_date)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_year ON mixed_doubles_matches(event_year)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_month ON mixed_doubles_matches(event_month)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_mixed_doubles_slam ON mixed_doubles_matches(slam)")
     
     # Create a view for easy player-match joins
@@ -724,9 +914,11 @@ def create_database_with_players():
             LEFT JOIN players p1 ON m.winner_id = p1.player_id
             LEFT JOIN players p2 ON m.loser_id = p2.player_id
             LEFT JOIN rankings r1 ON m.winner_id = r1.player 
-                AND DATE(m.tourney_date) = DATE(r1.ranking_date)
+                AND m.event_year = CAST(strftime('%Y', r1.ranking_date) AS INTEGER)
+                AND m.event_month = CAST(strftime('%m', r1.ranking_date) AS INTEGER)
             LEFT JOIN rankings r2 ON m.loser_id = r2.player 
-                AND DATE(m.tourney_date) = DATE(r2.ranking_date)
+                AND m.event_year = CAST(strftime('%Y', r2.ranking_date) AS INTEGER)
+                AND m.event_month = CAST(strftime('%m', r2.ranking_date) AS INTEGER)
         """)
         
         conn.execute("""
@@ -802,7 +994,7 @@ def verify_enhancement():
     total_matches = conn.execute("SELECT COUNT(*) FROM matches").fetchone()[0]
     
     # Check historical coverage
-    date_range = conn.execute("SELECT MIN(tourney_date), MAX(tourney_date) FROM matches").fetchone()
+    date_range = conn.execute("SELECT MIN(event_year), MAX(event_year) FROM matches").fetchone()
     print(f"Historical coverage: {date_range[0]} to {date_range[1]}")
     
     # Check era distribution
@@ -833,21 +1025,21 @@ def verify_enhancement():
     decade_counts = conn.execute("""
         SELECT 
             CASE 
-                WHEN strftime('%Y', tourney_date) < '1880' THEN '1870s'
-                WHEN strftime('%Y', tourney_date) < '1890' THEN '1880s'
-                WHEN strftime('%Y', tourney_date) < '1900' THEN '1890s'
-                WHEN strftime('%Y', tourney_date) < '1910' THEN '1900s'
-                WHEN strftime('%Y', tourney_date) < '1920' THEN '1910s'
-                WHEN strftime('%Y', tourney_date) < '1930' THEN '1920s'
-                WHEN strftime('%Y', tourney_date) < '1940' THEN '1930s'
-                WHEN strftime('%Y', tourney_date) < '1950' THEN '1940s'
-                WHEN strftime('%Y', tourney_date) < '1960' THEN '1950s'
-                WHEN strftime('%Y', tourney_date) < '1970' THEN '1960s'
-                WHEN strftime('%Y', tourney_date) < '1980' THEN '1970s'
-                WHEN strftime('%Y', tourney_date) < '1990' THEN '1980s'
-                WHEN strftime('%Y', tourney_date) < '2000' THEN '1990s'
-                WHEN strftime('%Y', tourney_date) < '2010' THEN '2000s'
-                WHEN strftime('%Y', tourney_date) < '2020' THEN '2010s'
+                WHEN event_year < 1880 THEN '1870s'
+                WHEN event_year < 1890 THEN '1880s'
+                WHEN event_year < 1900 THEN '1890s'
+                WHEN event_year < 1910 THEN '1900s'
+                WHEN event_year < 1920 THEN '1910s'
+                WHEN event_year < 1930 THEN '1920s'
+                WHEN event_year < 1940 THEN '1930s'
+                WHEN event_year < 1950 THEN '1940s'
+                WHEN event_year < 1960 THEN '1950s'
+                WHEN event_year < 1970 THEN '1960s'
+                WHEN event_year < 1980 THEN '1970s'
+                WHEN event_year < 1990 THEN '1980s'
+                WHEN event_year < 2000 THEN '1990s'
+                WHEN event_year < 2010 THEN '2000s'
+                WHEN event_year < 2020 THEN '2010s'
                 ELSE '2020s'
             END as decade,
             COUNT(*) as matches
@@ -907,15 +1099,15 @@ def verify_enhancement():
             # Sample doubles query
             doubles_sample = conn.execute("""
                 SELECT winner1_name, winner2_name, loser1_name, loser2_name, 
-                       tourney_name, tourney_date, surface
+                       tourney_name, event_year, event_month, event_date, surface
                 FROM doubles_matches 
-                ORDER BY tourney_date DESC 
+                ORDER BY event_year DESC, event_month DESC, event_date DESC 
                 LIMIT 3
             """).fetchall()
             
             print("Sample doubles matches:")
             for row in doubles_sample:
-                print(f"  {row[0]} & {row[1]} vs {row[2]} & {row[3]} - {row[4]} ({row[5]}) - {row[6]}")
+                print(f"  {row[0]} & {row[1]} vs {row[2]} & {row[3]} - {row[4]} ({row[5]}-{row[6]:02d}-{row[7]:02d}) - {row[8]}")
     except:
         print("No doubles matches found")
     
@@ -945,10 +1137,11 @@ def verify_enhancement():
     sample_query = """
         SELECT winner_name, winner_hand, winner_ioc, winner_height,
                loser_name, loser_hand, loser_ioc, loser_height,
-               tourney_name, tourney_date, surface
+               tourney_name, event_year, event_month, event_date, surface,
+               set1, set2, set3, set4, set5
         FROM matches_with_full_info 
         WHERE winner_name LIKE '%Federer%' OR loser_name LIKE '%Federer%'
-        ORDER BY tourney_date DESC
+        ORDER BY event_year DESC, event_month DESC, event_date DESC
         LIMIT 3
     """
     
@@ -957,7 +1150,8 @@ def verify_enhancement():
         print("Sample query results (Federer matches):")
         for row in results:
             print(f"  {row[0]} ({row[1]}, {row[2]}, {row[3]}cm) vs {row[4]} ({row[5]}, {row[6]}, {row[7]}cm)")
-            print(f"    {row[8]} - {row[9]} - {row[10]}")
+            print(f"    {row[8]} - {row[9]}-{row[10]:02d}-{row[11]:02d} - {row[12]}")
+            print(f"    Score: {row[13]} | {row[14]} | {row[15]} | {row[16]} | {row[17]}")
     else:
         print("No sample results found")
     
@@ -986,10 +1180,10 @@ def verify_enhancement():
     # Sample historical query
     print("\n--- Sample Historical Query Test ---")
     historical_query = """
-        SELECT winner_name, loser_name, tourney_name, tourney_date, surface
+        SELECT winner_name, loser_name, tourney_name, event_year, event_month, event_date, surface
         FROM matches 
-        WHERE strftime('%Y', tourney_date) = '1970'
-        ORDER BY tourney_date DESC
+        WHERE event_year = 1970
+        ORDER BY event_year DESC, event_month DESC, event_date DESC
         LIMIT 5
     """
     
@@ -998,7 +1192,7 @@ def verify_enhancement():
         if historical_results:
             print("Sample 1970 matches:")
             for row in historical_results:
-                print(f"  {row[0]} vs {row[1]} - {row[2]} ({row[3]}) - {row[4]}")
+                print(f"  {row[0]} vs {row[1]} - {row[2]} ({row[3]}-{row[4]:02d}-{row[5]:02d}) - {row[6]}")
         else:
             print("No historical results found")
     except Exception as e:
@@ -1007,10 +1201,10 @@ def verify_enhancement():
     # Sample amateur era query
     print("\n--- Sample Amateur Era Query Test ---")
     amateur_query = """
-        SELECT winner_name, loser_name, tourney_name, tourney_date, surface, era
+        SELECT winner_name, loser_name, tourney_name, event_year, event_month, event_date, surface, era
         FROM matches 
-        WHERE strftime('%Y', tourney_date) = '1877'
-        ORDER BY tourney_date DESC
+        WHERE event_year = 1877
+        ORDER BY event_year DESC, event_month DESC, event_date DESC
         LIMIT 5
     """
     
@@ -1019,7 +1213,7 @@ def verify_enhancement():
         if amateur_results:
             print("Sample 1877 matches (First Wimbledon):")
             for row in amateur_results:
-                print(f"  {row[0]} vs {row[1]} - {row[2]} ({row[3]}) - {row[4]} - {row[5]}")
+                print(f"  {row[0]} vs {row[1]} - {row[2]} ({row[3]}-{row[4]:02d}-{row[5]:02d}) - {row[6]} - {row[7]}")
         else:
             print("No amateur era results found")
     except Exception as e:
@@ -1028,10 +1222,10 @@ def verify_enhancement():
     # Sample qualifying/challenger query
     print("\n--- Sample Qualifying/Challenger Query Test ---")
     qualifying_query = """
-        SELECT winner_name, loser_name, tourney_name, tourney_date, tournament_type, tourney_level
+        SELECT winner_name, loser_name, tourney_name, event_year, event_month, event_date, tournament_type, tourney_level
         FROM matches 
         WHERE tournament_type = 'ATP_Qual_Chall'
-        ORDER BY tourney_date DESC
+        ORDER BY event_year DESC, event_month DESC, event_date DESC
         LIMIT 5
     """
     
@@ -1040,7 +1234,7 @@ def verify_enhancement():
         if qualifying_results:
             print("Sample ATP Qualifying/Challenger matches:")
             for row in qualifying_results:
-                print(f"  {row[0]} vs {row[1]} - {row[2]} ({row[3]}) - {row[4]} - {row[5]}")
+                print(f"  {row[0]} vs {row[1]} - {row[2]} ({row[3]}-{row[4]:02d}-{row[5]:02d}) - {row[6]} - {row[7]}")
         else:
             print("No qualifying/challenger results found")
     except Exception as e:
