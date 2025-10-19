@@ -1,4 +1,4 @@
-# AskTennis - Unified Requirements
+# AskTennis - Requirements
 # This file contains all dependencies needed for the complete AskTennis system
 # Install with: pip install -r requirements.txt
 
