@@ -92,7 +92,7 @@ This document outlines the data enhancement roadmap for the AskTennis project, p
 #### 3. **Add Doubles Matches** ✅ COMPLETED
 - **Files**: `atp_matches_doubles_*.csv`, `wta_matches_doubles_*.csv`
 - **Impact**: Expands match coverage significantly
-- **Implementation**: ✅ Modified `load_data_enhanced.py` to include doubles
+- **Implementation**: ✅ Modified `load_data.py` to include doubles
 - **Result**: 26K+ doubles matches integrated
 
 #### 4. **Rankings Integration** ✅ COMPLETED
@@ -106,13 +106,13 @@ This document outlines the data enhancement roadmap for the AskTennis project, p
 #### 5. **Qualifying/Challenger/Futures Matches** ✅ COMPLETED
 - **Files**: `atp_matches_qual_chall_*.csv`, `atp_matches_futures_*.csv`, `wta_matches_qual_itf_*.csv`
 - **Impact**: Complete tournament coverage, including lower-tier events
-- **Implementation**: ✅ Extended `load_data_enhanced.py` to include all match types
+- **Implementation**: ✅ Extended `load_data.py` to include all match types
 - **Result**: Complete tournament coverage across all levels
 
 #### 6. **Historical Data Extension** ✅ COMPLETED
 - **Files**: ATP/WTA data from 1968-2004 + Amateur era (1877-1967)
 - **Impact**: Complete historical coverage
-- **Implementation**: ✅ Extended year range in `load_data_enhanced.py`
+- **Implementation**: ✅ Extended year range in `load_data.py`
 - **Result**: Complete 147-year tennis history (1877-2024)
 
 ### 🔄 **FUTURE ENHANCEMENTS** - Optional Additions
@@ -155,7 +155,7 @@ This document outlines the data enhancement roadmap for the AskTennis project, p
    - ✅ Updated database with corrected surface information
 
 3. **Doubles Matches Integration** ✅
-   - ✅ Modified `load_data_enhanced.py` to include doubles
+   - ✅ Modified `load_data.py` to include doubles
    - ✅ Updated database schema with `doubles_matches` table
    - ✅ Updated AI system with doubles queries
 
