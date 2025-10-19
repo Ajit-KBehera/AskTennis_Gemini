@@ -66,6 +66,38 @@ AskTennis_Gemini/
 - **pip** (Python package manager)
 - **Git** (for cloning the repository)
 - **Google Gemini API Key** (for AI functionality)
+- **Tennis Data** (from Jeff Sackmann's GitHub repositories)
+
+### Data Setup (Required First Step)
+
+**⚠️ Important**: The tennis data is not included in this repository due to size constraints. You must download it separately.
+
+1. **Download Tennis Data from Jeff Sackmann's GitHub**
+   ```bash
+   # Create data directory
+   mkdir -p data
+   
+   # Download ATP data
+   git clone https://github.com/JeffSackmann/tennis_atp.git data/tennis_atp
+   
+   # Download WTA data  
+   git clone https://github.com/JeffSackmann/tennis_wta.git data/tennis_wta
+   
+   # Download Grand Slam point-by-point data
+   git clone https://github.com/JeffSackmann/tennis_slam_pointbypoint.git data/tennis_slam_pointbypoint
+   
+   # Download Match Charting Project data
+   git clone https://github.com/JeffSackmann/tennis_MatchChartingProject.git data/tennis_MatchChartingProject
+   ```
+
+2. **Verify Data Structure**
+   ```bash
+   # Check that data directories exist
+   ls -la data/
+   # Should show: tennis_atp, tennis_wta, tennis_slam_pointbypoint, tennis_MatchChartingProject
+   ```
+
+**Note**: The `data/` folder is in `.gitignore` to keep the repository lightweight. Each data repository is ~100MB-500MB, so the total download will be 1-2GB.
 
 ### Environment Setup
 
@@ -208,19 +240,23 @@ The `load_data.py` script will create a comprehensive database with:
 
 ### Common Issues
 
-1. **Database Creation Takes Long Time**
+1. **Data Not Found Error**
+   - Error: "No data found in any directory"
+   - Solution: Download tennis data from Jeff Sackmann's GitHub repositories (see Data Setup section above)
+
+2. **Database Creation Takes Long Time**
    - Normal: 30-90 minutes for complete database
    - Solution: Be patient, process includes 147 years of data
 
-2. **API Key Not Found**
+3. **API Key Not Found**
    - Error: "Google API key not found"
    - Solution: Create `.streamlit/secrets.toml` with your API key
 
-3. **Memory Issues**
+4. **Memory Issues**
    - Error: Out of memory during database creation
    - Solution: Close other applications, ensure 4GB+ RAM available
 
-4. **Dependencies Issues**
+5. **Dependencies Issues**
    - Error: Module not found
    - Solution: Ensure virtual environment is activated and run `pip install -r requirements.txt`
 
