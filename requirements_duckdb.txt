@@ -1,0 +1,49 @@
+# DuckDB Integration Requirements for Tennis Analytics
+# ==================================================
+
+# Core DuckDB and analytics dependencies
+duckdb>=0.9.0
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Existing tennis analytics dependencies
+streamlit>=1.28.0
+langchain>=0.1.0
+langchain-community>=0.0.20
+langchain-google-genai>=0.0.8
+langgraph>=0.0.40
+sqlalchemy>=2.0.0
+
+# Performance and optimization
+pyarrow>=12.0.0  # For Parquet support
+fastparquet>=0.8.0  # Alternative Parquet engine
+psutil>=5.9.0  # System monitoring
+
+# Data processing and analytics
+polars>=0.20.0  # Alternative to pandas for high-performance analytics
+dask>=2023.8.0  # Parallel computing for large datasets
+
+# Visualization and reporting
+plotly>=5.15.0  # Interactive visualizations
+matplotlib>=3.7.0  # Static visualizations
+seaborn>=0.12.0  # Statistical visualizations
+
+# Development and testing
+pytest>=7.4.0
+pytest-benchmark>=4.0.0  # Performance benchmarking
+memory-profiler>=0.60.0  # Memory usage profiling
+
+# Optional: Advanced analytics
+scikit-learn>=1.3.0  # Machine learning for tennis analytics
+scipy>=1.11.0  # Scientific computing
+statsmodels>=0.14.0  # Statistical modeling
+
+# Optional: Database connectors
+sqlite3  # Built-in Python module
+psycopg2-binary>=2.9.0  # PostgreSQL connector (if needed)
+pymongo>=4.5.0  # MongoDB connector (if needed)
+
+# Optional: Cloud and deployment
+boto3>=1.28.0  # AWS S3 support for DuckDB
+azure-storage-blob>=12.17.0  # Azure Blob storage support
+google-cloud-storage>=2.10.0  # Google Cloud Storage support
