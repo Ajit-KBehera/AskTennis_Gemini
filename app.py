@@ -286,7 +286,19 @@ if user_question:
                                         
                                         if df_data:
                                             df = pd.DataFrame(df_data)
-                                            st.dataframe(df, use_container_width=True)
+                                            # Format the dataframe with consistent left alignment
+                                            st.dataframe(
+                                                df, 
+                                                use_container_width=True,
+                                                column_config={
+                                                    "Winner": st.column_config.TextColumn("Winner", width="medium"),
+                                                    "Loser": st.column_config.TextColumn("Loser", width="medium"),
+                                                    "Tournament": st.column_config.TextColumn("Tournament", width="large"),
+                                                    "Year": st.column_config.TextColumn("Year", width="small"),
+                                                    "Surface": st.column_config.TextColumn("Surface", width="small"),
+                                                    "Score": st.column_config.TextColumn("Score", width="medium")
+                                                }
+                                            )
                                         else:
                                             st.warning("No detailed match data found in the expected format.")
                                     break
