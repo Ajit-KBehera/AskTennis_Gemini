@@ -221,6 +221,30 @@ def setup_langgraph_agent():
     - Example: "Doubles matches by surface" - use SELECT surface, COUNT(*) FROM doubles_matches GROUP BY surface
     - Example: "Recent doubles champions" - use ORDER BY event_year DESC, event_month DESC, event_date DESC
     
+    COMPLEX STREAK ANALYSIS (Gaps and Islands):
+    - For complex streak questions (e.g., "consecutive upsets"), you must first use a CTE with LAG() to identify "streak breaks" and then a second CTE with SUM() OVER... to create a 'group_id' for each streak.
+    - Example Q: "Find consecutive upset streaks of 6+ matches where a lower-ranked player beats a specific higher-ranked player every time."
+    - Example SQL Logic:
+      WITH ...
+      streak_groups AS (
+        SELECT
+          *,
+          -- Flag a 'break' if the winner changes OR it's not an upset
+          CASE
+            WHEN (winner_rank > loser_rank) = 0 THEN 1 -- Not an upset
+            WHEN winner_id != LAG(winner_id) OVER (PARTITION BY player1_id, player2_id ORDER BY match_date) AND LAG(winner_id) OVER (PARTITION BY player1_id, player2_id ORDER BY match_date) IS NOT NULL THEN 1 -- Winner changed
+            ELSE 0 -- Continues streak
+          END as is_streak_break
+        FROM ...
+      ),
+      streak_islands AS (
+        SELECT
+          *,
+          -- Create the unique group_id for each streak
+          SUM(is_streak_break) OVER (PARTITION BY player1_id, player2_id ORDER BY match_date) as group_id
+        FROM streak_groups
+      )
+      SELECT ... FROM streak_islands WHERE is_upset = 1 GROUP BY group_id HAVING COUNT(*) >= 6;
     
     WORKFLOW:
     1. Write a SQL query to answer the user's question
