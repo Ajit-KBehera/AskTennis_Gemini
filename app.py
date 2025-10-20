@@ -74,6 +74,37 @@ def suggest_corrections(query_name, name_type="player"):
     else:
         return f"No similar {name_type} names found. Please check your spelling."
 
+def validate_head_to_head_count(matches_data, player1, player2):
+    """Validate head-to-head counting and return accurate record."""
+    if not matches_data or len(matches_data) == 0:
+        return "No matches found"
+    
+    player1_wins = 0
+    player2_wins = 0
+    excluded_matches = 0
+    
+    for match in matches_data:
+        if len(match) >= 7:  # Ensure we have enough data
+            winner = match[0]
+            # Check if this is a walkover, default, or retirement
+            score_parts = [str(match[i]) for i in range(7, min(len(match), 12)) if match[i]]
+            score_str = ' '.join(score_parts).upper()
+            
+            if 'W/O' in score_str or 'DEF' in score_str or 'RET' in score_str:
+                excluded_matches += 1
+                continue
+            
+            # Count wins
+            if player1.lower() in winner.lower():
+                player1_wins += 1
+            elif player2.lower() in winner.lower():
+                player2_wins += 1
+    
+    total_matches = player1_wins + player2_wins
+    excluded_note = f" (excluding {excluded_matches} walkover/default/retirement matches)" if excluded_matches > 0 else ""
+    
+    return f"{player1} leads {player2} {player1_wins}-{player2_wins} in {total_matches} completed matches{excluded_note}"
+
 # --- Database and LLM Setup (Cached for performance) ---
 
 @st.cache_resource
@@ -141,6 +172,14 @@ def setup_langgraph_agent():
     - Use this query format: SELECT winner_name, loser_name, tourney_name, event_year, event_month, event_date, surface, set1, set2, set3, set4, set5 FROM matches WHERE...
     - Include match details like year, tournament, surface, score, and winner.
     - Format the response to show both the overall record and individual match details.
+    
+    CRITICAL HEAD-TO-HEAD COUNTING RULES:
+    - Count ONLY completed matches (exclude W/O, DEF, RET matches from head-to-head records)
+    - Double-check your counting: count wins for each player separately
+    - Verify your count matches the number of matches displayed in the table
+    - If you find W/O, DEF, or RET in the score, exclude that match from the head-to-head record
+    - Always state the correct win-loss record in your summary
+    - Example: "Player A leads Player B 15-3" (not counting walkovers)
     
     PLAYER METADATA QUERIES:
     - For questions about player characteristics (handedness, nationality, height, age), use the `matches_with_full_info` view
@@ -342,6 +381,19 @@ if user_question:
                                         
                                         if df_data:
                                             df = pd.DataFrame(df_data)
+                                            
+                                            # Add accurate head-to-head summary
+                                            if len(data) > 0:
+                                                # Extract player names from the first match
+                                                first_match = data[0]
+                                                if len(first_match) >= 2:
+                                                    player1 = first_match[0]  # winner
+                                                    player2 = first_match[1]  # loser
+                                                    
+                                                    # Validate and display accurate count
+                                                    accurate_record = validate_head_to_head_count(data, player1, player2)
+                                                    st.markdown(f"**Head-to-Head Record:** {accurate_record}")
+                                            
                                             # Format the dataframe with consistent left alignment
                                             st.dataframe(
                                                 df, 
