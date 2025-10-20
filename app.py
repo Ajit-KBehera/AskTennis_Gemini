@@ -266,14 +266,22 @@ if user_question:
                                         for row in data:
                                             if len(row) >= 4:  # Ensure we have enough columns
                                                 # Map columns based on the ACTUAL database query result:
-                                                # Index 0: winner_name, Index 1: loser_name, Index 2: tourney_name, Index 3: event_year, Index 4: surface, Index 5: set1, etc.
+                                                # Index 0: winner_name, Index 1: loser_name, Index 2: tourney_name, Index 3: event_year, Index 4: event_month, Index 5: event_date, Index 6: surface, Index 7: set1, Index 8: set2, etc.
+                                                # Format the score properly by combining only the set scores
+                                                set_scores = []
+                                                for i in range(7, min(len(row), 12)):  # Start from set1 (index 7) to set5 (index 11)
+                                                    if i < len(row) and row[i] and str(row[i]).strip() and str(row[i]).strip() != 'None':
+                                                        set_scores.append(str(row[i]).strip())
+                                                
+                                                score_str = ' '.join(set_scores) if set_scores else 'N/A'
+                                                
                                                 df_data.append({
                                                     'Winner': row[0],
                                                     'Loser': row[1], 
                                                     'Tournament': row[2],
                                                     'Year': row[3] if len(row) > 3 else 'N/A',
-                                                    'Surface': row[4] if len(row) > 4 else 'N/A',
-                                                    'Score': f"{row[5] if len(row) > 5 else ''} {row[6] if len(row) > 6 else ''} {row[7] if len(row) > 7 else ''} {row[8] if len(row) > 8 else ''} {row[9] if len(row) > 9 else ''}".strip()
+                                                    'Surface': row[6] if len(row) > 6 else 'N/A',
+                                                    'Score': score_str
                                                 })
                                         
                                         if df_data:
