@@ -82,7 +82,7 @@ def setup_langgraph_agent():
     SPECIAL INSTRUCTIONS FOR HEAD-TO-HEAD QUERIES:
     - For head-to-head questions (e.g., "Player A vs Player B h2h"), provide both a summary AND detailed match information.
     - ALWAYS include the surface column in your SQL queries for head-to-head matches.
-    - Use this query format: SELECT winner_name, loser_name, tourney_name, tourney_date, score, surface FROM matches WHERE...
+    - Use this query format: SELECT winner_name, loser_name, tourney_name, event_year, event_month, event_date, surface, set1, set2, set3, set4, set5 FROM matches WHERE...
     - Include match details like year, tournament, surface, score, and winner.
     - Format the response to show both the overall record and individual match details.
     
@@ -102,12 +102,12 @@ def setup_langgraph_agent():
     
     HISTORICAL QUERIES:
     - For questions about tennis history, use the COMPLETE historical database (1877-2024)
-    - Example: "Who won the first Wimbledon in 1877?" - use matches WHERE tourney_name LIKE '%Wimbledon%' AND strftime('%Y', tourney_date) = '1877'
-    - Example: "Who won Wimbledon in 1970?" - use matches WHERE tourney_name LIKE '%Wimbledon%' AND strftime('%Y', tourney_date) = '1970'
-    - Example: "How many matches were played in the 1980s?" - use matches WHERE strftime('%Y', tourney_date) BETWEEN '1980' AND '1989'
-    - Example: "Which players dominated the 1990s?" - use matches WHERE strftime('%Y', tourney_date) BETWEEN '1990' AND '1999'
+    - Example: "Who won the first Wimbledon in 1877?" - use matches WHERE tourney_name LIKE '%Wimbledon%' AND event_year = 1877
+    - Example: "Who won Wimbledon in 1970?" - use matches WHERE tourney_name LIKE '%Wimbledon%' AND event_year = 1970
+    - Example: "How many matches were played in the 1980s?" - use matches WHERE event_year BETWEEN 1980 AND 1989
+    - Example: "Which players dominated the 1990s?" - use matches WHERE event_year BETWEEN 1990 AND 1999
     - Example: "Compare amateur vs professional eras" - use era column to filter Amateur vs Professional
-    - Example: "Compare tennis evolution across decades" - use decade-based analysis with strftime functions
+    - Example: "Compare tennis evolution across decades" - use decade-based analysis with event_year
     
     TOURNAMENT TYPE QUERIES:
     - For questions about different tournament levels, use the tournament_type column
@@ -124,7 +124,7 @@ def setup_langgraph_agent():
     - Example: "Which doubles team won the most matches?" - use GROUP BY winner1_name, winner2_name
     - Example: "Who are the most successful doubles players?" - use winner1_name, winner2_name, loser1_name, loser2_name
     - Example: "Doubles matches by surface" - use SELECT surface, COUNT(*) FROM doubles_matches GROUP BY surface
-    - Example: "Recent doubles champions" - use ORDER BY tourney_date DESC
+    - Example: "Recent doubles champions" - use ORDER BY event_year DESC, event_month DESC, event_date DESC
     
     
     WORKFLOW:
@@ -204,6 +204,9 @@ user_question = st.text_input(
 )
 
 if user_question:
+    # Create placeholders for dynamic content
+    dataframe_placeholder = st.empty()
+    
     with st.spinner("The AI is analyzing your question and querying the database..."):
         try:
             # The config dictionary ensures each user gets their own conversation history.
@@ -255,32 +258,35 @@ if user_question:
                                 data = ast.literal_eval(message.content)
                                 if data and len(data) > 0 and isinstance(data[0], (list, tuple)) and len(data[0]) > 3:
                                     # This looks like detailed match data (winner, loser, score, etc.)
-                                    st.markdown("### 📊 Detailed Head-to-Head Matches")
-                                    
-                                    
-                                    # Convert to DataFrame for better display
-                                    df_data = []
-                                    for row in data:
-                                        if len(row) >= 4:  # Ensure we have enough columns
-                                            # Map columns based on the ACTUAL database query result:
-                                            # Index 0: winner_name, Index 1: loser_name, Index 2: tourney_name, Index 3: tourney_date, Index 4: score, Index 5: surface
-                                            df_data.append({
-                                                'Winner': row[0],
-                                                'Loser': row[1], 
-                                                'Tournament': row[2],
-                                                'Date': row[3] if len(row) > 3 else 'N/A',
-                                                'Score': row[4] if len(row) > 4 else 'N/A',
-                                                'Surface': row[5] if len(row) > 5 else 'N/A'
-                                            })
-                                    
-                                    if df_data:
-                                        df = pd.DataFrame(df_data)
-                                        st.dataframe(df, use_container_width=True)
-                                    else:
-                                        st.warning("No detailed match data found in the expected format.")
+                                    with dataframe_placeholder.container():
+                                        st.markdown("### 📊 Detailed Head-to-Head Matches")
+                                        
+                                        # Convert to DataFrame for better display
+                                        df_data = []
+                                        for row in data:
+                                            if len(row) >= 4:  # Ensure we have enough columns
+                                                # Map columns based on the ACTUAL database query result:
+                                                # Index 0: winner_name, Index 1: loser_name, Index 2: tourney_name, Index 3: event_year, Index 4: surface, Index 5: set1, etc.
+                                                df_data.append({
+                                                    'Winner': row[0],
+                                                    'Loser': row[1], 
+                                                    'Tournament': row[2],
+                                                    'Year': row[3] if len(row) > 3 else 'N/A',
+                                                    'Surface': row[4] if len(row) > 4 else 'N/A',
+                                                    'Score': f"{row[5] if len(row) > 5 else ''} {row[6] if len(row) > 6 else ''} {row[7] if len(row) > 7 else ''} {row[8] if len(row) > 8 else ''} {row[9] if len(row) > 9 else ''}".strip()
+                                                })
+                                        
+                                        if df_data:
+                                            df = pd.DataFrame(df_data)
+                                            st.dataframe(df, use_container_width=True)
+                                        else:
+                                            st.warning("No detailed match data found in the expected format.")
                                     break
                         except:
                             continue
+            else:
+                # Clear the dataframe placeholder for non-head-to-head queries
+                dataframe_placeholder.empty()
 
             if final_answer and final_answer.strip():
                 st.success("Here's what I found:")
