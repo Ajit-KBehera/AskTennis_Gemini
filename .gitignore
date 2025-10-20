@@ -98,4 +98,6 @@ logs/
 *.tmp
 *.temp
 
-improvements.txttennis_analytics.duckdb
+improvements.txt
+
+tennis_analytics.duckdb
