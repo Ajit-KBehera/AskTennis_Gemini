@@ -4,6 +4,8 @@ from typing import TypedDict, Annotated, List
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 import operator
 import pandas as pd
+from difflib import get_close_matches
+import sqlite3
 
 # Modern imports for LangChain & LangGraph
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
@@ -24,6 +26,53 @@ st.markdown("This app uses a state-of-the-art AI agent to answer natural languag
 # --- Define the Agent's State ---
 class AgentState(TypedDict):
     messages: Annotated[List[BaseMessage], operator.add]
+
+# --- Helper Functions for Misspelling Handling ---
+@st.cache_data
+def get_all_player_names():
+    """Get all unique player names from the database for fuzzy matching."""
+    conn = sqlite3.connect("tennis_data.db")
+    cursor = conn.cursor()
+    
+    # Get all unique winner and loser names
+    cursor.execute("SELECT DISTINCT winner_name FROM matches WHERE winner_name IS NOT NULL")
+    winner_names = [row[0] for row in cursor.fetchall()]
+    
+    cursor.execute("SELECT DISTINCT loser_name FROM matches WHERE loser_name IS NOT NULL")
+    loser_names = [row[0] for row in cursor.fetchall()]
+    
+    conn.close()
+    
+    # Combine and deduplicate
+    all_names = list(set(winner_names + loser_names))
+    return all_names
+
+@st.cache_data
+def get_all_tournament_names():
+    """Get all unique tournament names from the database for fuzzy matching."""
+    conn = sqlite3.connect("tennis_data.db")
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT DISTINCT tourney_name FROM matches WHERE tourney_name IS NOT NULL")
+    tournament_names = [row[0] for row in cursor.fetchall()]
+    
+    conn.close()
+    return tournament_names
+
+def suggest_corrections(query_name, name_type="player"):
+    """Suggest corrections for misspelled names."""
+    if name_type == "player":
+        all_names = get_all_player_names()
+    else:
+        all_names = get_all_tournament_names()
+    
+    # Find close matches
+    close_matches = get_close_matches(query_name, all_names, n=3, cutoff=0.6)
+    
+    if close_matches:
+        return f"Did you mean: {', '.join(close_matches)}?"
+    else:
+        return f"No similar {name_type} names found. Please check your spelling."
 
 # --- Database and LLM Setup (Cached for performance) ---
 
@@ -78,6 +127,13 @@ def setup_langgraph_agent():
     - After getting query results with sql_db_query, analyze the results and provide a clear, natural language answer.
     - Always provide a final response to the user, even if the query returns no results.
     - Do not make up information. If the database does not contain the answer, say so.
+    
+    MISSPELLING HANDLING:
+    - If a query returns no results, try fuzzy matching with LIKE patterns and common misspellings.
+    - For player names, try variations: partial names, common nicknames, and similar spellings.
+    - For tournament names, try partial matches and common abbreviations.
+    - If still no results, suggest similar names found in the database.
+    - Always be helpful and suggest corrections when possible.
     
     SPECIAL INSTRUCTIONS FOR HEAD-TO-HEAD QUERIES:
     - For head-to-head questions (e.g., "Player A vs Player B h2h"), provide both a summary AND detailed match information.
@@ -313,6 +369,10 @@ if user_question:
                 st.markdown(final_answer)
             else:
                 st.warning("I processed your request but couldn't generate a clear response. Please check the conversation flow below for details.")
+                
+                # Check if this might be a misspelling issue
+                if "no results" in str(final_answer).lower() or "not found" in str(final_answer).lower():
+                    st.info("💡 **Tip**: If you didn't find what you're looking for, try checking the spelling of player or tournament names. The system is case-sensitive and requires exact matches.")
 
             # Optional: Show the full conversation history for debugging
             # with st.expander("🧠 Show Full Conversation Flow", expanded=False):
