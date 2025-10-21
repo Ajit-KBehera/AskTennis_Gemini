@@ -107,7 +107,9 @@ def setup_langgraph_agent():
     - Basel: ATP = "Basel", WTA = "Basel" 
     - Madrid: ATP = "Madrid Masters", WTA = "Madrid"
     - For generic tournament queries (without ATP/WTA specification), search BOTH tournaments using UNION
+    - ALWAYS include round filter when user asks for specific rounds (Final, Semi-Final, etc.)
     - Example: "Who won Rome Final 2022" should return BOTH Iga Swiatek (WTA) and Novak Djokovic (ATP)
+    - Example query: SELECT winner_name FROM matches WHERE tourney_name = 'Rome Masters' AND event_year = 2022 AND round = 'F' UNION SELECT winner_name FROM matches WHERE tourney_name = 'Rome' AND event_year = 2022 AND round = 'F'
     
     ENHANCED DATABASE FEATURES:
     - The database now includes a `players` table with player metadata (handedness, nationality, height, birth date, etc.)
