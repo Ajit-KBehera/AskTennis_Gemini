@@ -86,6 +86,31 @@ def suggest_corrections(query_name, name_type="player"):
     else:
         return f"No similar {name_type} names found. Please check your spelling."
 
+def extract_players_from_query(query):
+    """Extract player names from a head-to-head query like 'Alcaraz vs Djokovic' or 'Federer vs Nadal h2h'."""
+    import re
+    
+    # Clean the query first - remove common h2h indicators
+    query_clean = re.sub(r'\s+(h2h|head\s+to\s+head)\s*$', '', query, flags=re.IGNORECASE)
+    
+    # Common patterns for head-to-head queries
+    patterns = [
+        r'(\w+(?:\s+\w+)*)\s+vs\s+(\w+(?:\s+\w+)*)',  # "Alcaraz vs Djokovic"
+        r'(\w+(?:\s+\w+)*)\s+v\s+(\w+(?:\s+\w+)*)',   # "Alcaraz v Djokovic"
+        r'(\w+(?:\s+\w+)*)\s+against\s+(\w+(?:\s+\w+)*)',  # "Alcaraz against Djokovic"
+    ]
+    
+    query_lower = query_clean.lower()
+    
+    for pattern in patterns:
+        match = re.search(pattern, query_lower, re.IGNORECASE)
+        if match:
+            player1 = match.group(1).strip().title()
+            player2 = match.group(2).strip().title()
+            return (player1, player2)
+    
+    return None
+
 def validate_head_to_head_count(matches_data, player1, player2):
     """Validate head-to-head counting and return accurate record."""
     if not matches_data or len(matches_data) == 0:
@@ -380,6 +405,9 @@ if user_question:
             
             # Check if this is a head-to-head query and display detailed results
             if 'h2h' in user_question.lower() or 'head to head' in user_question.lower() or 'vs' in user_question.lower():
+                # Extract player names from the user's query
+                query_players = extract_players_from_query(user_question)
+                
                 # Look for detailed match data in tool messages
                 for message in response["messages"]:
                     if hasattr(message, 'type') and message.type == 'tool' and 'sql_db_query' in str(message.name):
@@ -418,9 +446,15 @@ if user_question:
                                         if df_data:
                                             df = pd.DataFrame(df_data)
                                             
-                                            # Add accurate head-to-head summary
-                                            if len(data) > 0:
-                                                # Extract player names from the first match
+                                            # Add accurate head-to-head summary using the players from the query
+                                            if len(data) > 0 and query_players:
+                                                player1, player2 = query_players
+                                                
+                                                # Validate and display accurate count
+                                                accurate_record = validate_head_to_head_count(data, player1, player2)
+                                                st.markdown(f"**Head-to-Head Record:** {accurate_record}")
+                                            elif len(data) > 0:
+                                                # Fallback: Extract player names from the first match if query parsing failed
                                                 first_match = data[0]
                                                 if len(first_match) >= 2:
                                                     player1 = first_match[0]  # winner
