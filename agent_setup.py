@@ -50,18 +50,31 @@ def setup_langgraph_agent():
     from langchain_core.tools import tool
 
     @tool
-    def get_combined_tournament_names(tournament: str) -> str:
+    def get_tournament_mapping(tournament: str) -> str:
         """
-        Get the correct tournament names for combined events that have both ATP and WTA.
-        Returns a JSON string with ATP and WTA tournament names.
+        Map tennis fan colloquial names to database tournament names.
+        Handles Grand Slams, Masters, and combined events.
         
         Args:
-            tournament: The tournament name to look up (e.g., 'rome', 'basel', 'madrid')
+            tournament: The tournament name to look up (e.g., 'french open', 'aus open', 'wimbledon')
             
         Returns:
-            JSON string with ATP and WTA tournament names
+            JSON string with database tournament names
         """
-        tournament_mappings = {
+        # Grand Slam mappings (fan names -> database names)
+        grand_slam_mappings = {
+            "french open": "Roland Garros",
+            "roland garros": "Roland Garros", 
+            "aus open": "Australian Open",
+            "australian open": "Australian Open",
+            "wimbledon": "Wimbledon",
+            "the championship": "Wimbledon",
+            "us open": "US Open",
+            "us open": "US Open"
+        }
+        
+        # Combined tournament mappings (ATP + WTA)
+        combined_mappings = {
             "rome": {"atp": "Rome Masters", "wta": "Rome"},
             "basel": {"atp": "Basel", "wta": "Basel"},
             "madrid": {"atp": "Madrid Masters", "wta": "Madrid"},
@@ -84,14 +97,21 @@ def setup_langgraph_agent():
             "paris": {"atp": "Paris Masters", "wta": "Paris"}
         }
         
-        tournament_lower = tournament.lower()
-        if tournament_lower in tournament_mappings:
-            return str(tournament_mappings[tournament_lower])
-        else:
-            return str({"atp": tournament, "wta": tournament})
+        tournament_lower = tournament.lower().strip()
+        
+        # Check Grand Slams first
+        if tournament_lower in grand_slam_mappings:
+            return str({"database_name": grand_slam_mappings[tournament_lower], "type": "grand_slam"})
+        
+        # Check combined tournaments
+        if tournament_lower in combined_mappings:
+            return str(combined_mappings[tournament_lower])
+        
+        # Default: return as-is
+        return str({"database_name": tournament, "type": "unknown"})
 
     # Add the custom tool to the tools list
-    tools.append(get_combined_tournament_names)
+    tools.append(get_tournament_mapping)
     
     # --- Custom agent pattern using llm.bind_tools() ---
     # This is the modern approach for tool-calling models like Gemini
@@ -100,16 +120,15 @@ def setup_langgraph_agent():
     Here is the schema for the `matches` table you can query:
     {db_schema}
     
-    CRITICAL: COMBINED TOURNAMENTS (ATP + WTA)
-    - For combined tournaments like Rome, Basel, Madrid, etc., you MUST search BOTH ATP and WTA tournaments
-    - Use the get_combined_tournament_names tool to get the correct tournament names
-    - Rome: ATP = "Rome Masters", WTA = "Rome"
-    - Basel: ATP = "Basel", WTA = "Basel" 
-    - Madrid: ATP = "Madrid Masters", WTA = "Madrid"
-    - For generic tournament queries (without ATP/WTA specification), search BOTH tournaments using UNION
+    CRITICAL: TOURNAMENT NAME MAPPING
+    - Tennis fans use colloquial names that don't match database names
+    - ALWAYS use get_tournament_mapping tool to convert fan names to database names
+    - Grand Slams: "French Open" → "Roland Garros", "Aus Open" → "Australian Open", "The Championship" → "Wimbledon"
+    - Combined tournaments: "Rome" → ATP="Rome Masters" + WTA="Rome", "Madrid" → ATP="Madrid Masters" + WTA="Madrid"
+    - For combined tournaments (without ATP/WTA specification), search BOTH tournaments using UNION
     - ALWAYS include round filter when user asks for specific rounds (Final, Semi-Final, etc.)
-    - Example: "Who won Rome Final 2022" should return BOTH Iga Swiatek (WTA) and Novak Djokovic (ATP)
-    - Example query: SELECT winner_name FROM matches WHERE tourney_name = 'Rome Masters' AND event_year = 2022 AND round = 'F' UNION SELECT winner_name FROM matches WHERE tourney_name = 'Rome' AND event_year = 2022 AND round = 'F'
+    - Example: "Who won French Open Final 2022" → Map to "Roland Garros" → Query database
+    - Example: "Who won Rome Final 2022" → Map to both ATP and WTA → UNION query
     
     ENHANCED DATABASE FEATURES:
     - The database now includes a `players` table with player metadata (handedness, nationality, height, birth date, etc.)
