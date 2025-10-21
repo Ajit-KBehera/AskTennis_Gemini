@@ -1,30 +1,31 @@
-#!/usr/bin/env python3
-"""
-AskTennis App configured for Render PostgreSQL deployment
-"""
-
 import streamlit as st
-import psycopg2
-import pandas as pd
 from sqlalchemy import create_engine
-import os
+from typing import TypedDict, Annotated, List
+from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
+import operator
+import pandas as pd
 from difflib import get_close_matches
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
-from langchain_community.utilities import SQLDatabase
-from langchain_core.messages import HumanMessage
-from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.prebuilt import ToolNode
-from langchain_core.messages import AIMessage, ToolMessage
-import json
+import os
 
-# Configure Streamlit page
-st.set_page_config(
-    page_title="AskTennis - AI Tennis Database Assistant",
-    page_icon="🎾",
-    layout="wide"
-)
+# Modern imports for LangChain & LangGraph
+from langchain_community.agent_toolkits import SQLDatabaseToolkit
+from langchain_community.utilities import SQLDatabase
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langgraph.graph import StateGraph, END
+from langgraph.prebuilt import ToolNode
+from langchain_core.prompts import ChatPromptTemplate
+# Removed create_react_agent import - using custom agent pattern instead
+from langgraph.checkpoint.memory import MemorySaver
+
+# --- Page Configuration ---
+st.set_page_config(page_title="AskTennis AI", layout="wide")
+st.title("🎾 AskTennis: The Advanced AI Engine")
+st.markdown("#### Powered by Gemini & LangGraph (Stateful Agent)")
+st.markdown("This app uses a state-of-the-art AI agent to answer natural language questions about tennis data.")
+
+# --- Define the Agent's State ---
+class AgentState(TypedDict):
+    messages: Annotated[List[BaseMessage], operator.add]
 
 # --- Helper Functions for Misspelling Handling ---
 @st.cache_data
@@ -114,70 +115,54 @@ def validate_head_to_head_count(matches_data, player1, player2):
     
     return f"{player1} leads {player2} {player1_wins}-{player2_wins} in {total_matches} completed matches{excluded_note}"
 
-# Database connection for Render
-def get_database_connection():
-    """
-    Get database connection for Render PostgreSQL
-    """
-    try:
-        # Option 1: Use Render's DATABASE_URL environment variable
-        database_url = os.getenv('DATABASE_URL')
-        
-        if database_url:
-            # Render provides DATABASE_URL in format: postgresql://user:pass@host:port/db
-            if database_url.startswith('postgres://'):
-                database_url = database_url.replace('postgres://', 'postgresql://', 1)
-            
-            engine = create_engine(database_url)
-            return engine
-        
-        # Option 2: Manual connection (for local testing)
-        else:
-            # Replace with your Render database credentials
-            engine = create_engine(
-                "postgresql://username:password@hostname:port/database_name"
-            )
-            return engine
-            
-    except Exception as e:
-        st.error(f"Database connection failed: {e}")
-        return None
+# --- Database and LLM Setup (Cached for performance) ---
 
-# Initialize database
-@st.cache_resource
-def setup_database():
-    """Setup database connection"""
-    engine = get_database_connection()
-    if engine:
-        return SQLDatabase(engine)
-    return None
-
-# Initialize the database
-db = setup_database()
-
-if db is None:
-    st.error("❌ Failed to connect to database. Please check your Render database configuration.")
-    st.stop()
-
-# Initialize Google Gemini
 @st.cache_resource
 def setup_langgraph_agent():
-    """Setup the LangGraph agent with Google Gemini"""
+    """
+    Sets up the database, LLM, tools, and compiles the LangGraph ReAct agent.
+    This is cached to avoid re-initializing on every interaction.
+    """
+    print("--- Initializing LangGraph Agent with Gemini ---")
+
+    # Check for the API key in environment variables (Render deployment)
+    try:
+        google_api_key = os.getenv("GOOGLE_API_KEY")
+        if not google_api_key:
+            st.error("Google API key not found! Please set the GOOGLE_API_KEY environment variable in Render.")
+            st.stop()
+    except Exception as e:
+        st.error(f"Error accessing Google API key: {e}")
+        st.stop()
+
+    # Setup database connection and tools for Render PostgreSQL
+    try:
+        database_url = os.getenv('DATABASE_URL')
+        if not database_url:
+            st.error("DATABASE_URL not found! Please set the DATABASE_URL environment variable in Render.")
+            st.stop()
+        
+        # Handle postgres:// to postgresql:// conversion
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        
+        db_engine = create_engine(database_url)
+        db = SQLDatabase(engine=db_engine)
+    except Exception as e:
+        st.error(f"Database connection failed: {e}")
+        st.stop()
     
-    # Initialize Gemini
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash-lite",
-        google_api_key=os.getenv("GOOGLE_API_KEY"),
-        temperature=0
-    )
+    # --- REFINEMENT 1: Use the official, version-stable model name ---
+    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite", google_api_key=google_api_key, temperature=0)
+    toolkit = SQLDatabaseToolkit(db=db, llm=llm)
+    tools = toolkit.get_tools()
     
-    # Create SQL query tool
-    sql_query_tool = QuerySQLDataBaseTool(db=db)
-    
-    # Enhanced system prompt for tennis database
+    # --- Custom agent pattern using llm.bind_tools() ---
+    # This is the modern approach for tool-calling models like Gemini
+    db_schema = db.get_table_info()
     system_prompt = f"""You are a helpful assistant designed to answer questions about tennis matches by querying a SQL database.
     Here is the schema for the `matches` table you can query:
-    {db.get_table_info()}
+    {db_schema}
     
     ENHANCED DATABASE FEATURES:
     - The database now includes a `players` table with player metadata (handedness, nationality, height, birth date, etc.)
@@ -295,90 +280,69 @@ def setup_langgraph_agent():
     
     REMEMBER: Always use sql_db_query (not sql_db_query_checker) to get actual data from the database!
     """
-    
-    def should_continue(state):
-        """Determine if we should continue or end"""
-        messages = state["messages"]
-        last_message = messages[-1]
-        
-        if last_message.type == "tool":
-            return "continue"
-        else:
-            return "end"
-    
-    def call_model(state):
-        """Call the language model"""
-        messages = state["messages"]
-        response = llm.invoke(messages)
-        return {"messages": [response]}
-    
-    def call_tool(state):
-        """Call the SQL tool"""
-        messages = state["messages"]
-        last_message = messages[-1]
-        
-        tool_call = last_message.tool_calls[0]
-        tool_name = tool_call["name"]
-        tool_args = tool_call["args"]
-        
-        if tool_name == "sql_db_query":
-            result = sql_query_tool.run(tool_args["query"])
-            return {"messages": [ToolMessage(content=str(result), tool_call_id=tool_call["id"])]}
-    
-    # Create the graph
-    workflow = StateGraph(AgentState)
-    workflow.add_node("agent", call_model)
-    workflow.add_node("tools", call_tool)
-    
-    workflow.set_entry_point("agent")
-    workflow.add_conditional_edges(
-        "agent",
-        should_continue,
-        {
-            "continue": "tools",
-            "end": END
-        }
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", system_prompt),
+            ("placeholder", "{messages}"),
+        ]
     )
-    workflow.add_edge("tools", "agent")
     
-    # Compile with memory
+    # Bind tools to the LLM for native tool calling
+    llm_with_tools = llm.bind_tools(tools)
+
+    # --- Define the Nodes for the LangGraph ---
+
+    # The 'agent' node uses the LLM with bound tools
+    def call_agent(state: AgentState):
+        """Calls the LLM to decide the next step."""
+        messages = state["messages"]
+        # Use the LLM with bound tools to get the response
+        response = llm_with_tools.invoke(prompt.format_prompt(messages=messages))
+        return {"messages": [response]}
+
+    # The 'tools' node is the pre-built ToolNode.
+    tool_node = ToolNode(tools)
+
+    def should_continue(state: AgentState):
+        """Decide whether to continue with tools or finish."""
+        # The ReAct agent returns an AIMessage with tool_calls if it needs to act.
+        if isinstance(state["messages"][-1], AIMessage) and hasattr(state["messages"][-1], 'tool_calls') and state["messages"][-1].tool_calls:
+            return "tools"
+        return "end"
+
+    # --- Build the LangGraph ---
+    graph = StateGraph(AgentState)
+    
+    graph.add_node("agent", call_agent)
+    graph.add_node("tools", tool_node)
+    
+    graph.set_entry_point("agent")
+    
+    graph.add_conditional_edges("agent", should_continue, {"tools": "tools", "end": END})
+    
+    graph.add_edge("tools", "agent")
+    
     memory = MemorySaver()
-    return workflow.compile(checkpointer=memory)
-
-# Define state
-from typing import TypedDict, Annotated
-from langchain_core.messages import BaseMessage
-
-class AgentState(TypedDict):
-    messages: Annotated[list[BaseMessage], "The messages in the conversation"]
-
-# Initialize the agent
-agent_graph = setup_langgraph_agent()
-
-# Streamlit UI
-st.title("🎾 AskTennis - AI Tennis Database Assistant")
-st.markdown("Ask questions about tennis matches, players, tournaments, and statistics!")
-
-# Example questions
-with st.expander("💡 Example Questions", expanded=False):
-    st.markdown("""
-    **Player Statistics:**
-    - How many matches did Roger Federer win in 2006?
-    - Who won the most matches on clay in 2010?
-    - What was the score of the Wimbledon final in 2008?
+    runnable_graph = graph.compile(checkpointer=memory)
     
-    **Head-to-Head Records:**
-    - What is the head-to-head record between Serena Williams and Maria Sharapova?
-    - Show me all matches between Rafael Nadal and Novak Djokovic
-    
-    **Tournament Analysis:**
-    - How many Grand Slam titles did Serena Williams win?
-    - Which players won the most matches at Wimbledon?
-    - Compare ATP vs WTA match statistics
-    """)
+    print("--- LangGraph Agent Compiled Successfully with Gemini ---")
+    return runnable_graph
 
-# Create persistent placeholder for dataframe display
-dataframe_placeholder = st.empty()
+# Initialize the LangGraph agent
+try:
+    agent_graph = setup_langgraph_agent()
+except Exception as e:
+    st.error(f"Failed to initialize the AI agent: {e}")
+    st.stop()
+
+# --- Main App UI & Logic ---
+
+st.markdown("##### Example Questions:")
+st.markdown("""
+- *How many matches did Roger Federer win in 2006?*
+- *Who won the most matches on clay in 2010?*
+- *What was the score of the Wimbledon final in 2008?*
+""")
 
 user_question = st.text_input(
     "Ask your tennis question:",
@@ -386,25 +350,50 @@ user_question = st.text_input(
 )
 
 if user_question:
+    # Create placeholders for dynamic content
+    dataframe_placeholder = st.empty()
+    
     with st.spinner("The AI is analyzing your question and querying the database..."):
         try:
             # The config dictionary ensures each user gets their own conversation history.
             config = {"configurable": {"thread_id": "user_session"}}
             
-            # Invoke the agent
+            # --- REFINEMENT 3: The stateful graph only needs the new human message. ---
+            # It loads the history from memory automatically via the checkpointer.
             response = agent_graph.invoke(
                 {"messages": [HumanMessage(content=user_question)]},
                 config=config
             )
             
-            # Parse response
+            # The final answer is in the content of the last AIMessage.
+            # Parse Gemini's structured output format
             last_message = response["messages"][-1]
             if isinstance(last_message.content, list) and last_message.content:
+                # For Gemini, content is a list of dicts. We want the text from the first part.
                 final_answer = last_message.content[0].get("text", "")
             else:
+                # Fallback for standard string content
                 final_answer = last_message.content
             
-            # Handle head-to-head queries with dataframe display
+            # If no final answer found, try to extract from tool messages
+            if not final_answer or not final_answer.strip():
+                for message in reversed(response["messages"]):
+                    if hasattr(message, 'type') and message.type == 'tool' and 'sql_db_query' in str(message.name):
+                        try:
+                            import ast
+                            if message.content.startswith('[') and message.content.endswith(']'):
+                                data = ast.literal_eval(message.content)
+                                if data and len(data) > 0:
+                                    if isinstance(data[0], (list, tuple)) and len(data[0]) > 0:
+                                        count = data[0][0]
+                                        final_answer = f"Based on the database query, I found {count} result(s)."
+                                    else:
+                                        final_answer = f"Based on the database query, I found {len(data)} result(s)."
+                                    break
+                        except:
+                            continue
+            
+            # Check if this is a head-to-head query and display detailed results
             if 'h2h' in user_question.lower() or 'head to head' in user_question.lower() or 'vs' in user_question.lower():
                 # Look for detailed match data in tool messages
                 for message in response["messages"]:
@@ -414,16 +403,19 @@ if user_question:
                             if message.content.startswith('[') and message.content.endswith(']'):
                                 data = ast.literal_eval(message.content)
                                 if data and len(data) > 0 and isinstance(data[0], (list, tuple)) and len(data[0]) > 3:
-                                    # Display detailed match data
+                                    # This looks like detailed match data (winner, loser, score, etc.)
                                     with dataframe_placeholder.container():
                                         st.markdown("### 📊 Detailed Head-to-Head Matches")
                                         
-                                        # Convert to DataFrame
+                                        # Convert to DataFrame for better display
                                         df_data = []
                                         for row in data:
-                                            if len(row) >= 4:
+                                            if len(row) >= 4:  # Ensure we have enough columns
+                                                # Map columns based on the ACTUAL database query result:
+                                                # Index 0: winner_name, Index 1: loser_name, Index 2: tourney_name, Index 3: event_year, Index 4: event_month, Index 5: event_date, Index 6: surface, Index 7: set1, Index 8: set2, etc.
+                                                # Format the score properly by combining only the set scores
                                                 set_scores = []
-                                                for i in range(7, min(len(row), 12)):
+                                                for i in range(7, min(len(row), 12)):  # Start from set1 (index 7) to set5 (index 11)
                                                     if i < len(row) and row[i] and str(row[i]).strip() and str(row[i]).strip() != 'None':
                                                         set_scores.append(str(row[i]).strip())
                                                 
@@ -433,7 +425,7 @@ if user_question:
                                                     'Winner': row[0],
                                                     'Loser': row[1], 
                                                     'Tournament': row[2],
-                                                    'Year': row[3],
+                                                    'Year': row[3] if len(row) > 3 else 'N/A',
                                                     'Surface': row[6] if len(row) > 6 else 'N/A',
                                                     'Score': score_str
                                                 })
@@ -474,7 +466,7 @@ if user_question:
             else:
                 # Clear the dataframe placeholder for non-head-to-head queries
                 dataframe_placeholder.empty()
-            
+
             if final_answer and final_answer.strip():
                 st.success("Here's what I found:")
                 st.markdown(final_answer)
@@ -484,14 +476,10 @@ if user_question:
                 # Check if this might be a misspelling issue
                 if "no results" in str(final_answer).lower() or "not found" in str(final_answer).lower():
                     st.info("💡 **Tip**: If you didn't find what you're looking for, try checking the spelling of player or tournament names. The system is case-sensitive and requires exact matches.")
-                
-        except Exception as e:
-            st.error(f"An error occurred while processing your request: {e}")
 
             # Optional: Show the full conversation history for debugging
             # with st.expander("🧠 Show Full Conversation Flow", expanded=False):
             #     st.json(response['messages'])
 
-# Footer
-st.markdown("---")
-st.markdown("**Powered by Google Gemini AI and Render PostgreSQL** 🚀")
+        except Exception as e:
+            st.error(f"An error occurred while processing your request: {e}")
