@@ -50,6 +50,98 @@ def setup_langgraph_agent():
     from langchain_core.tools import tool
 
     @tool
+    def get_tennis_round_mapping(round_name: str) -> str:
+        """
+        Map tennis fan colloquial round names to database round values.
+        Handles various tennis round terminologies.
+        
+        Args:
+            round_name: The round name to look up (e.g., 'final', 'semi-final', 'quarter-final')
+            
+        Returns:
+            JSON string with database round value
+        """
+        # Tennis round mappings (fan names -> database values)
+        round_mappings = {
+            # Finals
+            "final": "F",
+            "finals": "F", 
+            "championship": "F",
+            "champion": "F",
+            "winner": "F",
+            
+            # Semi-Finals
+            "semi-final": "SF",
+            "semi finals": "SF",
+            "semifinal": "SF",
+            "semifinals": "SF",
+            "semi": "SF",
+            "last four": "SF",
+            "last 4": "SF",
+            
+            # Quarter-Finals
+            "quarter-final": "QF",
+            "quarter finals": "QF",
+            "quarterfinal": "QF",
+            "quarterfinals": "QF",
+            "quarter": "QF",
+            "quarters": "QF",
+            "last eight": "QF",
+            "last 8": "QF",
+            
+            # Round of 16
+            "round of 16": "R16",
+            "round 16": "R16",
+            "last 16": "R16",
+            "fourth round": "R16",
+            "4th round": "R16",
+            
+            # Round of 32
+            "round of 32": "R32", 
+            "round 32": "R32",
+            "third round": "R32",
+            "3rd round": "R32",
+            
+            # Round of 64
+            "round of 64": "R64",
+            "round 64": "R64", 
+            "second round": "R64",
+            "2nd round": "R64",
+            
+            # Round of 128
+            "round of 128": "R128",
+            "round 128": "R128",
+            "first round": "R128",
+            "1st round": "R128",
+            
+            # Qualifying rounds
+            "qualifying": "Q1",
+            "qualifier": "Q1",
+            "qualifying 1": "Q1",
+            "qualifying 2": "Q2",
+            "qualifying 3": "Q3",
+            
+            # Round Robin
+            "round robin": "RR",
+            "group stage": "RR",
+            "group": "RR",
+            
+            # Other rounds
+            "bronze": "BR",
+            "playoff": "PR",
+            "consolation": "CR",
+            "exhibition": "ER"
+        }
+        
+        round_lower = round_name.lower().strip()
+        
+        if round_lower in round_mappings:
+            return str({"database_round": round_mappings[round_lower], "type": "tennis_round"})
+        
+        # Default: return as-is
+        return str({"database_round": round_name, "type": "unknown"})
+
+    @tool
     def get_tournament_mapping(tournament: str) -> str:
         """
         Map tennis fan colloquial names to database tournament names.
@@ -110,7 +202,8 @@ def setup_langgraph_agent():
         # Default: return as-is
         return str({"database_name": tournament, "type": "unknown"})
 
-    # Add the custom tool to the tools list
+    # Add the custom tools to the tools list
+    tools.append(get_tennis_round_mapping)
     tools.append(get_tournament_mapping)
     
     # --- Custom agent pattern using llm.bind_tools() ---
@@ -136,6 +229,20 @@ def setup_langgraph_agent():
       * "Who won Wimbledon 2021" → Map to "Wimbledon" + round = 'F'
     - For specific rounds: "Who won French Open Semi-Final 2022" → round = 'SF'
     - For generic tournament queries: "Who won Rome Final 2022" → round = 'F' for both ATP and WTA
+    
+    CRITICAL: TENNIS ROUND TERMINOLOGY
+    - Tennis fans use various round names that don't match database values
+    - ALWAYS use get_tennis_round_mapping tool to convert fan round names to database values
+    - Common mappings:
+      * "Final" → "F", "Semi-Final" → "SF", "Quarter-Final" → "QF"
+      * "Round of 16" → "R16", "Round of 32" → "R32", "Round of 64" → "R64"
+      * "First Round" → "R128", "Second Round" → "R64", "Third Round" → "R32"
+      * "Last 16" → "R16", "Last 8" → "QF", "Last 4" → "SF"
+      * "Qualifying" → "Q1", "Round Robin" → "RR"
+    - Examples:
+      * "Who won French Open Semi-Final 2022" → round = 'SF'
+      * "Who reached Wimbledon Quarter-Finals 2021" → round = 'QF'
+      * "Who won Rome Last 16 2022" → round = 'R16'
     
     ENHANCED DATABASE FEATURES:
     - The database now includes a `players` table with player metadata (handedness, nationality, height, birth date, etc.)
