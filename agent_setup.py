@@ -142,6 +142,174 @@ def setup_langgraph_agent():
         return str({"database_round": round_name, "type": "unknown"})
 
     @tool
+    def get_tennis_surface_mapping(surface: str) -> str:
+        """
+        Map tennis fan surface names to database surface values.
+        Handles various surface terminologies.
+        
+        Args:
+            surface: The surface name to look up (e.g., 'clay court', 'hard court', 'grass court')
+            
+        Returns:
+            JSON string with database surface value
+        """
+        # Tennis surface mappings (fan names -> database values)
+        surface_mappings = {
+            # Clay courts
+            "clay": "Clay",
+            "clay court": "Clay",
+            "red clay": "Clay",
+            "terre battue": "Clay",
+            "dirt": "Clay",
+            "slow court": "Clay",
+            
+            # Hard courts
+            "hard": "Hard",
+            "hard court": "Hard",
+            "concrete": "Hard",
+            "asphalt": "Hard",
+            "acrylic": "Hard",
+            "deco turf": "Hard",
+            "plexicushion": "Hard",
+            "fast court": "Hard",
+            "indoor hard": "Hard",
+            "outdoor hard": "Hard",
+            
+            # Grass courts
+            "grass": "Grass",
+            "grass court": "Grass",
+            "lawn": "Grass",
+            "natural grass": "Grass",
+            "very fast court": "Grass",
+            "quick court": "Grass",
+            
+            # Carpet courts
+            "carpet": "Carpet",
+            "carpet court": "Carpet",
+            "indoor carpet": "Carpet",
+            "synthetic": "Carpet",
+            "artificial": "Carpet"
+        }
+        
+        surface_lower = surface.lower().strip()
+        
+        if surface_lower in surface_mappings:
+            return str({"database_surface": surface_mappings[surface_lower], "type": "tennis_surface"})
+        
+        # Default: return as-is
+        return str({"database_surface": surface, "type": "unknown"})
+
+    @tool
+    def get_tennis_tour_mapping(tour: str) -> str:
+        """
+        Map tennis fan tour names to database tour categories.
+        Handles ATP, WTA, ITF, Challenger, Futures terminology.
+        
+        Args:
+            tour: The tour name to look up (e.g., 'atp tour', 'wta tour', 'challenger')
+            
+        Returns:
+            JSON string with database tour information
+        """
+        # Tennis tour mappings (fan names -> database categories)
+        tour_mappings = {
+            # Main tours
+            "atp": "ATP",
+            "atp tour": "ATP",
+            "men's tour": "ATP",
+            "men tour": "ATP",
+            "men": "ATP",
+            "male": "ATP",
+            
+            "wta": "WTA", 
+            "wta tour": "WTA",
+            "women's tour": "WTA",
+            "women tour": "WTA",
+            "women": "WTA",
+            "female": "WTA",
+            "ladies": "WTA",
+            
+            # Development tours
+            "challenger": "Challenger",
+            "atp challenger": "Challenger",
+            "challenger tour": "Challenger",
+            "development tour": "Challenger",
+            
+            "futures": "Futures",
+            "atp futures": "Futures",
+            "futures tour": "Futures",
+            "itf futures": "Futures",
+            
+            "itf": "ITF",
+            "itf tour": "ITF",
+            "junior tour": "ITF",
+            "development": "ITF",
+            
+            # Combined
+            "both": "Both",
+            "combined": "Both",
+            "men and women": "Both",
+            "atp and wta": "Both"
+        }
+        
+        tour_lower = tour.lower().strip()
+        
+        if tour_lower in tour_mappings:
+            return str({"database_tour": tour_mappings[tour_lower], "type": "tennis_tour"})
+        
+        # Default: return as-is
+        return str({"database_tour": tour, "type": "unknown"})
+
+    @tool
+    def get_tennis_hand_mapping(hand: str) -> str:
+        """
+        Map tennis fan hand terminology to database hand values.
+        Handles handedness terminology.
+        
+        Args:
+            hand: The hand name to look up (e.g., 'right-handed', 'left-handed', 'ambidextrous')
+            
+        Returns:
+            JSON string with database hand value
+        """
+        # Tennis hand mappings (fan names -> database values)
+        hand_mappings = {
+            # Right-handed
+            "right": "R",
+            "right-handed": "R",
+            "right hand": "R",
+            "righty": "R",
+            "right handed": "R",
+            
+            # Left-handed
+            "left": "L", 
+            "left-handed": "L",
+            "left hand": "L",
+            "lefty": "L",
+            "left handed": "L",
+            "southpaw": "L",
+            
+            # Ambidextrous
+            "ambidextrous": "A",
+            "both": "A",
+            "either": "A",
+            "switch": "A",
+            
+            # Unknown
+            "unknown": "U",
+            "unclear": "U",
+            "not specified": "U"
+        }
+        
+        hand_lower = hand.lower().strip()
+        
+        if hand_lower in hand_mappings:
+            return str({"database_hand": hand_mappings[hand_lower], "type": "tennis_hand"})
+        
+        # Default: return as-is
+        return str({"database_hand": hand, "type": "unknown"})
+
+    @tool
     def get_tournament_mapping(tournament: str) -> str:
         """
         Map tennis fan colloquial names to database tournament names.
@@ -204,6 +372,9 @@ def setup_langgraph_agent():
 
     # Add the custom tools to the tools list
     tools.append(get_tennis_round_mapping)
+    tools.append(get_tennis_surface_mapping)
+    tools.append(get_tennis_tour_mapping)
+    tools.append(get_tennis_hand_mapping)
     tools.append(get_tournament_mapping)
     
     # --- Custom agent pattern using llm.bind_tools() ---
@@ -243,6 +414,46 @@ def setup_langgraph_agent():
       * "Who won French Open Semi-Final 2022" → round = 'SF'
       * "Who reached Wimbledon Quarter-Finals 2021" → round = 'QF'
       * "Who won Rome Last 16 2022" → round = 'R16'
+    
+    CRITICAL: TENNIS SURFACE TERMINOLOGY
+    - Tennis fans use various surface names that don't match database values
+    - ALWAYS use get_tennis_surface_mapping tool to convert fan surface names to database values
+    - Common mappings:
+      * "Clay Court" → "Clay", "Red Clay" → "Clay", "Terre Battue" → "Clay"
+      * "Hard Court" → "Hard", "Concrete" → "Hard", "Deco Turf" → "Hard"
+      * "Grass Court" → "Grass", "Lawn" → "Grass", "Natural Grass" → "Grass"
+      * "Carpet Court" → "Carpet", "Synthetic" → "Carpet", "Artificial" → "Carpet"
+    - Examples:
+      * "Who won on clay courts in 2022" → surface = 'Clay'
+      * "Best players on grass" → surface = 'Grass'
+      * "Hard court specialists" → surface = 'Hard'
+    
+    CRITICAL: TENNIS TOUR TERMINOLOGY
+    - Tennis fans use various tour names that don't match database categories
+    - ALWAYS use get_tennis_tour_mapping tool to convert fan tour names to database values
+    - Common mappings:
+      * "ATP Tour" → "ATP", "Men's Tour" → "ATP", "Men" → "ATP"
+      * "WTA Tour" → "WTA", "Women's Tour" → "WTA", "Women" → "WTA", "Ladies" → "WTA"
+      * "Challenger Tour" → "Challenger", "Development Tour" → "Challenger"
+      * "Futures Tour" → "Futures", "ITF Futures" → "Futures"
+      * "Both Tours" → "Both", "Men and Women" → "Both"
+    - Examples:
+      * "ATP players in 2022" → tour = 'ATP'
+      * "WTA rankings" → tour = 'WTA'
+      * "Challenger events" → tour = 'Challenger'
+    
+    CRITICAL: TENNIS HAND TERMINOLOGY
+    - Tennis fans use various hand names that don't match database values
+    - ALWAYS use get_tennis_hand_mapping tool to convert fan hand names to database values
+    - Common mappings:
+      * "Right-handed" → "R", "Righty" → "R", "Right Hand" → "R"
+      * "Left-handed" → "L", "Lefty" → "L", "Southpaw" → "L"
+      * "Ambidextrous" → "A", "Both Hands" → "A", "Switch" → "A"
+      * "Unknown" → "U", "Not Specified" → "U"
+    - Examples:
+      * "Left-handed players" → winner_hand = 'L'
+      * "Right-handed champions" → winner_hand = 'R'
+      * "Southpaw specialists" → winner_hand = 'L'
     
     ENHANCED DATABASE FEATURES:
     - The database now includes a `players` table with player metadata (handedness, nationality, height, birth date, etc.)
