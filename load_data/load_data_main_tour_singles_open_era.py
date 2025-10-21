@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 # --- Configuration ---
 DATA_DIRS = ["data/tennis_atp", "data/tennis_wta"]
 YEARS = list(range(1968, 2026))  # Complete historical coverage: 1968-2026
-DB_FILE = "tennis_data_1.db"
+DB_FILE = "tennis_data_main_tour_singles_open_era.db"
 
 # Option to load only recent years for testing (set to False for complete data)
 LOAD_RECENT_ONLY = False  # Set to True to load only 2020-2026 for testing
