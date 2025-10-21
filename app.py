@@ -74,36 +74,6 @@ def suggest_corrections(query_name, name_type="player"):
     else:
         return f"No similar {name_type} names found. Please check your spelling."
 
-def validate_head_to_head_count(matches_data, player1, player2):
-    """Validate head-to-head counting and return accurate record."""
-    if not matches_data or len(matches_data) == 0:
-        return "No matches found"
-    
-    player1_wins = 0
-    player2_wins = 0
-    excluded_matches = 0
-    
-    for match in matches_data:
-        if len(match) >= 7:  # Ensure we have enough data
-            winner = match[0]
-            # Check if this is a walkover, default, or retirement
-            score_parts = [str(match[i]) for i in range(7, min(len(match), 12)) if match[i]]
-            score_str = ' '.join(score_parts).upper()
-            
-            if 'W/O' in score_str or 'DEF' in score_str or 'RET' in score_str:
-                excluded_matches += 1
-                continue
-            
-            # Count wins
-            if player1.lower() in winner.lower():
-                player1_wins += 1
-            elif player2.lower() in winner.lower():
-                player2_wins += 1
-    
-    total_matches = player1_wins + player2_wins
-    excluded_note = f" (excluding {excluded_matches} walkover/default/retirement matches)" if excluded_matches > 0 else ""
-    
-    return f"{player1} leads {player2} {player1_wins}-{player2_wins} in {total_matches} completed matches{excluded_note}"
 
 # --- Database and LLM Setup (Cached for performance) ---
 
@@ -323,9 +293,6 @@ user_question = st.text_input(
 )
 
 if user_question:
-    # Create placeholders for dynamic content
-    dataframe_placeholder = st.empty()
-    
     with st.spinner("The AI is analyzing your question and querying the database..."):
         try:
             # The config dictionary ensures each user gets their own conversation history.
@@ -366,79 +333,6 @@ if user_question:
                         except:
                             continue
             
-            # Check if this is a head-to-head query and display detailed results
-            if 'h2h' in user_question.lower() or 'head to head' in user_question.lower() or 'vs' in user_question.lower():
-                # Look for detailed match data in tool messages
-                for message in response["messages"]:
-                    if hasattr(message, 'type') and message.type == 'tool' and 'sql_db_query' in str(message.name):
-                        try:
-                            import ast
-                            if message.content.startswith('[') and message.content.endswith(']'):
-                                data = ast.literal_eval(message.content)
-                                if data and len(data) > 0 and isinstance(data[0], (list, tuple)) and len(data[0]) > 3:
-                                    # This looks like detailed match data (winner, loser, score, etc.)
-                                    with dataframe_placeholder.container():
-                                        st.markdown("### 📊 Detailed Head-to-Head Matches")
-                                        
-                                        # Convert to DataFrame for better display
-                                        df_data = []
-                                        for row in data:
-                                            if len(row) >= 4:  # Ensure we have enough columns
-                                                # Map columns based on the ACTUAL database query result:
-                                                # Index 0: winner_name, Index 1: loser_name, Index 2: tourney_name, Index 3: event_year, Index 4: event_month, Index 5: event_date, Index 6: surface, Index 7: set1, Index 8: set2, etc.
-                                                # Format the score properly by combining only the set scores
-                                                set_scores = []
-                                                for i in range(7, min(len(row), 12)):  # Start from set1 (index 7) to set5 (index 11)
-                                                    if i < len(row) and row[i] and str(row[i]).strip() and str(row[i]).strip() != 'None':
-                                                        set_scores.append(str(row[i]).strip())
-                                                
-                                                score_str = ' '.join(set_scores) if set_scores else 'N/A'
-                                                
-                                                df_data.append({
-                                                    'Winner': row[0],
-                                                    'Loser': row[1], 
-                                                    'Tournament': row[2],
-                                                    'Year': row[3] if len(row) > 3 else 'N/A',
-                                                    'Surface': row[6] if len(row) > 6 else 'N/A',
-                                                    'Score': score_str
-                                                })
-                                        
-                                        if df_data:
-                                            df = pd.DataFrame(df_data)
-                                            
-                                            # Add accurate head-to-head summary
-                                            if len(data) > 0:
-                                                # Extract player names from the first match
-                                                first_match = data[0]
-                                                if len(first_match) >= 2:
-                                                    player1 = first_match[0]  # winner
-                                                    player2 = first_match[1]  # loser
-                                                    
-                                                    # Validate and display accurate count
-                                                    accurate_record = validate_head_to_head_count(data, player1, player2)
-                                                    st.markdown(f"**Head-to-Head Record:** {accurate_record}")
-                                            
-                                            # Format the dataframe with consistent left alignment
-                                            st.dataframe(
-                                                df, 
-                                                use_container_width=True,
-                                                column_config={
-                                                    "Winner": st.column_config.TextColumn("Winner", width="medium"),
-                                                    "Loser": st.column_config.TextColumn("Loser", width="medium"),
-                                                    "Tournament": st.column_config.TextColumn("Tournament", width="large"),
-                                                    "Year": st.column_config.TextColumn("Year", width="small"),
-                                                    "Surface": st.column_config.TextColumn("Surface", width="small"),
-                                                    "Score": st.column_config.TextColumn("Score", width="medium")
-                                                }
-                                            )
-                                        else:
-                                            st.warning("No detailed match data found in the expected format.")
-                                    break
-                        except:
-                            continue
-            else:
-                # Clear the dataframe placeholder for non-head-to-head queries
-                dataframe_placeholder.empty()
 
             if final_answer and final_answer.strip():
                 st.success("Here's what I found:")
