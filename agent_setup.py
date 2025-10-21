@@ -46,12 +46,68 @@ def setup_langgraph_agent():
     toolkit = SQLDatabaseToolkit(db=db, llm=llm)
     tools = toolkit.get_tools()
     
+    # Add custom tournament mapping tool for combined events
+    from langchain_core.tools import tool
+
+    @tool
+    def get_combined_tournament_names(tournament: str) -> str:
+        """
+        Get the correct tournament names for combined events that have both ATP and WTA.
+        Returns a JSON string with ATP and WTA tournament names.
+        
+        Args:
+            tournament: The tournament name to look up (e.g., 'rome', 'basel', 'madrid')
+            
+        Returns:
+            JSON string with ATP and WTA tournament names
+        """
+        tournament_mappings = {
+            "rome": {"atp": "Rome Masters", "wta": "Rome"},
+            "basel": {"atp": "Basel", "wta": "Basel"},
+            "madrid": {"atp": "Madrid Masters", "wta": "Madrid"},
+            "indian wells": {"atp": "Indian Wells Masters", "wta": "Indian Wells"},
+            "miami": {"atp": "Miami Masters", "wta": "Miami"},
+            "monte carlo": {"atp": "Monte Carlo Masters", "wta": "Monte Carlo"},
+            "hamburg": {"atp": "Hamburg", "wta": "Hamburg"},
+            "stuttgart": {"atp": "Stuttgart", "wta": "Stuttgart"},
+            "eastbourne": {"atp": "Eastbourne", "wta": "Eastbourne"},
+            "newport": {"atp": "Newport", "wta": "Newport"},
+            "atlanta": {"atp": "Atlanta", "wta": "Atlanta"},
+            "washington": {"atp": "Washington", "wta": "Washington"},
+            "toronto": {"atp": "Toronto Masters", "wta": "Toronto"},
+            "montreal": {"atp": "Montreal Masters", "wta": "Montreal"},
+            "cincinnati": {"atp": "Cincinnati Masters", "wta": "Cincinnati"},
+            "winston salem": {"atp": "Winston Salem", "wta": "Winston Salem"},
+            "stockholm": {"atp": "Stockholm", "wta": "Stockholm"},
+            "antwerp": {"atp": "Antwerp", "wta": "Antwerp"},
+            "vienna": {"atp": "Vienna", "wta": "Vienna"},
+            "paris": {"atp": "Paris Masters", "wta": "Paris"}
+        }
+        
+        tournament_lower = tournament.lower()
+        if tournament_lower in tournament_mappings:
+            return str(tournament_mappings[tournament_lower])
+        else:
+            return str({"atp": tournament, "wta": tournament})
+
+    # Add the custom tool to the tools list
+    tools.append(get_combined_tournament_names)
+    
     # --- Custom agent pattern using llm.bind_tools() ---
     # This is the modern approach for tool-calling models like Gemini
     db_schema = db.get_table_info()
     system_prompt = f"""You are a helpful assistant designed to answer questions about tennis matches by querying a SQL database.
     Here is the schema for the `matches` table you can query:
     {db_schema}
+    
+    CRITICAL: COMBINED TOURNAMENTS (ATP + WTA)
+    - For combined tournaments like Rome, Basel, Madrid, etc., you MUST search BOTH ATP and WTA tournaments
+    - Use the get_combined_tournament_names tool to get the correct tournament names
+    - Rome: ATP = "Rome Masters", WTA = "Rome"
+    - Basel: ATP = "Basel", WTA = "Basel" 
+    - Madrid: ATP = "Madrid Masters", WTA = "Madrid"
+    - For generic tournament queries (without ATP/WTA specification), search BOTH tournaments using UNION
+    - Example: "Who won Rome Final 2022" should return BOTH Iga Swiatek (WTA) and Novak Djokovic (ATP)
     
     ENHANCED DATABASE FEATURES:
     - The database now includes a `players` table with player metadata (handedness, nationality, height, birth date, etc.)
