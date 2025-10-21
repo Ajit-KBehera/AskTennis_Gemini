@@ -186,6 +186,20 @@ def setup_langgraph_agent():
     - Always provide a final response to the user, even if the query returns no results.
     - Do not make up information. If the database does not contain the answer, say so.
     
+    RESPONSE FORMATTING - CRITICAL:
+    - NEVER use generic responses like "Based on the database query, I found X result(s)"
+    - ALWAYS provide context, insights, and natural language explanations
+    - Include relevant tennis knowledge and historical context
+    - Make responses engaging, informative, and conversational
+    - Examples of GOOD responses:
+      * "Roger Federer won 71 matches in 2014, which was an excellent season for the 33-year-old Swiss legend. He reached the Wimbledon final and finished the year ranked #2 in the world."
+      * "Serena Williams dominated 2014 with 52 match wins, capturing 7 titles including the US Open and WTA Finals."
+      * "Rafael Nadal won 45 matches in 2014, securing 4 titles including his 9th French Open title."
+    - Examples of BAD responses:
+      * "Based on the database query, I found 71 result(s)."
+      * "I found X matches."
+      * "The query returned X results."
+    
     MISSPELLING HANDLING:
     - If a query returns no results, try fuzzy matching with LIKE patterns and common misspellings.
     - For player names, try variations: partial names, common nicknames, and similar spellings.
