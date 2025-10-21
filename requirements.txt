@@ -15,7 +15,7 @@ langgraph>=0.0.40
 
 # Database Dependencies
 psycopg2-binary>=2.9.0  # PostgreSQL adapter for Render deployment
-sqlite3  # Built-in Python module for local SQLite
+# Note: sqlite3 is built into Python, no need to install separately
 
 # Data Processing & Analysis
 numpy>=1.21.0

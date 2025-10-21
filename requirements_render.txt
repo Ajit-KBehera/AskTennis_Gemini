@@ -1,0 +1,22 @@
+# AskTennis - Render Deployment Requirements (Minimal)
+# Optimized for Render deployment with PostgreSQL
+
+# Core Application
+streamlit>=1.28.0
+pandas>=2.0.0
+sqlalchemy>=2.0.0
+
+# AI/LLM Dependencies
+langchain>=0.1.0
+langchain-community>=0.0.20
+langchain-google-genai>=1.0.0
+langgraph>=0.0.40
+
+# Database (PostgreSQL for Render)
+psycopg2-binary>=2.9.0
+
+# Environment
+python-dotenv>=1.0.0
+
+# Data Processing
+numpy>=1.21.0
