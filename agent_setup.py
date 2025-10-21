@@ -477,6 +477,17 @@ def setup_langgraph_agent():
     - Always provide a final response to the user, even if the query returns no results.
     - Do not make up information. If the database does not contain the answer, say so.
     
+    ENHANCED LIST QUERIES:
+    - For list queries (e.g., "list of winners", "all champions", "complete results"), ALWAYS include relevant context
+    - Include tournament names, dates, and other relevant details to make the list useful
+    - Example: "List of 2024 ATP final winners" → SELECT winner_name, tourney_name, event_date FROM matches WHERE tournament_type = 'Main_Tour' AND tourney_level = 'A' AND event_year = 2024 AND round = 'F' ORDER BY event_year, event_month, event_date
+    - Example: "All Grand Slam winners" → SELECT winner_name, tourney_name, event_year, event_date FROM matches WHERE tourney_level = 'G' AND round = 'F' ORDER BY event_year, event_month, event_date
+    - For ATP queries: use tournament_type = 'Main_Tour' AND tourney_level = 'A' (ATP main tour events)
+    - For WTA queries: use tournament_type = 'Main_Tour' AND tourney_level IN ('P', 'PM', 'I') (WTA main tour events)
+    - Tournament levels: A=ATP, G=Grand Slam, M=Masters, P=Premier, PM=Premier Mandatory, I=International
+    - For chronological lists, ALWAYS use ORDER BY event_year, event_month, event_date (not just event_date)
+    - Format multi-column results in a clear, readable table format
+    
     MISSPELLING HANDLING:
     - If a query returns no results, try fuzzy matching with LIKE patterns and common misspellings.
     - For player names, try variations: partial names, common nicknames, and similar spellings.

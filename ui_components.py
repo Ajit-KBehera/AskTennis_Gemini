@@ -28,6 +28,11 @@ def get_user_input():
     )
 
 
+def is_list_query(user_question):
+    """Detect if the user is asking for a list of items."""
+    list_keywords = ['list', 'all', 'every', 'complete', 'full', 'entire', 'chronological', 'chronologically']
+    return any(keyword in user_question.lower() for keyword in list_keywords)
+
 def process_agent_response(response, logger):
     """Process and format the agent's response."""
     # The final answer is in the content of the last AIMessage.
@@ -82,8 +87,28 @@ def process_agent_response(response, logger):
                                 if logger is not None:
                                     logger.info(f"✅ Formatted multi-column result: {final_answer}")
                             else:
-                                # Multiple rows
-                                final_answer = f"Found {len(data)} result(s): {', '.join([str(row[0]) for row in data[:5]])}"
+                                # Multiple rows - always show all results for better user experience
+                                if len(data) > 10:
+                                    # For large result sets, provide a proper tabular format
+                                    final_answer = f"Found {len(data)} result(s):\n\n"
+                                    # Create a table with all results
+                                    for i, row in enumerate(data, 1):
+                                        if len(row) > 1:
+                                            # Multi-column result - format as table row
+                                            final_answer += f"{i:3d}. {row[0]} | {row[1] if len(row) > 1 else ''} | {row[2] if len(row) > 2 else ''}\n"
+                                        else:
+                                            # Single column result
+                                            final_answer += f"{i:3d}. {row[0]}\n"
+                                else:
+                                    # For smaller result sets, show all results inline
+                                    if len(data) > 0 and len(data[0]) > 1:
+                                        # Multi-column result - format as table
+                                        final_answer = f"Found {len(data)} result(s):\n\n"
+                                        for i, row in enumerate(data, 1):
+                                            final_answer += f"{i:2d}. {row[0]} | {row[1] if len(row) > 1 else ''} | {row[2] if len(row) > 2 else ''}\n"
+                                    else:
+                                        # Single column result
+                                        final_answer = f"Found {len(data)} result(s): {', '.join([str(row[0]) for row in data])}"
                                 if logger is not None:
                                     logger.info(f"✅ Formatted multi-row result: {final_answer}")
                             break
@@ -110,8 +135,28 @@ def process_agent_response(response, logger):
                                     # Multiple columns, single row
                                     final_answer = f"Result: {', '.join(map(str, data[0]))}"
                                 else:
-                                    # Multiple rows
-                                    final_answer = f"Found {len(data)} result(s): {', '.join([str(row[0]) for row in data[:5]])}"
+                                    # Multiple rows - always show all results for better user experience
+                                    if len(data) > 10:
+                                        # For large result sets, provide a proper tabular format
+                                        final_answer = f"Found {len(data)} result(s):\n\n"
+                                        # Create a table with all results
+                                        for i, row in enumerate(data, 1):
+                                            if len(row) > 1:
+                                                # Multi-column result - format as table row
+                                                final_answer += f"{i:3d}. {row[0]} | {row[1] if len(row) > 1 else ''} | {row[2] if len(row) > 2 else ''}\n"
+                                            else:
+                                                # Single column result
+                                                final_answer += f"{i:3d}. {row[0]}\n"
+                                    else:
+                                        # For smaller result sets, show all results inline
+                                        if len(data) > 0 and len(data[0]) > 1:
+                                            # Multi-column result - format as table
+                                            final_answer = f"Found {len(data)} result(s):\n\n"
+                                            for i, row in enumerate(data, 1):
+                                                final_answer += f"{i:2d}. {row[0]} | {row[1] if len(row) > 1 else ''} | {row[2] if len(row) > 2 else ''}\n"
+                                        else:
+                                            # Single column result
+                                            final_answer = f"Found {len(data)} result(s): {', '.join([str(row[0]) for row in data])}"
                                 break
                     except:
                         continue
