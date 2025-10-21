@@ -90,8 +90,9 @@ def extract_players_from_query(query):
     """Extract player names from a head-to-head query like 'Alcaraz vs Djokovic' or 'Federer vs Nadal h2h'."""
     import re
     
-    # Clean the query first - remove common h2h indicators
-    query_clean = re.sub(r'\s+(h2h|head\s+to\s+head)\s*$', '', query, flags=re.IGNORECASE)
+    # Clean the query first - remove common h2h indicators and extra words
+    query_clean = re.sub(r'\s+(h2h|head\s+to\s+head|matches?)\s*$', '', query, flags=re.IGNORECASE)
+    query_clean = re.sub(r'\s+(matches?|results?|h2h|head\s+to\s+head)\s*$', '', query_clean, flags=re.IGNORECASE)
     
     # Common patterns for head-to-head queries
     patterns = [
@@ -205,10 +206,12 @@ def setup_langgraph_agent():
     
     SPECIAL INSTRUCTIONS FOR HEAD-TO-HEAD QUERIES:
     - For head-to-head questions (e.g., "Player A vs Player B h2h"), provide both a summary AND detailed match information.
+    - CRITICAL: For head-to-head queries, you MUST find matches where the two specific players played against each other.
+    - Use this EXACT query format for head-to-head: SELECT winner_name, loser_name, tourney_name, event_year, event_month, event_date, surface, set1, set2, set3, set4, set5 FROM matches WHERE ((winner_name LIKE '%PlayerA%' AND loser_name LIKE '%PlayerB%') OR (winner_name LIKE '%PlayerB%' AND loser_name LIKE '%PlayerA%'))
     - ALWAYS include the surface column in your SQL queries for head-to-head matches.
-    - Use this query format: SELECT winner_name, loser_name, tourney_name, event_year, event_month, event_date, surface, set1, set2, set3, set4, set5 FROM matches WHERE...
     - Include match details like year, tournament, surface, score, and winner.
     - Format the response to show both the overall record and individual match details.
+    - DO NOT return matches where only one of the players is involved - only matches where BOTH players played against each other.
     
     CRITICAL HEAD-TO-HEAD COUNTING RULES:
     - Count ONLY completed matches (exclude W/O, DEF, RET matches from head-to-head records)
