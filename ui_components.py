@@ -7,6 +7,7 @@ import streamlit as st
 from datetime import datetime
 from langchain_core.messages import HumanMessage, AIMessage
 from logging_config import log_user_query, log_llm_interaction, log_final_response, log_error
+from ml_analytics import TennisLogAnalyzer
 
 
 def display_example_questions():
@@ -118,8 +119,41 @@ def process_agent_response(response, logger):
     return final_answer
 
 
+def detect_coverage_issue_realtime(query: str) -> dict:
+    """Detect potential coverage issues in real-time."""
+    query_lower = query.lower()
+    
+    # Combined tournaments that have both ATP and WTA
+    combined_tournaments = [
+        'rome', 'basel', 'madrid', 'indian wells', 'miami', 'monte carlo', 
+        'hamburg', 'stuttgart', 'eastbourne', 'newport', 'atlanta', 
+        'washington', 'toronto', 'montreal', 'cincinnati', 'winston salem', 
+        'stockholm', 'antwerp', 'vienna', 'paris'
+    ]
+    
+    is_tournament_query = any(tournament in query_lower for tournament in combined_tournaments)
+    has_gender_spec = any(gender_word in query_lower for gender_word in ['men', 'women', 'male', 'female', 'atp', 'wta'])
+    
+    if is_tournament_query and not has_gender_spec:
+        tournament_detected = next((t for t in combined_tournaments if t in query_lower), 'unknown')
+        return {
+            'is_coverage_issue': True,
+            'tournament': tournament_detected,
+            'query': query,
+            'severity': 'high' if tournament_detected in ['rome', 'basel', 'madrid'] else 'medium'
+        }
+    
+    return {'is_coverage_issue': False}
+
+
 def handle_user_query(user_question, agent_graph, logger):
     """Handle user query processing and response display."""
+    # Real-time coverage issue detection
+    coverage_issue = detect_coverage_issue_realtime(user_question)
+    if coverage_issue['is_coverage_issue']:
+        st.warning(f"🤖 ML Alert: Generic tournament query detected for {coverage_issue['tournament'].title()}. "
+                  f"Consider specifying ATP/WTA for complete results.")
+    
     # Log the user query
     log_user_query(user_question, "user_session")
     
@@ -170,8 +204,46 @@ def handle_user_query(user_question, agent_graph, logger):
             st.error(f"An error occurred while processing your request: {e}")
 
 
+def run_session_ml_analysis():
+    """Run ML analysis at the start of each session."""
+    if 'ml_analysis_done' not in st.session_state:
+        st.session_state.ml_analysis_done = True
+        
+        # Initialize ML analyzer
+        analyzer = TennisLogAnalyzer()
+        
+        # Run comprehensive analysis
+        with st.spinner("🤖 Running ML analysis for session optimization..."):
+            try:
+                report = analyzer.generate_insights_report()
+                
+                if 'error' not in report:
+                    # Store analysis results in session state
+                    st.session_state.ml_insights = report
+                    
+                    # Check for coverage issues
+                    if 'query_analysis' in report and 'coverage_issues' in report['query_analysis']:
+                        coverage = report['query_analysis']['coverage_issues']
+                        if coverage.get('total_incomplete_queries', 0) > 0:
+                            st.session_state.coverage_issues = coverage
+                            
+                            # Display coverage issues as info
+                            st.info(f"🤖 ML Analysis: Found {coverage['total_incomplete_queries']} potential coverage issues. "
+                                   f"Consider specifying ATP/WTA for tournament queries like Rome, Basel, etc.")
+                    
+                    # Store performance insights
+                    if 'performance_analysis' in report:
+                        st.session_state.performance_insights = report['performance_analysis']
+                        
+            except Exception as e:
+                st.warning(f"ML analysis encountered an issue: {e}")
+
+
 def run_main_app(agent_graph, logger):
     """Run the main application logic."""
+    # Run ML analysis at session start
+    run_session_ml_analysis()
+    
     # Display example questions
     display_example_questions()
     

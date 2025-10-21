@@ -32,12 +32,7 @@ except Exception as e:
 from ui_components import run_main_app
 
 # --- ML Analytics ---
-from ml_analytics import display_ml_analytics
-
-# Create sidebar for ML Analytics
-with st.sidebar:
-    st.header("🤖 ML Analytics")
-    display_ml_analytics()
+from ml_analytics import TennisLogAnalyzer
 
 # Run the main application
 run_main_app(agent_graph, logger)
