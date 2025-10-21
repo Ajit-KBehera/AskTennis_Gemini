@@ -148,11 +148,11 @@ def detect_coverage_issue_realtime(query: str) -> dict:
 
 def handle_user_query(user_question, agent_graph, logger):
     """Handle user query processing and response display."""
-    # Real-time coverage issue detection
+    # Real-time coverage issue detection (silent background processing)
     coverage_issue = detect_coverage_issue_realtime(user_question)
+    # Store coverage issue data silently for backend analysis
     if coverage_issue['is_coverage_issue']:
-        st.warning(f"🤖 ML Alert: Generic tournament query detected for {coverage_issue['tournament'].title()}. "
-                  f"Consider specifying ATP/WTA for complete results.")
+        st.session_state.latest_coverage_issue = coverage_issue
     
     # Log the user query
     log_user_query(user_question, "user_session")
@@ -212,31 +212,27 @@ def run_session_ml_analysis():
         # Initialize ML analyzer
         analyzer = TennisLogAnalyzer()
         
-        # Run comprehensive analysis
-        with st.spinner("🤖 Running ML analysis for session optimization..."):
-            try:
-                report = analyzer.generate_insights_report()
+        # Run comprehensive analysis silently in background
+        try:
+            report = analyzer.generate_insights_report()
+            
+            if 'error' not in report:
+                # Store analysis results in session state silently
+                st.session_state.ml_insights = report
                 
-                if 'error' not in report:
-                    # Store analysis results in session state
-                    st.session_state.ml_insights = report
+                # Check for coverage issues and store silently
+                if 'query_analysis' in report and 'coverage_issues' in report['query_analysis']:
+                    coverage = report['query_analysis']['coverage_issues']
+                    if coverage.get('total_incomplete_queries', 0) > 0:
+                        st.session_state.coverage_issues = coverage
+                
+                # Store performance insights silently
+                if 'performance_analysis' in report:
+                    st.session_state.performance_insights = report['performance_analysis']
                     
-                    # Check for coverage issues
-                    if 'query_analysis' in report and 'coverage_issues' in report['query_analysis']:
-                        coverage = report['query_analysis']['coverage_issues']
-                        if coverage.get('total_incomplete_queries', 0) > 0:
-                            st.session_state.coverage_issues = coverage
-                            
-                            # Display coverage issues as info
-                            st.info(f"🤖 ML Analysis: Found {coverage['total_incomplete_queries']} potential coverage issues. "
-                                   f"Consider specifying ATP/WTA for tournament queries like Rome, Basel, etc.")
-                    
-                    # Store performance insights
-                    if 'performance_analysis' in report:
-                        st.session_state.performance_insights = report['performance_analysis']
-                        
-            except Exception as e:
-                st.warning(f"ML analysis encountered an issue: {e}")
+        except Exception as e:
+            # Log error silently without showing to user
+            pass
 
 
 def run_main_app(agent_graph, logger):

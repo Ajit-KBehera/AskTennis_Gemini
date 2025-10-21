@@ -13,7 +13,6 @@ logger, log_file = setup_logging()
 st.set_page_config(page_title="AskTennis AI", layout="wide")
 st.title("🎾 AskTennis: The Advanced AI Engine")
 st.markdown("#### Powered by Gemini & LangGraph (Stateful Agent)")
-st.markdown("This app uses a state-of-the-art AI agent to answer natural language questions about tennis data.")
 
 # --- Database Utilities ---
 from database_utils import get_all_player_names, get_all_tournament_names, suggest_corrections
