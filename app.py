@@ -28,20 +28,33 @@ class AgentState(TypedDict):
     messages: Annotated[List[BaseMessage], operator.add]
 
 # --- Helper Functions for Misspelling Handling ---
+def get_database_connection():
+    """Get database connection - either local SQLite or Render PostgreSQL."""
+    try:
+        # Try to get Render database URL from Streamlit secrets
+        render_db_url = st.secrets.get("RENDER_DATABASE_URL")
+        if render_db_url:
+            # Use Render PostgreSQL database
+            return create_engine(render_db_url)
+        else:
+            # Fallback to local SQLite
+            return create_engine("sqlite:///tennis_data.db")
+    except Exception as e:
+        st.warning(f"Could not connect to Render database: {e}. Falling back to local SQLite.")
+        return create_engine("sqlite:///tennis_data.db")
+
 @st.cache_data
 def get_all_player_names():
     """Get all unique player names from the database for fuzzy matching."""
-    conn = sqlite3.connect("tennis_data.db")
-    cursor = conn.cursor()
+    engine = get_database_connection()
     
-    # Get all unique winner and loser names
-    cursor.execute("SELECT DISTINCT winner_name FROM matches WHERE winner_name IS NOT NULL")
-    winner_names = [row[0] for row in cursor.fetchall()]
-    
-    cursor.execute("SELECT DISTINCT loser_name FROM matches WHERE loser_name IS NOT NULL")
-    loser_names = [row[0] for row in cursor.fetchall()]
-    
-    conn.close()
+    with engine.connect() as conn:
+        # Get all unique winner and loser names
+        winner_result = conn.execute("SELECT DISTINCT winner_name FROM matches WHERE winner_name IS NOT NULL")
+        winner_names = [row[0] for row in winner_result.fetchall()]
+        
+        loser_result = conn.execute("SELECT DISTINCT loser_name FROM matches WHERE loser_name IS NOT NULL")
+        loser_names = [row[0] for row in loser_result.fetchall()]
     
     # Combine and deduplicate
     all_names = list(set(winner_names + loser_names))
@@ -50,13 +63,12 @@ def get_all_player_names():
 @st.cache_data
 def get_all_tournament_names():
     """Get all unique tournament names from the database for fuzzy matching."""
-    conn = sqlite3.connect("tennis_data.db")
-    cursor = conn.cursor()
+    engine = get_database_connection()
     
-    cursor.execute("SELECT DISTINCT tourney_name FROM matches WHERE tourney_name IS NOT NULL")
-    tournament_names = [row[0] for row in cursor.fetchall()]
+    with engine.connect() as conn:
+        result = conn.execute("SELECT DISTINCT tourney_name FROM matches WHERE tourney_name IS NOT NULL")
+        tournament_names = [row[0] for row in result.fetchall()]
     
-    conn.close()
     return tournament_names
 
 def suggest_corrections(query_name, name_type="player"):
@@ -123,7 +135,7 @@ def setup_langgraph_agent():
         st.stop()
 
     # Setup database connection and tools
-    db_engine = create_engine("sqlite:///tennis_data.db")
+    db_engine = get_database_connection()
     db = SQLDatabase(engine=db_engine)
     # --- REFINEMENT 1: Use the official, version-stable model name ---
     llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite", google_api_key=google_api_key, temperature=0)

@@ -18,6 +18,9 @@ lxml>=4.9.0
 numpy>=1.21.0
 scikit-learn>=1.1.0
 
+# Database Drivers
+psycopg2-binary>=2.9.0
+
 # Visualization Dependencies
 spacy>=3.4.0
 plotly>=5.15.0
