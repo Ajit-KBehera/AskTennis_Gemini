@@ -177,6 +177,9 @@ class TennisLogAnalyzer:
             'other': 0
         }
         
+        # Tennis terminology analysis
+        terminology_analysis = self._analyze_tennis_terminology(query_texts)
+        
         # Enhanced analysis for tournament queries
         tournament_queries = []
         incomplete_coverage_queries = []
@@ -221,7 +224,8 @@ class TennisLogAnalyzer:
             'category_percentages': {k: round(v/total_queries*100, 2) for k, v in categories.items()},
             'tournament_queries': tournament_queries,
             'incomplete_coverage_queries': incomplete_coverage_queries,
-            'coverage_issues': self._analyze_coverage_issues(incomplete_coverage_queries)
+            'coverage_issues': self._analyze_coverage_issues(incomplete_coverage_queries),
+            'tennis_terminology': terminology_analysis
         }
     
     def analyze_performance(self, log_data: List[Dict]) -> Dict[str, Any]:
@@ -377,6 +381,152 @@ class TennisLogAnalyzer:
         
         return coverage_analysis
     
+    def _analyze_tennis_terminology(self, query_texts: List[str]) -> Dict[str, Any]:
+        """Analyze tennis terminology usage in queries."""
+        # Tennis terminology patterns
+        surface_terms = {
+            'clay': ['clay court', 'red clay', 'terre battue', 'dirt', 'slow court'],
+            'hard': ['hard court', 'concrete', 'asphalt', 'acrylic', 'deco turf', 'plexicushion', 'fast court'],
+            'grass': ['grass court', 'lawn', 'natural grass', 'very fast court', 'quick court'],
+            'carpet': ['carpet court', 'synthetic', 'artificial', 'indoor carpet']
+        }
+        
+        tour_terms = {
+            'atp': ['atp tour', 'men\'s tour', 'men tour', 'men', 'male'],
+            'wta': ['wta tour', 'women\'s tour', 'women tour', 'women', 'female', 'ladies'],
+            'challenger': ['challenger tour', 'development tour', 'challenger'],
+            'futures': ['futures tour', 'itf futures', 'futures'],
+            'itf': ['itf tour', 'junior tour', 'development', 'itf']
+        }
+        
+        hand_terms = {
+            'right': ['right-handed', 'righty', 'right hand', 'right handed'],
+            'left': ['left-handed', 'lefty', 'left handed', 'southpaw'],
+            'ambidextrous': ['ambidextrous', 'both hands', 'switch', 'either']
+        }
+        
+        round_terms = {
+            'final': ['final', 'finals', 'championship', 'champion', 'winner'],
+            'semi': ['semi-final', 'semi finals', 'semifinal', 'semifinals', 'semi', 'last four', 'last 4'],
+            'quarter': ['quarter-final', 'quarter finals', 'quarterfinal', 'quarterfinals', 'quarter', 'quarters', 'last eight', 'last 8'],
+            'round16': ['round of 16', 'round 16', 'last 16', 'fourth round', '4th round'],
+            'round32': ['round of 32', 'round 32', 'third round', '3rd round'],
+            'round64': ['round of 64', 'round 64', 'second round', '2nd round'],
+            'round128': ['round of 128', 'round 128', 'first round', '1st round'],
+            'qualifying': ['qualifying', 'qualifier', 'qualifying 1', 'qualifying 2', 'qualifying 3'],
+            'round_robin': ['round robin', 'group stage', 'group']
+        }
+        
+        # Analyze terminology usage
+        terminology_stats = {
+            'surface_usage': defaultdict(int),
+            'tour_usage': defaultdict(int),
+            'hand_usage': defaultdict(int),
+            'round_usage': defaultdict(int),
+            'colloquial_terms_detected': [],
+            'mapping_opportunities': [],
+            'terminology_coverage': {}
+        }
+        
+        for query in query_texts:
+            query_lower = query.lower()
+            
+            # Surface terminology detection
+            for surface_type, terms in surface_terms.items():
+                for term in terms:
+                    if term in query_lower:
+                        terminology_stats['surface_usage'][surface_type] += 1
+                        if term != surface_type:  # Colloquial term detected
+                            terminology_stats['colloquial_terms_detected'].append(f"Surface: '{term}' in query: '{query}'")
+            
+            # Tour terminology detection
+            for tour_type, terms in tour_terms.items():
+                for term in terms:
+                    if term in query_lower:
+                        terminology_stats['tour_usage'][tour_type] += 1
+                        if term != tour_type:  # Colloquial term detected
+                            terminology_stats['colloquial_terms_detected'].append(f"Tour: '{term}' in query: '{query}'")
+            
+            # Hand terminology detection
+            for hand_type, terms in hand_terms.items():
+                for term in terms:
+                    if term in query_lower:
+                        terminology_stats['hand_usage'][hand_type] += 1
+                        if term != hand_type:  # Colloquial term detected
+                            terminology_stats['colloquial_terms_detected'].append(f"Hand: '{term}' in query: '{query}'")
+            
+            # Round terminology detection
+            for round_type, terms in round_terms.items():
+                for term in terms:
+                    if term in query_lower:
+                        terminology_stats['round_usage'][round_type] += 1
+                        if term != round_type:  # Colloquial term detected
+                            terminology_stats['colloquial_terms_detected'].append(f"Round: '{term}' in query: '{query}'")
+        
+        # Calculate terminology coverage
+        total_queries = len(query_texts)
+        terminology_stats['terminology_coverage'] = {
+            'surface_queries': sum(terminology_stats['surface_usage'].values()),
+            'tour_queries': sum(terminology_stats['tour_usage'].values()),
+            'hand_queries': sum(terminology_stats['hand_usage'].values()),
+            'round_queries': sum(terminology_stats['round_usage'].values()),
+            'colloquial_terms_found': len(terminology_stats['colloquial_terms_detected']),
+            'terminology_usage_percentage': round(
+                (sum(terminology_stats['surface_usage'].values()) + 
+                 sum(terminology_stats['tour_usage'].values()) + 
+                 sum(terminology_stats['hand_usage'].values()) + 
+                 sum(terminology_stats['round_usage'].values())) / total_queries * 100, 2
+            ) if total_queries > 0 else 0
+        }
+        
+        # Generate mapping opportunities
+        terminology_stats['mapping_opportunities'] = self._generate_terminology_recommendations(
+            terminology_stats['colloquial_terms_detected'],
+            terminology_stats['surface_usage'],
+            terminology_stats['tour_usage'],
+            terminology_stats['hand_usage'],
+            terminology_stats['round_usage']
+        )
+        
+        return terminology_stats
+    
+    def _generate_terminology_recommendations(self, colloquial_terms: List[str], 
+                                           surface_usage: Dict, tour_usage: Dict, 
+                                           hand_usage: Dict, round_usage: Dict) -> List[str]:
+        """Generate recommendations for tennis terminology improvements."""
+        recommendations = []
+        
+        # Surface terminology recommendations
+        if surface_usage.get('clay', 0) > 0:
+            recommendations.append("Consider adding clay court surface detection for better query understanding")
+        if surface_usage.get('grass', 0) > 0:
+            recommendations.append("Grass court queries detected - ensure proper surface mapping")
+        
+        # Tour terminology recommendations
+        if tour_usage.get('atp', 0) > 0 and tour_usage.get('wta', 0) > 0:
+            recommendations.append("Both ATP and WTA queries detected - ensure combined tournament coverage")
+        if tour_usage.get('challenger', 0) > 0:
+            recommendations.append("Challenger tour queries detected - consider development tour coverage")
+        
+        # Hand terminology recommendations
+        if hand_usage.get('left', 0) > 0:
+            recommendations.append("Left-handed player queries detected - ensure southpaw terminology support")
+        if hand_usage.get('ambidextrous', 0) > 0:
+            recommendations.append("Ambidextrous player queries detected - ensure switch-hitter terminology")
+        
+        # Round terminology recommendations
+        if round_usage.get('semi', 0) > 0 or round_usage.get('quarter', 0) > 0:
+            recommendations.append("Tournament round queries detected - ensure proper round mapping")
+        if round_usage.get('qualifying', 0) > 0:
+            recommendations.append("Qualifying round queries detected - ensure Q1/Q2/Q3 mapping")
+        
+        # Colloquial terms recommendations
+        if len(colloquial_terms) > 0:
+            recommendations.append(f"Found {len(colloquial_terms)} colloquial tennis terms - ensure mapping tools are working")
+            recommendations.append("Consider expanding tennis terminology dictionary")
+        
+        return recommendations
+    
     def generate_insights_report(self) -> Dict[str, Any]:
         """Generate comprehensive insights report."""
         log_data = self.load_log_files()
@@ -438,6 +588,69 @@ def display_ml_analytics():
                     st.write("**Most Common Words:**")
                     for word, count in list(query_analysis['most_common_words'].items())[:5]:
                         st.write(f"- {word}: {count}")
+                
+                # Tennis terminology analysis
+                if 'tennis_terminology' in query_analysis:
+                    st.subheader("🎾 Tennis Terminology Analysis")
+                    terminology = query_analysis['tennis_terminology']
+                    
+                    if 'terminology_coverage' in terminology:
+                        coverage = terminology['terminology_coverage']
+                        col1, col2, col3, col4 = st.columns(4)
+                        
+                        with col1:
+                            st.metric("Surface Queries", coverage.get('surface_queries', 0))
+                        with col2:
+                            st.metric("Tour Queries", coverage.get('tour_queries', 0))
+                        with col3:
+                            st.metric("Hand Queries", coverage.get('hand_queries', 0))
+                        with col4:
+                            st.metric("Round Queries", coverage.get('round_queries', 0))
+                        
+                        st.metric("Terminology Usage", f"{coverage.get('terminology_usage_percentage', 0)}%")
+                        st.metric("Colloquial Terms Found", coverage.get('colloquial_terms_found', 0))
+                    
+                    # Surface terminology breakdown
+                    if 'surface_usage' in terminology:
+                        st.write("**Surface Terminology Usage:**")
+                        for surface, count in terminology['surface_usage'].items():
+                            if count > 0:
+                                st.write(f"- {surface.title()}: {count} queries")
+                    
+                    # Tour terminology breakdown
+                    if 'tour_usage' in terminology:
+                        st.write("**Tour Terminology Usage:**")
+                        for tour, count in terminology['tour_usage'].items():
+                            if count > 0:
+                                st.write(f"- {tour.upper()}: {count} queries")
+                    
+                    # Hand terminology breakdown
+                    if 'hand_usage' in terminology:
+                        st.write("**Hand Terminology Usage:**")
+                        for hand, count in terminology['hand_usage'].items():
+                            if count > 0:
+                                st.write(f"- {hand.title()}-handed: {count} queries")
+                    
+                    # Round terminology breakdown
+                    if 'round_usage' in terminology:
+                        st.write("**Round Terminology Usage:**")
+                        for round_type, count in terminology['round_usage'].items():
+                            if count > 0:
+                                st.write(f"- {round_type.replace('_', ' ').title()}: {count} queries")
+                    
+                    # Colloquial terms detected
+                    if 'colloquial_terms_detected' in terminology and terminology['colloquial_terms_detected']:
+                        st.write("**Colloquial Tennis Terms Detected:**")
+                        for term in terminology['colloquial_terms_detected'][:10]:  # Show first 10
+                            st.write(f"- {term}")
+                        if len(terminology['colloquial_terms_detected']) > 10:
+                            st.write(f"... and {len(terminology['colloquial_terms_detected']) - 10} more")
+                    
+                    # Mapping opportunities
+                    if 'mapping_opportunities' in terminology and terminology['mapping_opportunities']:
+                        st.write("**Terminology Improvement Opportunities:**")
+                        for opportunity in terminology['mapping_opportunities']:
+                            st.write(f"💡 {opportunity}")
                 
                 # Coverage issues analysis
                 if 'coverage_issues' in query_analysis:
