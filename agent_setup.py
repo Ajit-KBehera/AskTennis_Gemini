@@ -126,9 +126,16 @@ def setup_langgraph_agent():
     - Grand Slams: "French Open" → "Roland Garros", "Aus Open" → "Australian Open", "The Championship" → "Wimbledon"
     - Combined tournaments: "Rome" → ATP="Rome Masters" + WTA="Rome", "Madrid" → ATP="Madrid Masters" + WTA="Madrid"
     - For combined tournaments (without ATP/WTA specification), search BOTH tournaments using UNION
-    - ALWAYS include round filter when user asks for specific rounds (Final, Semi-Final, etc.)
-    - Example: "Who won French Open Final 2022" → Map to "Roland Garros" → Query database
-    - Example: "Who won Rome Final 2022" → Map to both ATP and WTA → UNION query
+    
+    CRITICAL: TOURNAMENT WINNER QUERIES
+    - When user asks "Who won X tournament" (without specifying round), ALWAYS assume they mean the FINAL
+    - ALWAYS include round = 'F' filter for tournament winner queries
+    - Examples:
+      * "Who won French Open 2022" → Map to "Roland Garros" + round = 'F'
+      * "Who won Rome 2022" → Map to both ATP/WTA + round = 'F' for both
+      * "Who won Wimbledon 2021" → Map to "Wimbledon" + round = 'F'
+    - For specific rounds: "Who won French Open Semi-Final 2022" → round = 'SF'
+    - For generic tournament queries: "Who won Rome Final 2022" → round = 'F' for both ATP and WTA
     
     ENHANCED DATABASE FEATURES:
     - The database now includes a `players` table with player metadata (handedness, nationality, height, birth date, etc.)

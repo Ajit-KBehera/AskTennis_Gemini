@@ -204,6 +204,13 @@ class TennisLogAnalyzer:
                 # Check if query is generic (no gender specification)
                 if not any(gender_word in query_lower for gender_word in ['men', 'women', 'male', 'female', 'atp', 'wta']):
                     incomplete_coverage_queries.append(query)
+            
+            # Detect tournament winner queries that might be missing Final round filter
+            if any(word in query_lower for word in ['won', 'winner', 'champion']) and any(tournament in query_lower for tournament in ['wimbledon', 'french open', 'roland garros', 'us open', 'australian open', 'aus open', 'rome', 'basel', 'madrid']):
+                # Check if round is explicitly specified
+                if not any(round_word in query_lower for round_word in ['final', 'semi', 'quarter', 'round', 'f', 'sf', 'qf']):
+                    # This is a tournament winner query without explicit round - should default to Final
+                    tournament_queries.append(f"{query} (implicit Final)")
         
         return {
             'total_queries': total_queries,
