@@ -366,6 +366,9 @@ if user_question:
     # Create placeholders for dynamic content
     dataframe_placeholder = st.empty()
     
+    # Clear any previous dataframe content at the start of each new query
+    dataframe_placeholder.empty()
+    
     with st.spinner("The AI is analyzing your question and querying the database..."):
         try:
             # The config dictionary ensures each user gets their own conversation history.
@@ -486,8 +489,8 @@ if user_question:
                         except:
                             continue
             else:
-                # Clear the dataframe placeholder for non-head-to-head queries
-                dataframe_placeholder.empty()
+                # For non-head-to-head queries, the dataframe placeholder is already cleared at the start
+                pass
 
             if final_answer and final_answer.strip():
                 st.success("Here's what I found:")
