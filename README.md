@@ -18,6 +18,7 @@
 - **LangGraph Framework**: Stateful AI agent architecture
 - **Intelligent Responses**: Context-aware tennis insights
 - **Historical Analysis**: AI-powered tennis history exploration
+- **Modular Agent**: Clean separation of AI logic and UI components
 
 ### 📊 **Comprehensive Analytics**
 - **Player Metadata**: Handedness, nationality, height, birth dates
@@ -26,6 +27,13 @@
 - **Tournament Types**: Main Tour, Qualifying, Challenger, Futures, ITF
 - **Ranking Context**: Historical ranking analysis with match context
 - **Head-to-Head**: Complete player matchup analysis
+
+### 🏗️ **Modern Architecture**
+- **Modular Design**: 5 focused modules for maintainability
+- **Clean Code**: 58-line main app vs 571-line monolith
+- **Testable Components**: Individual module testing capabilities
+- **Team Collaboration**: Parallel development on different modules
+- **Code Reusability**: Components can be reused across projects
 
 ## 🛠️ Technical Stack
 
@@ -37,11 +45,34 @@
 - **Visualization**: Plotly for interactive charts
 - **Data Sources**: ATP, WTA, Grand Slam, and historical tennis data
 
+## 🏗️ Modular Architecture
+
+AskTennis features a clean, modular architecture designed for maintainability, testability, and scalability:
+
+### 🧩 **Core Modules**
+- **`app.py`** (58 lines) - Main orchestration and entry point
+- **`logging_config.py`** (119 lines) - Comprehensive logging system
+- **`database_utils.py`** (57 lines) - Database utilities and fuzzy matching
+- **`agent_setup.py`** (254 lines) - LangGraph agent configuration
+- **`ui_components.py`** (183 lines) - Streamlit UI components
+
+### 🎯 **Benefits of Modular Design**
+- **Single Responsibility**: Each module has a focused purpose
+- **Easy Testing**: Individual modules can be unit tested
+- **Code Reusability**: Components can be reused across projects
+- **Maintainability**: Changes are isolated to specific modules
+- **Collaboration**: Multiple developers can work on different modules
+- **Readability**: Main app is now just 58 lines vs 571 lines
+
 ## 📁 Project Structure
 
 ```
 AskTennis_Gemini/
-├── app.py                          # 🚀 Main Streamlit application
+├── app.py                          # 🚀 Main Streamlit application (58 lines)
+├── logging_config.py               # 📝 Logging system and utilities
+├── database_utils.py              # 🗄️ Database utilities and fuzzy matching
+├── agent_setup.py                 # 🤖 LangGraph agent configuration
+├── ui_components.py               # 🎨 Streamlit UI components
 ├── load_data.py                    # 🗄️ Enhanced database creation
 ├── requirements.txt               # 📦 Unified dependencies
 ├── tennis_data.db                 # 🗃️ SQLite database (created after setup)
@@ -301,6 +332,10 @@ For issues or questions:
 
 **Status**: ✅ Production Ready - Complete Tennis Database with AI Integration
 
+**Architecture**: 🏗️ Modular Design - 5 focused modules (58-line main app vs 571-line monolith)
+
 **Database Coverage**: 147 years (1877-2024) | 1.7M+ matches | 136K+ players | 5.3M+ rankings
 
 **AI Capabilities**: Natural language queries | Historical analysis | Player insights | Tournament analytics
+
+**Code Quality**: 🧩 Single Responsibility | 🧪 Testable Components | 🔄 Reusable Modules | 👥 Team Collaboration Ready
