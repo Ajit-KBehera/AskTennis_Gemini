@@ -177,6 +177,10 @@ class TennisLogAnalyzer:
             'other': 0
         }
         
+        # Enhanced analysis for tournament queries
+        tournament_queries = []
+        incomplete_coverage_queries = []
+        
         for query in query_texts:
             query_lower = query.lower()
             if any(word in query_lower for word in ['win', 'match', 'victory', 'defeat']):
@@ -193,6 +197,13 @@ class TennisLogAnalyzer:
                 categories['year'] += 1
             else:
                 categories['other'] += 1
+            
+            # Detect tournament queries that might need both ATP and WTA coverage
+            if any(tournament in query_lower for tournament in ['basel', 'rome', 'madrid', 'indian wells', 'miami', 'monte carlo', 'hamburg', 'stuttgart', 'eastbourne', 'newport', 'atlanta', 'washington', 'toronto', 'montreal', 'cincinnati', 'winston salem', 'stockholm', 'antwerp', 'vienna', 'paris']):
+                tournament_queries.append(query)
+                # Check if query is generic (no gender specification)
+                if not any(gender_word in query_lower for gender_word in ['men', 'women', 'male', 'female', 'atp', 'wta']):
+                    incomplete_coverage_queries.append(query)
         
         return {
             'total_queries': total_queries,
@@ -200,7 +211,10 @@ class TennisLogAnalyzer:
             'avg_query_length': round(avg_query_length, 2),
             'most_common_words': dict(word_frequencies.most_common(10)),
             'query_categories': categories,
-            'category_percentages': {k: round(v/total_queries*100, 2) for k, v in categories.items()}
+            'category_percentages': {k: round(v/total_queries*100, 2) for k, v in categories.items()},
+            'tournament_queries': tournament_queries,
+            'incomplete_coverage_queries': incomplete_coverage_queries,
+            'coverage_issues': self._analyze_coverage_issues(incomplete_coverage_queries)
         }
     
     def analyze_performance(self, log_data: List[Dict]) -> Dict[str, Any]:
@@ -327,6 +341,35 @@ class TennisLogAnalyzer:
         
         return recommendations
     
+    def _analyze_coverage_issues(self, incomplete_queries: List[str]) -> Dict[str, Any]:
+        """Analyze coverage issues in tournament queries."""
+        if not incomplete_queries:
+            return {"message": "No coverage issues detected"}
+        
+        # Analyze the specific problem
+        basel_queries = [q for q in incomplete_queries if 'basel' in q.lower()]
+        rome_queries = [q for q in incomplete_queries if 'rome' in q.lower()]
+        
+        coverage_analysis = {
+            'total_incomplete_queries': len(incomplete_queries),
+            'basel_queries': basel_queries,
+            'rome_queries': rome_queries,
+            'problem_description': "Generic tournament queries missing gender specification",
+            'recommendations': [
+                "For generic tournament queries, search both ATP and WTA tables",
+                "Add gender detection to query understanding",
+                "Implement comprehensive tournament coverage",
+                "Suggest both men's and women's results when applicable"
+            ],
+            'sql_improvements': [
+                "Use UNION to combine ATP and WTA results",
+                "Add tournament_type column to distinguish men's/women's",
+                "Implement smart query expansion for generic questions"
+            ]
+        }
+        
+        return coverage_analysis
+    
     def generate_insights_report(self) -> Dict[str, Any]:
         """Generate comprehensive insights report."""
         log_data = self.load_log_files()
@@ -388,6 +431,34 @@ def display_ml_analytics():
                     st.write("**Most Common Words:**")
                     for word, count in list(query_analysis['most_common_words'].items())[:5]:
                         st.write(f"- {word}: {count}")
+                
+                # Coverage issues analysis
+                if 'coverage_issues' in query_analysis:
+                    st.subheader("🚨 Coverage Issues Detected")
+                    coverage = query_analysis['coverage_issues']
+                    
+                    if 'total_incomplete_queries' in coverage:
+                        st.warning(f"⚠️ Found {coverage['total_incomplete_queries']} queries with incomplete coverage")
+                    
+                    if 'basel_queries' in coverage and coverage['basel_queries']:
+                        st.write("**Basel Tournament Queries:**")
+                        for query in coverage['basel_queries']:
+                            st.write(f"- {query}")
+                    
+                    if 'rome_queries' in coverage and coverage['rome_queries']:
+                        st.write("**Rome Tournament Queries:**")
+                        for query in coverage['rome_queries']:
+                            st.write(f"- {query}")
+                    
+                    if 'recommendations' in coverage:
+                        st.write("**ML Recommendations:**")
+                        for rec in coverage['recommendations']:
+                            st.write(f"✅ {rec}")
+                    
+                    if 'sql_improvements' in coverage:
+                        st.write("**SQL Improvements:**")
+                        for imp in coverage['sql_improvements']:
+                            st.write(f"🔧 {imp}")
             
             # Performance insights
             if 'performance_analysis' in report:
