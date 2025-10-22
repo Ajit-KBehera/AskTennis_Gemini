@@ -31,7 +31,7 @@ except Exception as e:
 from ui.ui_factory import run_main_app
 
 # --- ML Analytics ---
-from ml_analytics import TennisLogAnalyzer
+from ml.ml_factory import TennisLogAnalyzer
 
 # Run the main application
 run_main_app(agent_graph, logger)
