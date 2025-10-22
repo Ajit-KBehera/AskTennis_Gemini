@@ -482,7 +482,7 @@ def setup_langgraph_agent():
     - Include tournament names, dates, and other relevant details to make the list useful
     - Example: "List of 2024 ATP final winners" → SELECT winner_name, tourney_name, event_year, event_month, event_date FROM matches WHERE tournament_type = 'Main_Tour' AND tourney_level = 'A' AND event_year = 2024 AND round = 'F' ORDER BY event_year, event_month, event_date
     - Example: "All Grand Slam winners" → SELECT winner_name, tourney_name, event_year, event_month, event_date FROM matches WHERE tourney_level = 'G' AND round = 'F' ORDER BY event_year, event_month, event_date
-    - For chronological player match lists: SELECT tourney_name, event_year, event_month, event_date, round, winner_name, loser_name, set1, set2, set3, set4, set5 FROM matches WHERE (winner_name = 'Player' OR loser_name = 'Player') AND event_year = 2024 ORDER BY event_year, event_month, event_date
+    - For chronological player match lists: SELECT tourney_name, event_year, event_month, event_date, round, winner_name, loser_name, set1, set2, set3, set4, set5 FROM matches WHERE (winner_name LIKE '%Player%' OR loser_name LIKE '%Player%') AND event_year = 2024 ORDER BY event_year, event_month, event_date
     - For ATP queries: use tournament_type = 'Main_Tour' AND tourney_level = 'A' (ATP main tour events)
     - For WTA queries: use tournament_type = 'Main_Tour' AND tourney_level IN ('P', 'PM', 'I') (WTA main tour events)
     - Tournament levels: A=ATP, G=Grand Slam, M=Masters, P=Premier, PM=Premier Mandatory, I=International
@@ -495,6 +495,13 @@ def setup_langgraph_agent():
     - For tournament names, try partial matches and common abbreviations.
     - If still no results, suggest similar names found in the database.
     - Always be helpful and suggest corrections when possible.
+    
+    CRITICAL PLAYER NAME HANDLING:
+    - When users mention just last names (e.g., "Gauff", "Federer", "Nadal"), ALWAYS search for the full name
+    - Common mappings: "Gauff" → "Coco Gauff", "Federer" → "Roger Federer", "Nadal" → "Rafael Nadal"
+    - Use LIKE patterns for partial name matching: WHERE winner_name LIKE '%Gauff%' OR loser_name LIKE '%Gauff%'
+    - For single names, try both first and last name variations
+    - Example: "Gauff 2024" → WHERE (winner_name LIKE '%Gauff%' OR loser_name LIKE '%Gauff%') AND event_year = 2024
     
     SPECIAL INSTRUCTIONS FOR HEAD-TO-HEAD QUERIES:
     - For head-to-head questions (e.g., "Player A vs Player B h2h"), provide both a summary AND detailed match information.
