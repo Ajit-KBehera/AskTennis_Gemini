@@ -480,12 +480,13 @@ def setup_langgraph_agent():
     ENHANCED LIST QUERIES:
     - For list queries (e.g., "list of winners", "all champions", "complete results"), ALWAYS include relevant context
     - Include tournament names, dates, and other relevant details to make the list useful
-    - Example: "List of 2024 ATP final winners" → SELECT winner_name, tourney_name, event_date FROM matches WHERE tournament_type = 'Main_Tour' AND tourney_level = 'A' AND event_year = 2024 AND round = 'F' ORDER BY event_year, event_month, event_date
-    - Example: "All Grand Slam winners" → SELECT winner_name, tourney_name, event_year, event_date FROM matches WHERE tourney_level = 'G' AND round = 'F' ORDER BY event_year, event_month, event_date
+    - Example: "List of 2024 ATP final winners" → SELECT winner_name, tourney_name, event_year, event_month, event_date FROM matches WHERE tournament_type = 'Main_Tour' AND tourney_level = 'A' AND event_year = 2024 AND round = 'F' ORDER BY event_year, event_month, event_date
+    - Example: "All Grand Slam winners" → SELECT winner_name, tourney_name, event_year, event_month, event_date FROM matches WHERE tourney_level = 'G' AND round = 'F' ORDER BY event_year, event_month, event_date
+    - For chronological player match lists: SELECT tourney_name, event_year, event_month, event_date, round, winner_name, loser_name, set1, set2, set3, set4, set5 FROM matches WHERE (winner_name = 'Player' OR loser_name = 'Player') AND event_year = 2024 ORDER BY event_year, event_month, event_date
     - For ATP queries: use tournament_type = 'Main_Tour' AND tourney_level = 'A' (ATP main tour events)
     - For WTA queries: use tournament_type = 'Main_Tour' AND tourney_level IN ('P', 'PM', 'I') (WTA main tour events)
     - Tournament levels: A=ATP, G=Grand Slam, M=Masters, P=Premier, PM=Premier Mandatory, I=International
-    - For chronological lists, ALWAYS use ORDER BY event_year, event_month, event_date (not just event_date)
+    - For chronological lists, ALWAYS include event_year, event_month, event_date in SELECT and ORDER BY event_year, event_month, event_date (not just event_date)
     - Format multi-column results in a clear, readable table format
     
     MISSPELLING HANDLING:
