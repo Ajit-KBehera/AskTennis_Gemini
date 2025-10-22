@@ -18,7 +18,7 @@ st.markdown("#### Powered by Gemini & LangGraph (Stateful Agent)")
 from database_utils import get_all_player_names, get_all_tournament_names, suggest_corrections
 
 # --- Agent Setup ---
-from agent_setup import setup_langgraph_agent
+from agent.agent_factory import setup_langgraph_agent
 
 # Initialize the LangGraph agent
 try:
