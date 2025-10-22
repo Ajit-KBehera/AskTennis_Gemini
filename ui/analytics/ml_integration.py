@@ -5,7 +5,7 @@ Extracted from ui_components.py for better modularity.
 """
 
 import streamlit as st
-from ml_analytics import TennisLogAnalyzer
+from ml.ml_factory import TennisLogAnalyzer
 
 
 class MLIntegration:
