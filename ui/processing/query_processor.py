@@ -8,7 +8,7 @@ import streamlit as st
 import ast
 from datetime import datetime
 from langchain_core.messages import HumanMessage, AIMessage
-from logging_config import log_user_query, log_llm_interaction, log_final_response, log_error
+from tennis_logging.logging_factory import log_user_query, log_llm_interaction, log_final_response, log_error
 from ui.formatting.data_formatter import DataFormatter
 
 

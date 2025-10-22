@@ -7,7 +7,7 @@ from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.messages import AIMessage
 from datetime import datetime
-from logging_config import log_tool_usage, log_database_query, log_error
+from tennis_logging.logging_factory import log_tool_usage, log_database_query, log_error
 from agent.agent_state import AgentState
 from typing import List, Any
 

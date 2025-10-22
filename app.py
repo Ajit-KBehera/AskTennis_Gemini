@@ -1,7 +1,7 @@
 import streamlit as st
 
 # --- Logging Configuration ---
-from logging_config import (
+from tennis_logging.logging_factory import (
     setup_logging, log_user_query, log_llm_interaction, 
     log_database_query, log_tool_usage, log_final_response, log_error
 )
