@@ -28,7 +28,7 @@ except Exception as e:
     st.stop()
 
 # --- UI Components ---
-from ui_components import run_main_app
+from ui.ui_factory import run_main_app
 
 # --- ML Analytics ---
 from ml_analytics import TennisLogAnalyzer
