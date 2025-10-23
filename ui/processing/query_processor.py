@@ -6,8 +6,6 @@ Extracted from ui_components.py for better modularity.
 
 import streamlit as st
 import ast
-import json
-import os
 from datetime import datetime
 from langchain_core.messages import HumanMessage, AIMessage
 from tennis_logging.logging_factory import log_user_query, log_llm_interaction, log_final_response, log_error
@@ -117,46 +115,6 @@ class QueryProcessor:
         
         return final_answer
     
-    def log_feedback(self, feedback_type: str, user_question: str, response: str, processing_time: float):
-        """
-        Log user feedback for ML analytics improvement.
-        
-        Args:
-            feedback_type: 'positive' or 'negative'
-            user_question: The original user query
-            response: The AI response
-            processing_time: Time taken to process the query
-        """
-        try:
-            feedback_data = {
-                "timestamp": datetime.now().isoformat(),
-                "feedback_type": feedback_type,
-                "user_question": user_question,
-                "response_length": len(response),
-                "processing_time": processing_time,
-                "session_id": "user_session"  # Could be made dynamic later
-            }
-            
-            # Create feedback directory if it doesn't exist
-            feedback_dir = "logs/feedback"
-            os.makedirs(feedback_dir, exist_ok=True)
-            
-            # Log to feedback file
-            feedback_file = os.path.join(feedback_dir, f"feedback_{datetime.now().strftime('%Y%m%d')}.jsonl")
-            
-            # Ensure the file exists and is writable
-            with open(feedback_file, "a", encoding="utf-8") as f:
-                f.write(json.dumps(feedback_data, ensure_ascii=False) + "\n")
-                f.flush()  # Ensure data is written immediately
-            
-            # Also log to console for debugging
-            print(f"✅ Feedback logged: {feedback_type} for query: {user_question[:50]}...")
-                
-        except Exception as e:
-            # Don't let feedback logging break the main flow
-            print(f"❌ Error logging feedback: {e}")
-            import traceback
-            traceback.print_exc()
     
     def handle_user_query(self, user_question: str, agent_graph, logger):
         """Handle user query processing and response display."""
@@ -195,33 +153,6 @@ class QueryProcessor:
                     log_final_response(final_answer, processing_time)
                     st.success("Here's what I found:")
                     st.markdown(final_answer)
-                    
-                    # Add feedback buttons (only show if not already given feedback for this query)
-                    feedback_key = f"feedback_given_{hash(user_question)}"
-                    if feedback_key not in st.session_state:
-                        st.markdown("---")
-                        st.markdown("**Was this response helpful?**")
-                        col1, col2, col3 = st.columns([1, 1, 4])
-                        
-                        with col1:
-                            if st.button("👍 Helpful", key=f"positive_{hash(user_question)}"):
-                                self.log_feedback("positive", user_question, final_answer, processing_time)
-                                st.session_state[feedback_key] = "positive"
-                                st.success("Thank you for your feedback! 👍")
-                                st.rerun()
-                        
-                        with col2:
-                            if st.button("👎 Not Helpful", key=f"negative_{hash(user_question)}"):
-                                self.log_feedback("negative", user_question, final_answer, processing_time)
-                                st.session_state[feedback_key] = "negative"
-                                st.warning("Thank you for your feedback! 👎")
-                                st.rerun()
-                    else:
-                        # Show feedback confirmation
-                        feedback_type = st.session_state[feedback_key]
-                        emoji = "👍" if feedback_type == "positive" else "👎"
-                        st.markdown("---")
-                        st.info(f"Thank you for your feedback! {emoji}")
                 else:
                     # Log warning case
                     log_final_response("No clear response generated", processing_time)
