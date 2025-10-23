@@ -9,7 +9,7 @@ import pandas as pd
 from datetime import datetime
 import os
 
-def get_matches_data(db_path="tennis_data_new.db"):
+def get_matches_data(db_path="tennis_data.db"):
     """
     Get matches data using the provided SQL query
     """

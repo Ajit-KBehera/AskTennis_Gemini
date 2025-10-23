@@ -9,7 +9,7 @@ import sqlite3
 import pandas as pd
 import os
 
-def find_consecutive_upset_streaks(db_path="tennis_data_new.db", min_streak=6):
+def find_consecutive_upset_streaks(db_path="tennis_data.db", min_streak=6):
     """
     Find consecutive upset streaks using the sophisticated SQL query
     """

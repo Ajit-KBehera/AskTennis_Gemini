@@ -25,7 +25,7 @@ class AgentConfig:
     def __init__(self):
         self.model_name = "gemini-2.5-flash-lite"
         self.temperature = 0
-        self.db_path = "sqlite:///tennis_data_new.db"
+        self.db_path = "sqlite:///tennis_data.db"
         self.api_key = None  # Will be set by setup method
     
     def get_llm_config(self) -> dict:
