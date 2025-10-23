@@ -7,12 +7,7 @@ import streamlit as st
 from agent.agent_state import AgentState
 from agent.agent_config import AgentConfigManager
 from llm.llm_setup import LLMFactory
-from tennis.tennis_mappings import TennisMappingFactory
-from tennis.tennis_mappings_cached import CachedTennisMappingFactory
-from tennis.optimized_db_tools import OptimizedDatabaseTools
-from tennis.performance_optimizer import performance_monitor, performance_optimizer
-from tennis.tennis_prompts import TennisPromptBuilder
-from tennis.tennis_prompts_optimized import OptimizedTennisPromptBuilder
+from tennis.tennis_core import TennisMappingTools, TennisPromptBuilder, PerformanceMonitor
 from graph.langgraph_builder import LangGraphBuilder
 
 
@@ -49,7 +44,7 @@ def setup_langgraph_agent():
     base_tools = toolkit.get_tools()
     
     # Add cached tennis mapping tools for better performance
-    tennis_tools = CachedTennisMappingFactory.create_all_mapping_tools()
+    tennis_tools = TennisMappingTools.create_all_mapping_tools()
     
     # Note: Optimized database tools removed to prevent infinite loops
     # The original sql_db_query tool from base_tools is sufficient
@@ -58,8 +53,8 @@ def setup_langgraph_agent():
     
     # Create optimized prompt
     db_schema = db.get_table_info()
-    system_prompt = OptimizedTennisPromptBuilder.create_optimized_system_prompt(db_schema)
-    prompt = OptimizedTennisPromptBuilder.create_optimized_prompt_template(system_prompt)
+    system_prompt = TennisPromptBuilder.create_system_prompt(db_schema)
+    prompt = TennisPromptBuilder.create_optimized_prompt_template(system_prompt)
     
     # Bind tools to LLM
     llm_with_tools = llm.bind_tools(all_tools)
@@ -94,14 +89,14 @@ class AgentFactory:
         
         # Get tools
         base_tools = toolkit.get_tools()
-        tennis_tools = CachedTennisMappingFactory.create_all_mapping_tools()
+        tennis_tools = TennisMappingTools.create_all_mapping_tools()
         # Note: Optimized database tools removed to prevent infinite loops
         all_tools = base_tools + tennis_tools
         
         # Create optimized prompt
         db_schema = db.get_table_info()
-        system_prompt = OptimizedTennisPromptBuilder.create_optimized_system_prompt(db_schema)
-        prompt = OptimizedTennisPromptBuilder.create_optimized_prompt_template(system_prompt)
+        system_prompt = TennisPromptBuilder.create_system_prompt(db_schema)
+        prompt = TennisPromptBuilder.create_optimized_prompt_template(system_prompt)
         
         # Bind tools to LLM
         llm_with_tools = llm.bind_tools(all_tools)
@@ -138,8 +133,8 @@ class AgentFactory:
         
         # Create optimized prompt
         db_schema = db.get_table_info()
-        system_prompt = OptimizedTennisPromptBuilder.create_optimized_system_prompt(db_schema)
-        prompt = OptimizedTennisPromptBuilder.create_optimized_prompt_template(system_prompt)
+        system_prompt = TennisPromptBuilder.create_system_prompt(db_schema)
+        prompt = TennisPromptBuilder.create_optimized_prompt_template(system_prompt)
         
         # Bind tools to LLM
         llm_with_tools = llm.bind_tools(all_tools)

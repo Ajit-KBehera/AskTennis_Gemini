@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 # Add the parent directory to Python path to import tennis module
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from tennis.tennis_mappings import standardize_tourney_level
+from tennis.tennis_core import standardize_tourney_level
 
 # --- Configuration ---
 # Get the project root directory (parent of load_data)

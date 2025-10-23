@@ -1,9 +1,38 @@
 """
-Tennis module for AskTennis AI application.
-Contains tennis-specific tools, mappings, and prompt templates.
+Tennis Module - Unified Tennis Functionality
+Consolidated tennis tools, mappings, and prompts.
 """
 
-from .tennis_mappings import TennisMappingFactory
-from .tennis_prompts import TennisPromptBuilder
+from .tennis_core import (
+    TennisMappingTools,
+    TennisPromptBuilder,
+    PerformanceMonitor,
+    standardize_tourney_level,
+    ROUND_MAPPINGS,
+    SURFACE_MAPPINGS,
+    TOUR_MAPPINGS,
+    HAND_MAPPINGS,
+    GRAND_SLAM_MAPPINGS,
+    TOURNEY_LEVEL_MAPPINGS,
+    COMBINED_TOURNAMENT_MAPPINGS
+)
 
-__all__ = ['TennisMappingFactory', 'TennisPromptBuilder']
+# Backward compatibility
+TennisMappingFactory = TennisMappingTools
+OptimizedTennisPromptBuilder = TennisPromptBuilder
+
+__all__ = [
+    'TennisMappingTools',
+    'TennisPromptBuilder', 
+    'PerformanceMonitor',
+    'standardize_tourney_level',
+    'TennisMappingFactory',  # Backward compatibility
+    'OptimizedTennisPromptBuilder',  # Backward compatibility
+    'ROUND_MAPPINGS',
+    'SURFACE_MAPPINGS', 
+    'TOUR_MAPPINGS',
+    'HAND_MAPPINGS',
+    'GRAND_SLAM_MAPPINGS',
+    'TOURNEY_LEVEL_MAPPINGS',
+    'COMBINED_TOURNAMENT_MAPPINGS'
+]

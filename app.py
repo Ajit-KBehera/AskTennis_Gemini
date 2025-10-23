@@ -20,19 +20,18 @@ from database_utils import get_all_player_names, get_all_tournament_names, sugge
 # --- Agent Setup ---
 from agent.agent_factory import setup_langgraph_agent
 
-# Initialize the LangGraph agent
-try:
-    agent_graph = setup_langgraph_agent()
-except Exception as e:
-    st.error(f"Failed to initialize the AI agent: {e}")
-    st.stop()
-
 # --- UI Components ---
 from ui.ui_factory import run_main_app
 
 # --- ML Analytics ---
 from ml.ml_factory import TennisLogAnalyzer
 
-# Run the main application
-run_main_app(agent_graph, logger)
+# Initialize the LangGraph agent
+try:
+    agent_graph = setup_langgraph_agent()
+    # Run the main application
+    run_main_app(agent_graph, logger)
+except Exception as e:
+    st.error(f"Failed to initialize the AI agent: {e}")
+    st.stop()
 
