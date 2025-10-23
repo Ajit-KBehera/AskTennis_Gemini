@@ -397,18 +397,24 @@ class TennisPromptBuilder:
         CRITICAL: TOURNAMENT WINNER QUERIES (OPTIMIZED)
         - When user asks "Who won X tournament" (without specifying round), ALWAYS assume they mean the FINAL
         - ALWAYS include round = 'F' filter for tournament winner queries
+        - CRITICAL: When user specifies "ATP" or "WTA", ALWAYS filter by tour column
         - Use sql_db_query with optimized queries that include player names
         - Examples:
           * "Who won French Open 2022" → Use sql_db_query with optimized query for "Roland Garros" + round = 'F'
           * "Who won Rome 2022" → Use sql_db_query for both ATP/WTA tournaments
           * "Who won Wimbledon 2021" → Use sql_db_query with optimized query for "Wimbledon" + round = 'F'
+          * "ATP Indian Wells 2017" → Use sql_db_query with tour = 'ATP' + tourney_name = 'Indian Wells' + event_year = 2017
+          * "WTA Indian Wells 2017" → Use sql_db_query with tour = 'WTA' + tourney_name = 'Indian Wells' + event_year = 2017
         - For specific rounds: "Who won French Open Semi-Final 2022" → round = 'SF'
         - For generic tournament queries: "Who won Rome Final 2022" → round = 'F' for both ATP and WTA
+        - ALWAYS check if user specifies ATP/WTA and filter accordingly
         
         CRITICAL: TENNIS ROUND TERMINOLOGY (CACHED)
         - Tennis fans use various round names that don't match database values
         - ALWAYS use get_tennis_round_mapping tool to convert fan round names to database values
         - These mappings are now CACHED for better performance
+        - IMPORTANT: The database column is called 'round', NOT 'round_num'
+        - When ordering by rounds, use ORDER BY round, not ORDER BY round_num
         - Common mappings:
           * "Final" → "F", "Semi-Final" → "SF", "Quarter-Final" → "QF"
           * "Round of 16" → "R16", "Round of 32" → "R32", "Round of 64" → "R64"
@@ -419,6 +425,18 @@ class TennisPromptBuilder:
           * "Who won French Open Semi-Final 2022" → round = 'SF'
           * "Who reached Wimbledon Quarter-Finals 2021" → round = 'QF'
           * "Who won Rome Last 16 2022" → round = 'R16'
+          * "Differentiate by rounds" → ORDER BY round (NOT round_num)
+        
+        CRITICAL: TOUR FILTERING (ATP vs WTA)
+        - CRITICAL: When user specifies "ATP" or "WTA", ALWAYS filter by tour column
+        - The database has a 'tour' column that distinguishes between ATP and WTA matches
+        - Examples:
+          * "ATP Indian Wells 2017" → Add tour = 'ATP' to WHERE clause
+          * "WTA Indian Wells 2017" → Add tour = 'WTA' to WHERE clause
+          * "ATP French Open 2022" → Add tour = 'ATP' to WHERE clause
+          * "WTA French Open 2022" → Add tour = 'WTA' to WHERE clause
+        - If user doesn't specify ATP/WTA, search both tours using UNION
+        - ALWAYS check user query for ATP/WTA specification and filter accordingly
         
         CRITICAL: TENNIS SURFACE TERMINOLOGY (CACHED)
         - Tennis fans use various surface names that don't match database values
