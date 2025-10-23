@@ -23,8 +23,6 @@ from agent.agent_factory import setup_langgraph_agent
 # --- UI Components ---
 from ui.ui_factory import run_main_app
 
-# --- ML Analytics ---
-from ml.ml_factory import TennisLogAnalyzer
 
 # Initialize the LangGraph agent
 try:
