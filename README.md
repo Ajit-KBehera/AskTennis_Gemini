@@ -65,8 +65,7 @@ AskTennis features a clean, modular architecture designed for maintainability, t
 - **`llm/`** - LLM setup and configuration management
 - **`tennis/`** - Tennis-specific tools, mappings, and performance optimizations
 - **`tennis_logging/`** - Comprehensive logging system with handlers
-- **`ui/`** - User interface components and analytics
-- **`ml/`** - Machine learning analytics and performance monitoring
+- **`ui/`** - User interface components
 - **`graph/`** - LangGraph builder and state management
 
 ### 🎯 **Benefits of Modular Design**
@@ -103,15 +102,9 @@ AskTennis_Streamlit/
 │   ├── handlers/                  # Specialized logging handlers
 │   └── setup/                     # Logging configuration
 ├── ui/                           # 🎨 User Interface Components
-│   ├── analytics/                # Performance analytics and dashboards
 │   ├── display/                  # UI display components
 │   ├── formatting/               # Data formatting utilities
 │   └── processing/               # Query processing
-├── ml/                           # 🤖 Machine Learning Analytics
-│   ├── analysis/                 # Performance and error analysis
-│   ├── display/                  # ML dashboard components
-│   ├── parsing/                  # Log parsing utilities
-│   └── terminology/              # Terminology analysis
 ├── graph/                        # 🔗 LangGraph Builder
 │   └── langgraph_builder.py      # Graph construction and management
 ├── docs/                         # 📚 Documentation

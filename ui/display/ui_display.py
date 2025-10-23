@@ -66,25 +66,3 @@ class UIDisplay:
         """Display tip message to user."""
         st.info(f"💡 **Tip**: {message}")
     
-    @staticmethod
-    def display_coverage_insights(ml_integration):
-        """Display coverage insights if available."""
-        if ml_integration.has_coverage_issues():
-            coverage_summary = ml_integration.get_coverage_summary()
-            st.info(f"📊 **Coverage Analysis**: {coverage_summary}")
-    
-    @staticmethod
-    def display_performance_insights(ml_integration):
-        """Display performance insights if available."""
-        performance_summary = ml_integration.get_performance_summary()
-        if performance_summary != "No performance data available.":
-            st.info(f"⚡ **Performance**: {performance_summary}")
-    
-    @staticmethod
-    def display_session_insights(ml_integration):
-        """Display session insights if available."""
-        # Display coverage insights
-        UIDisplay.display_coverage_insights(ml_integration)
-        
-        # Display performance insights
-        UIDisplay.display_performance_insights(ml_integration)
