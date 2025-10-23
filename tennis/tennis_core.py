@@ -392,7 +392,12 @@ class TennisPromptBuilder:
         - These mappings are now CACHED for better performance
         - Grand Slams: "French Open" → "Roland Garros", "Aus Open" → "Australian Open", "The Championship" → "Wimbledon"
         - Combined tournaments: "Rome" → ATP="Rome Masters" + WTA="Rome", "Madrid" → ATP="Madrid Masters" + WTA="Madrid"
-        - For combined tournaments (without ATP/WTA specification), search BOTH tournaments using UNION
+        - CRITICAL: For combined tournaments (without ATP/WTA specification), ALWAYS search BOTH tournaments using UNION
+        - Examples:
+          * "Miami 2017" → Search both "Miami Masters" (ATP) AND "Miami" (WTA) using UNION
+          * "Rome 2022" → Search both "Rome Masters" (ATP) AND "Rome" (WTA) using UNION
+          * "Madrid 2021" → Search both "Madrid Masters" (ATP) AND "Madrid" (WTA) using UNION
+        - NEVER search only one tournament when user doesn't specify ATP/WTA
         
         CRITICAL: TOURNAMENT WINNER QUERIES (OPTIMIZED)
         - When user asks "Who won X tournament" (without specifying round), ALWAYS assume they mean the FINAL
@@ -426,6 +431,18 @@ class TennisPromptBuilder:
           * "Who reached Wimbledon Quarter-Finals 2021" → round = 'QF'
           * "Who won Rome Last 16 2022" → round = 'R16'
           * "Differentiate by rounds" → ORDER BY round (NOT round_num)
+        
+        CRITICAL: COMBINED TOURNAMENT QUERIES (ATP + WTA)
+        - CRITICAL: When user asks for tournament without specifying ATP/WTA, ALWAYS search BOTH tours
+        - Use UNION to combine ATP and WTA results from the same tournament
+        - Examples:
+          * "Miami 2017 all match results" → UNION of "Miami Masters" (ATP) + "Miami" (WTA)
+          * "Rome 2022 results" → UNION of "Rome Masters" (ATP) + "Rome" (WTA)
+          * "Madrid 2021 matches" → UNION of "Madrid Masters" (ATP) + "Madrid" (WTA)
+        - SQL Pattern: SELECT ... FROM matches WHERE tourney_name = 'Tournament ATP' AND event_year = YYYY
+                      UNION ALL
+                      SELECT ... FROM matches WHERE tourney_name = 'Tournament WTA' AND event_year = YYYY
+        - NEVER return only ATP or only WTA results when user doesn't specify tour
         
         CRITICAL: TOUR FILTERING (ATP vs WTA)
         - CRITICAL: When user specifies "ATP" or "WTA", ALWAYS filter by tour column
