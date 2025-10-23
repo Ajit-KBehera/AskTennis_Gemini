@@ -11,6 +11,7 @@ import pandas as pd
 from datetime import datetime
 import time
 from functools import wraps
+from tennis.tennis_visualization_tools import TennisVisualizationTools
 
 # =============================================================================
 # TENNIS MAPPING DICTIONARIES
@@ -337,6 +338,18 @@ class TennisMappingTools:
         ]
     
     @staticmethod
+    def create_all_tennis_tools() -> List:
+        """
+        Create all tennis tools including mapping and visualization tools.
+        
+        Returns:
+            List of all tennis tools
+        """
+        mapping_tools = TennisMappingTools.create_all_mapping_tools()
+        visualization_tools = TennisVisualizationTools.create_all_visualization_tools()
+        return mapping_tools + visualization_tools
+    
+    @staticmethod
     def clear_cache():
         """Clear all mapping caches."""
         _get_round_mapping.cache_clear()
@@ -539,17 +552,43 @@ class TennisPromptBuilder:
         - Match types: Singles (matches table), Doubles (doubles_matches table)
         - Historical coverage: 147 years of complete tennis history (1877-2024)
         
+        CRITICAL: VISUALIZATION TOOLS (NEW FEATURE)
+        - When users ask for visualizations, charts, or graphical representations, you MUST follow this exact workflow:
+          1. FIRST: Use sql_db_query to get the data from the database
+          2. SECOND: Format the data as JSON with the required column names
+          3. THIRD: Call the appropriate visualization tool with the JSON data
+        - NEVER call visualization tools with empty data '[]' - ALWAYS query the database first
+        - Available visualization tools:
+          * create_head_to_head_chart: For comparing two players (e.g., "Show me Nadal vs Federer head-to-head")
+          * create_surface_performance_chart: For showing player performance by surface (e.g., "Show me Djokovic's performance by surface")
+          * create_ranking_history_chart: For showing ranking trends over time (e.g., "Show me Serena's ranking history")
+          * create_tournament_performance_chart: For showing wins by tournament (e.g., "Show me Federer's tournament wins")
+          * create_season_performance_chart: For showing performance by year (e.g., "Show me Nadal's wins by year")
+        - REQUIRED WORKFLOW FOR VISUALIZATIONS:
+          * Step 1: Query database with sql_db_query to get match data
+          * Step 2: Convert results to JSON format with required columns
+          * Step 3: Call visualization tool with the JSON data
+        - The visualization tools expect JSON data with specific column names
+        - For head-to-head: winner_name, loser_name, surface, year, tournament
+        - For surface performance: winner_name, loser_name, surface, year
+        - For ranking history: ranking_date, rank, player
+        - For tournament performance: winner_name, loser_name, tourney_name, year
+        - For season performance: winner_name, loser_name, year
+        - When users ask questions like "Show me", "Visualize", "Chart", "Graph", "Plot" - ALWAYS query database first, then use visualization tools
+        
         PERFORMANCE OPTIMIZATION WORKFLOW:
         1. Use cached mapping tools for terminology conversion
         2. Use specialized tools when available (get_tournament_final_results, get_surface_performance_results, get_head_to_head_results)
-        3. For complex queries, use sql_db_query_enhanced with optimized patterns
-        4. Always include player names and context in responses
-        5. Format results clearly and consistently
+        3. For visualization requests, query database first, then use appropriate visualization tool
+        4. For complex queries, use sql_db_query_enhanced with optimized patterns
+        5. Always include player names and context in responses
+        6. Format results clearly and consistently
         
         REMEMBER: 
         - Use cached tools for better performance
         - Include player names in all responses
         - Use specialized tools when available
+        - Use visualization tools for graphical representations
         - Provide context and clear formatting
         - Optimize for speed and accuracy
         """

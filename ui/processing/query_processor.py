@@ -6,6 +6,8 @@ Extracted from ui_components.py for better modularity.
 
 import streamlit as st
 import ast
+import json
+import plotly.graph_objects as go
 from datetime import datetime
 from langchain_core.messages import HumanMessage, AIMessage
 from tennis_logging.logging_factory import log_user_query, log_llm_interaction, log_final_response, log_error
@@ -115,6 +117,63 @@ class QueryProcessor:
         
         return final_answer
     
+    def _detect_and_display_visualization(self, response: dict, logger) -> bool:
+        """
+        Detect and display the LATEST visualization chart from agent response.
+        Only shows the most recent chart to avoid displaying multiple charts.
+        
+        Args:
+            response: Agent response dictionary
+            logger: Logger instance
+            
+        Returns:
+            bool: True if visualization was found and displayed, False otherwise
+        """
+        try:
+            # Look for visualization tool outputs in the messages (in reverse order to get the latest)
+            latest_chart = None
+            
+            for message in reversed(response["messages"]):
+                if hasattr(message, 'content') and message.content:
+                    content_str = str(message.content)
+                    
+                    # Check if this is a Plotly chart JSON
+                    if content_str.startswith('{"data":') and '"layout"' in content_str:
+                        try:
+                            # Parse the Plotly JSON
+                            chart_data = json.loads(content_str)
+                            
+                            # Check if it's a valid Plotly figure
+                            if 'data' in chart_data and 'layout' in chart_data:
+                                latest_chart = chart_data
+                                break  # Found the latest chart, stop looking
+                                
+                        except json.JSONDecodeError as e:
+                            if logger:
+                                logger.info(f"Failed to parse chart JSON: {e}")
+                            continue
+                        except Exception as e:
+                            if logger:
+                                logger.info(f"Failed to create chart: {e}")
+                            continue
+            
+            # Display only the latest chart
+            if latest_chart:
+                fig = go.Figure(data=latest_chart['data'], layout=latest_chart['layout'])
+                # Use a unique key to ensure Streamlit treats this as a new chart
+                chart_key = f"chart_{hash(str(latest_chart))}"
+                st.plotly_chart(fig, use_container_width=True, key=chart_key)
+                
+                if logger:
+                    logger.info("✅ Successfully displayed latest visualization chart")
+                return True
+            
+            return False
+            
+        except Exception as e:
+            if logger:
+                logger.info(f"Error in visualization detection: {e}")
+            return False
     
     def handle_user_query(self, user_question: str, agent_graph, logger):
         """Handle user query processing and response display."""
@@ -141,6 +200,10 @@ class QueryProcessor:
                 # Log the complete conversation flow
                 log_llm_interaction(response["messages"], "COMPLETE_CONVERSATION_FLOW")
                 
+                # Clear any previous visualizations and check for new ones
+                with st.container():
+                    visualization_displayed = self._detect_and_display_visualization(response, logger)
+                
                 # Process the response
                 final_answer = self.process_agent_response(response, logger, user_question)
                 
@@ -151,7 +214,12 @@ class QueryProcessor:
                 if final_answer and final_answer.strip():
                     # Log successful response
                     log_final_response(final_answer, processing_time)
-                    st.success("Here's what I found:")
+                    
+                    if visualization_displayed:
+                        st.success("Here's the visualization and analysis:")
+                    else:
+                        st.success("Here's what I found:")
+                    
                     st.markdown(final_answer)
                 else:
                     # Log warning case

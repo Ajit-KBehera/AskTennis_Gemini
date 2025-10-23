@@ -43,8 +43,8 @@ def setup_langgraph_agent():
     # Get base tools from toolkit
     base_tools = toolkit.get_tools()
     
-    # Add cached tennis mapping tools for better performance
-    tennis_tools = TennisMappingTools.create_all_mapping_tools()
+    # Add cached tennis mapping and visualization tools for better performance
+    tennis_tools = TennisMappingTools.create_all_tennis_tools()
     
     # Note: Optimized database tools removed to prevent infinite loops
     # The original sql_db_query tool from base_tools is sufficient
@@ -89,7 +89,7 @@ class AgentFactory:
         
         # Get tools
         base_tools = toolkit.get_tools()
-        tennis_tools = TennisMappingTools.create_all_mapping_tools()
+        tennis_tools = TennisMappingTools.create_all_tennis_tools()
         # Note: Optimized database tools removed to prevent infinite loops
         all_tools = base_tools + tennis_tools
         
