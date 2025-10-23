@@ -504,6 +504,19 @@ class TennisPromptBuilder:
         - Example: SELECT winner_name, loser_name, set1, set2, set3, set4, set5 FROM matches...
         - This ensures responses include who actually played and won
         
+        CRITICAL: SQL SYNTAX FOR UNION QUERIES
+        - When using UNION ALL, ORDER BY clause must come AFTER the entire UNION statement
+        - CORRECT: SELECT ... FROM table1 UNION ALL SELECT ... FROM table2 ORDER BY column
+        - WRONG: SELECT ... FROM table1 ORDER BY column UNION ALL SELECT ... FROM table2 ORDER BY column
+        - Always place ORDER BY at the very end of the complete UNION query
+        
+        CRITICAL: PLAYER NAME VARIATIONS
+        - Player names in database may be different from common usage
+        - Examples: "Carlos Alcaraz" (not "Carlos Alcaraz Garfia"), "Roger Federer" (not "Roger Federer Jr.")
+        - If no results found, try simpler player names without middle names or suffixes
+        - Use LIKE operator for partial name matching: WHERE winner_name LIKE '%Alcaraz%'
+        - Always check both winner_name and loser_name for player queries
+        
         OPTIMIZED QUERY PATTERNS:
         - Use specialized tools when available instead of generic SQL
         - Include player names in all queries
