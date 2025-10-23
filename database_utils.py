@@ -31,7 +31,7 @@ def get_all_player_names():
 @st.cache_data
 def get_all_tournament_names():
     """Get all unique tournament names from the database for fuzzy matching."""
-    conn = sqlite3.connect("tennis_data.db")
+    conn = sqlite3.connect("tennis_data_new.db")
     cursor = conn.cursor()
     
     cursor.execute("SELECT DISTINCT tourney_name FROM matches WHERE tourney_name IS NOT NULL")

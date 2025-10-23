@@ -6,6 +6,76 @@ Extracted from agent_setup.py for better modularity.
 from langchain_core.prompts import ChatPromptTemplate
 
 
+def get_tourney_level_context():
+    """Get context about tourney level codes for AI/LLM understanding."""
+    return """
+    TOURNEY LEVEL CODES:
+    - G: Grand Slams (Australian Open, French Open, Wimbledon, US Open)
+    - M: ATP Masters 1000 (Indian Wells, Miami, Madrid, etc.)
+    - PM: WTA Premier Mandatory (Indian Wells, Miami, Madrid, Beijing)
+    - A: ATP Tour events (ATP 250, ATP 500)
+    - P: WTA Premier tournaments
+    - I: WTA International tournaments
+    - C: ATP Challenger tournaments
+    - D: Davis Cup (men's team competition)
+    - BJK_Cup: Billie Jean King Cup (women's team competition)
+    - F: Tour Finals (ATP Finals, WTA Finals)
+    - E: Exhibition events
+    - J: Junior tournaments
+    - O: Olympic events
+    - W: WTA Tour events (general tour level)
+    - CC: Colgate Series (historical WTA tournament series)
+    - ITF_10K, ITF_15K, ITF_25K, etc.: ITF tournaments by prize money
+    
+    QUERY EXAMPLES:
+    - "Grand Slam winners" → tourney_level = 'G'
+    - "Masters 1000 events" → tourney_level = 'M' (ATP) or 'PM' (WTA)
+    - "ATP Tour events" → tourney_level = 'A'
+    - "WTA Premier events" → tourney_level = 'P'
+    - "ITF $25K events" → tourney_level = 'ITF_25K'
+    - "Team competitions" → tourney_level IN ('D', 'BJK_Cup')
+    """
+
+
+def get_enhanced_sql_examples():
+    """Enhanced SQL examples with new tourney level codes."""
+    return """
+    ENHANCED SQL QUERY EXAMPLES:
+    
+    - "List 2024 Grand Slam winners" → 
+      SELECT winner_name, tourney_name, event_year FROM matches 
+      WHERE tourney_level = 'G' AND event_year = 2024 AND round = 'F'
+    
+    - "ATP Masters 1000 winners" → 
+      SELECT winner_name, tourney_name FROM matches 
+      WHERE tourney_level = 'M' AND round = 'F'
+    
+    - "WTA Premier Mandatory winners" → 
+      SELECT winner_name, tourney_name FROM matches 
+      WHERE tourney_level = 'PM' AND round = 'F'
+    
+    - "Team competition winners" → 
+      SELECT winner_name, tourney_name FROM matches 
+      WHERE tourney_level IN ('D', 'BJK_Cup') AND round = 'F'
+    
+    - "ITF $25K tournament winners" → 
+      SELECT winner_name, tourney_name FROM matches 
+      WHERE tourney_level = 'ITF_25K' AND round = 'F'
+    
+    - "All tournament levels by importance" → 
+      SELECT tourney_level, COUNT(*) as matches 
+      FROM matches GROUP BY tourney_level 
+      ORDER BY CASE tourney_level 
+        WHEN 'G' THEN 1 
+        WHEN 'M' THEN 2 
+        WHEN 'PM' THEN 2 
+        WHEN 'A' THEN 3 
+        WHEN 'P' THEN 3 
+        WHEN 'I' THEN 3 
+        ELSE 4 END
+    """
+
+
 class TennisPromptBuilder:
     """
     Builder class for creating tennis-specific prompts.
@@ -125,6 +195,9 @@ class TennisPromptBuilder:
         - Include tournament names, dates, and other relevant details to make the list useful
         - Example: "List of 2024 ATP final winners" → SELECT winner_name, tourney_name, event_year, event_month, event_date FROM matches WHERE tournament_type = 'Main_Tour' AND tourney_level = 'A' AND event_year = 2024 AND round = 'F' ORDER BY event_year, event_month, event_date
         - Example: "All Grand Slam winners" → SELECT winner_name, tourney_name, event_year, event_month, event_date FROM matches WHERE tourney_level = 'G' AND round = 'F' ORDER BY event_year, event_month, event_date
+        - Example: "WTA Premier Mandatory winners" → SELECT winner_name, tourney_name, event_year FROM matches WHERE tourney_level = 'PM' AND round = 'F' ORDER BY event_year
+        - Example: "Team competition winners" → SELECT winner_name, tourney_name, event_year FROM matches WHERE tourney_level IN ('D', 'BJK_Cup') AND round = 'F' ORDER BY event_year
+        - Example: "ITF $25K tournament winners" → SELECT winner_name, tourney_name, event_year FROM matches WHERE tourney_level = 'ITF_25K' AND round = 'F' ORDER BY event_year
         - For chronological player match lists: SELECT tourney_name, event_year, event_month, event_date, round, winner_name, loser_name, set1, set2, set3, set4, set5 FROM matches WHERE (winner_name LIKE '%Player%' OR loser_name LIKE '%Player%') AND event_year = 2024 ORDER BY event_year, event_month, event_date
         - For ATP queries: use tournament_type = 'Main_Tour' AND tourney_level = 'A' (ATP main tour events)
         - For WTA queries: use tournament_type = 'Main_Tour' AND tourney_level IN ('P', 'PM', 'I') (WTA main tour events)
@@ -232,7 +305,55 @@ class TennisPromptBuilder:
         3. Analyze the results and provide a clear answer to the user
         
         REMEMBER: Always use sql_db_query (not sql_db_query_checker) to get actual data from the database!
+        
+        CRITICAL: TOURNEY LEVEL CODES
+        - Tennis tournaments have standardized level codes for filtering and analysis
+        - ALWAYS use get_tourney_level_mapping tool to understand level codes
+        - Common level codes:
+          * G: Grand Slams (Australian Open, French Open, Wimbledon, US Open)
+          * M: ATP Masters 1000 (Indian Wells, Miami, Madrid, etc.)
+          * PM: WTA Premier Mandatory (Indian Wells, Miami, Madrid, Beijing)
+          * A: ATP Tour events (ATP 250, ATP 500)
+          * P: WTA Premier tournaments
+          * I: WTA International tournaments
+          * C: ATP Challenger tournaments
+          * D: Davis Cup (men's team competition)
+          * BJK_Cup: Billie Jean King Cup (women's team competition)
+          * F: Tour Finals (ATP Finals, WTA Finals)
+          * E: Exhibition events
+          * J: Junior tournaments
+          * O: Olympic events
+          * W: WTA Tour events (general tour level)
+          * CC: Colgate Series (historical WTA tournament series)
+          * ITF_10K, ITF_15K, ITF_25K, etc.: ITF tournaments by prize money
+        - Query examples:
+          * "Grand Slam winners" → tourney_level = 'G'
+          * "Masters 1000 events" → tourney_level = 'M' (ATP) or 'PM' (WTA)
+          * "ATP Tour events" → tourney_level = 'A'
+          * "WTA Premier events" → tourney_level = 'P'
+          * "ITF $25K events" → tourney_level = 'ITF_25K'
+          * "Team competitions" → tourney_level IN ('D', 'BJK_Cup')
         """
+    
+    @staticmethod
+    def get_tourney_level_context() -> str:
+        """
+        Get context about tourney level codes for AI/LLM understanding.
+        
+        Returns:
+            Context string about tourney level codes
+        """
+        return get_tourney_level_context()
+    
+    @staticmethod
+    def get_enhanced_sql_examples() -> str:
+        """
+        Get enhanced SQL examples with new tourney level codes.
+        
+        Returns:
+            Enhanced SQL examples string
+        """
+        return get_enhanced_sql_examples()
     
     @staticmethod
     def create_prompt_template(system_prompt: str) -> ChatPromptTemplate:

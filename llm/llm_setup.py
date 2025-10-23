@@ -36,7 +36,7 @@ class LLMFactory:
         )
     
     @staticmethod
-    def create_database_connection(db_path: str = "sqlite:///tennis_data.db") -> SQLDatabase:
+    def create_database_connection(db_path: str = "sqlite:///tennis_data_new.db") -> SQLDatabase:
         """
         Create a database connection.
         
@@ -83,7 +83,7 @@ class LLMFactory:
         
         # Create database connection
         db = LLMFactory.create_database_connection(
-            db_path=config.get('db_path', 'sqlite:///tennis_data.db')
+            db_path=config.get('db_path', 'sqlite:///tennis_data_new.db')
         )
         
         # Create toolkit

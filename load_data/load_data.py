@@ -2,13 +2,20 @@ import pandas as pd
 import sqlite3
 import glob
 import os
+import sys
 import time
 from datetime import datetime, timedelta
 
+# Add the parent directory to Python path to import tennis module
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from tennis.tennis_mappings import standardize_tourney_level
+
 # --- Configuration ---
-DATA_DIRS = ["data/tennis_atp", "data/tennis_wta"]
+# Get the project root directory (parent of load_data)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIRS = [os.path.join(PROJECT_ROOT, "data/tennis_atp"), os.path.join(PROJECT_ROOT, "data/tennis_wta")]
 YEARS = list(range(1968, 2026))  # Complete historical coverage: 1968-2024
-DB_FILE = "tennis_data.db"
+DB_FILE = os.path.join(PROJECT_ROOT, "tennis_data.db")
 
 # Option to load only recent years for testing (set to False for complete data)
 LOAD_RECENT_ONLY = False  # Set to True to load only 2020-2024 for testing
@@ -62,10 +69,10 @@ def load_players_data():
     print("--- Loading Player Information ---")
     
     # Load ATP players
-    atp_players_path = "data/tennis_atp/atp_players.csv"
+    atp_players_path = os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_players.csv")
     if os.path.exists(atp_players_path):
         print(f"Reading {atp_players_path}...")
-        atp_players = pd.read_csv(atp_players_path)
+        atp_players = pd.read_csv(atp_players_path, index_col=False)
         atp_players['tour'] = 'ATP'
         print(f"ATP players loaded: {len(atp_players)}")
     else:
@@ -73,10 +80,10 @@ def load_players_data():
         atp_players = pd.DataFrame()
     
     # Load WTA players
-    wta_players_path = "data/tennis_wta/wta_players.csv"
+    wta_players_path = os.path.join(PROJECT_ROOT, "data/tennis_wta/wta_players.csv")
     if os.path.exists(wta_players_path):
         print(f"Reading {wta_players_path}...")
-        wta_players = pd.read_csv(wta_players_path)
+        wta_players = pd.read_csv(wta_players_path, index_col=False)
         wta_players['tour'] = 'WTA'
         print(f"WTA players loaded: {len(wta_players)}")
     else:
@@ -112,19 +119,19 @@ def load_rankings_data():
     
     # Define ranking file patterns
     ranking_files = [
-        "data/tennis_atp/atp_rankings_70s.csv",
-        "data/tennis_atp/atp_rankings_80s.csv", 
-        "data/tennis_atp/atp_rankings_90s.csv",
-        "data/tennis_atp/atp_rankings_00s.csv",
-        "data/tennis_atp/atp_rankings_10s.csv",
-        "data/tennis_atp/atp_rankings_20s.csv",
-        "data/tennis_atp/atp_rankings_current.csv",
-        "data/tennis_wta/wta_rankings_80s.csv",
-        "data/tennis_wta/wta_rankings_90s.csv", 
-        "data/tennis_wta/wta_rankings_00s.csv",
-        "data/tennis_wta/wta_rankings_10s.csv",
-        "data/tennis_wta/wta_rankings_20s.csv",
-        "data/tennis_wta/wta_rankings_current.csv"
+        os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_rankings_70s.csv"),
+        os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_rankings_80s.csv"), 
+        os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_rankings_90s.csv"),
+        os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_rankings_00s.csv"),
+        os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_rankings_10s.csv"),
+        os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_rankings_20s.csv"),
+        os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_rankings_current.csv"),
+        os.path.join(PROJECT_ROOT, "data/tennis_wta/wta_rankings_80s.csv"),
+        os.path.join(PROJECT_ROOT, "data/tennis_wta/wta_rankings_90s.csv"), 
+        os.path.join(PROJECT_ROOT, "data/tennis_wta/wta_rankings_00s.csv"),
+        os.path.join(PROJECT_ROOT, "data/tennis_wta/wta_rankings_10s.csv"),
+        os.path.join(PROJECT_ROOT, "data/tennis_wta/wta_rankings_20s.csv"),
+        os.path.join(PROJECT_ROOT, "data/tennis_wta/wta_rankings_current.csv")
     ]
     
     all_rankings = []
@@ -137,7 +144,7 @@ def load_rankings_data():
         if os.path.exists(file_path):
             progress.update(1, f"Loading {os.path.basename(file_path)}...")
             try:
-                df = pd.read_csv(file_path)
+                df = pd.read_csv(file_path, index_col=False)
                 
                 # Determine tour based on file path
                 if 'atp' in file_path:
@@ -205,6 +212,14 @@ def load_matches_data():
         print(f"\n--- Processing directory: {data_dir} ---")
         all_files = glob.glob(os.path.join(data_dir, "*_matches_*.csv"))
         
+        # Determine tour based on directory
+        if 'atp' in data_dir.lower():
+            tour_name = 'ATP'
+        elif 'wta' in data_dir.lower():
+            tour_name = 'WTA'
+        else:
+            tour_name = 'Unknown'
+        
         df_list = []
         for year in YEARS:
             # Construct the expected file path pattern for each year
@@ -214,8 +229,9 @@ def load_matches_data():
             if matching_files:
                 file_path = matching_files[0] # Use the first match found
                 progress.update(1, f"Loading {os.path.basename(file_path)}...")
-                df = pd.read_csv(file_path, low_memory=False)
+                df = pd.read_csv(file_path, low_memory=False, index_col=False)
                 df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d')
+                df['tour'] = tour_name  # Add tour column
                 df_list.append(df)
             else:
                 # This is not an error, just means data for that year/tour doesn't exist
@@ -231,13 +247,14 @@ def load_matches_data():
         return pd.DataFrame()
 
     # Load amateur tennis data (1877-1967)
-    amateur_file = "data/tennis_atp/atp_matches_amateur.csv"
+    amateur_file = os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_matches_amateur.csv")
     if os.path.exists(amateur_file):
         print(f"\n--- Loading Amateur Tennis Data (1877-1967) ---")
         print(f"Reading {amateur_file}...")
-        amateur_df = pd.read_csv(amateur_file, low_memory=False)
+        amateur_df = pd.read_csv(amateur_file, low_memory=False, index_col=False)
         amateur_df['tourney_date'] = pd.to_datetime(amateur_df['tourney_date'], format='%Y%m%d')
-        amateur_df['era'] = 'Amateur'  # Mark as amateur era
+        amateur_df['tour'] = 'ATP'  # Amateur data is from ATP source
+        # Era will be classified later as 'Closed Era' (pre-1968)
         master_df_list.append(amateur_df)
         print(f"Amateur matches loaded: {len(amateur_df)}")
     else:
@@ -246,38 +263,101 @@ def load_matches_data():
     # Load qualifying/challenger/futures data
     print(f"\n--- Loading Qualifying/Challenger/Futures Data ---")
     
-    # ATP Qualifying/Challenger data
-    atp_qual_chall_files = glob.glob("data/tennis_atp/atp_matches_qual_chall_*.csv")
-    if atp_qual_chall_files:
+    # ATP Qualifying data
+    atp_qual_files = glob.glob(os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_matches_qual_*.csv"))
+    if atp_qual_files:
         # Filter files by recent years if LOAD_RECENT_ONLY is True
         if LOAD_RECENT_ONLY:
             filtered_files = []
-            for file_path in atp_qual_chall_files:
+            for file_path in atp_qual_files:
                 year = int(file_path.split('_')[-1].split('.')[0])
                 if year in RECENT_YEARS:
                     filtered_files.append(file_path)
-            atp_qual_chall_files = filtered_files
+            atp_qual_files = filtered_files
         
-        print(f"Loading ATP Qualifying/Challenger data ({len(atp_qual_chall_files)} files)...")
-        atp_qual_chall_dfs = []
-        for i, file_path in enumerate(sorted(atp_qual_chall_files), 1):
+        print(f"Loading ATP Qualifying data ({len(atp_qual_files)} files)...")
+        atp_qual_dfs = []
+        for i, file_path in enumerate(sorted(atp_qual_files), 1):
             try:
                 if i % 10 == 0:  # Progress indicator every 10 files
-                    print(f"  Processing file {i}/{len(atp_qual_chall_files)}: {os.path.basename(file_path)}")
-                df = pd.read_csv(file_path, low_memory=False)
+                    print(f"  Processing file {i}/{len(atp_qual_files)}: {os.path.basename(file_path)}")
+                df = pd.read_csv(file_path, low_memory=False, index_col=False)
                 df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
-                df['tournament_type'] = 'ATP_Qual_Chall'
-                atp_qual_chall_dfs.append(df)
+                df['tournament_type'] = 'ATP_Qualifying'
+                df['tour'] = 'ATP'  # Add tour column
+                atp_qual_dfs.append(df)
             except Exception as e:
                 print(f"  Error loading {file_path}: {e}")
         
-        if atp_qual_chall_dfs:
-            atp_qual_chall_df = pd.concat(atp_qual_chall_dfs, ignore_index=True)
-            master_df_list.append(atp_qual_chall_df)
-            print(f"  ATP Qualifying/Challenger matches loaded: {len(atp_qual_chall_df)}")
+        if atp_qual_dfs:
+            atp_qual_df = pd.concat(atp_qual_dfs, ignore_index=True)
+            master_df_list.append(atp_qual_df)
+            print(f"  ATP Qualifying matches loaded: {len(atp_qual_df)}")
+    
+    # ATP Challenger data
+    atp_chall_files = glob.glob(os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_matches_chall_*.csv"))
+    if atp_chall_files:
+        # Filter files by recent years if LOAD_RECENT_ONLY is True
+        if LOAD_RECENT_ONLY:
+            filtered_files = []
+            for file_path in atp_chall_files:
+                year = int(file_path.split('_')[-1].split('.')[0])
+                if year in RECENT_YEARS:
+                    filtered_files.append(file_path)
+            atp_chall_files = filtered_files
+        
+        print(f"Loading ATP Challenger data ({len(atp_chall_files)} files)...")
+        atp_chall_dfs = []
+        for i, file_path in enumerate(sorted(atp_chall_files), 1):
+            try:
+                if i % 10 == 0:  # Progress indicator every 10 files
+                    print(f"  Processing file {i}/{len(atp_chall_files)}: {os.path.basename(file_path)}")
+                df = pd.read_csv(file_path, low_memory=False, index_col=False)
+                df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
+                df['tournament_type'] = 'ATP_Challenger'
+                df['tour'] = 'ATP'  # Add tour column
+                atp_chall_dfs.append(df)
+            except Exception as e:
+                print(f"  Error loading {file_path}: {e}")
+        
+        if atp_chall_dfs:
+            atp_chall_df = pd.concat(atp_chall_dfs, ignore_index=True)
+            master_df_list.append(atp_chall_df)
+            print(f"  ATP Challenger matches loaded: {len(atp_chall_df)}")
+    
+    # ATP Challenger Qualifying data
+    atp_chall_qual_files = glob.glob(os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_matches_chall_qual_*.csv"))
+    if atp_chall_qual_files:
+        # Filter files by recent years if LOAD_RECENT_ONLY is True
+        if LOAD_RECENT_ONLY:
+            filtered_files = []
+            for file_path in atp_chall_qual_files:
+                year = int(file_path.split('_')[-1].split('.')[0])
+                if year in RECENT_YEARS:
+                    filtered_files.append(file_path)
+            atp_chall_qual_files = filtered_files
+        
+        print(f"Loading ATP Challenger Qualifying data ({len(atp_chall_qual_files)} files)...")
+        atp_chall_qual_dfs = []
+        for i, file_path in enumerate(sorted(atp_chall_qual_files), 1):
+            try:
+                if i % 10 == 0:  # Progress indicator every 10 files
+                    print(f"  Processing file {i}/{len(atp_chall_qual_files)}: {os.path.basename(file_path)}")
+                df = pd.read_csv(file_path, low_memory=False, index_col=False)
+                df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
+                df['tournament_type'] = 'ATP_Challenger_Qualifying'
+                df['tour'] = 'ATP'  # Add tour column
+                atp_chall_qual_dfs.append(df)
+            except Exception as e:
+                print(f"  Error loading {file_path}: {e}")
+        
+        if atp_chall_qual_dfs:
+            atp_chall_qual_df = pd.concat(atp_chall_qual_dfs, ignore_index=True)
+            master_df_list.append(atp_chall_qual_df)
+            print(f"  ATP Challenger Qualifying matches loaded: {len(atp_chall_qual_df)}")
     
     # ATP Futures data
-    atp_futures_files = glob.glob("data/tennis_atp/atp_matches_futures_*.csv")
+    atp_futures_files = glob.glob(os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_matches_futures_*.csv"))
     if atp_futures_files:
         # Filter files by recent years if LOAD_RECENT_ONLY is True
         if LOAD_RECENT_ONLY:
@@ -294,9 +374,10 @@ def load_matches_data():
             try:
                 if i % 10 == 0:  # Progress indicator every 10 files
                     print(f"  Processing file {i}/{len(atp_futures_files)}: {os.path.basename(file_path)}")
-                df = pd.read_csv(file_path, low_memory=False)
+                df = pd.read_csv(file_path, low_memory=False, index_col=False)
                 df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
                 df['tournament_type'] = 'ATP_Futures'
+                df['tour'] = 'ATP'  # Add tour column
                 atp_futures_dfs.append(df)
             except Exception as e:
                 print(f"  Error loading {file_path}: {e}")
@@ -306,44 +387,136 @@ def load_matches_data():
             master_df_list.append(atp_futures_df)
             print(f"  ATP Futures matches loaded: {len(atp_futures_df)}")
     
-    # WTA Qualifying/ITF data
-    wta_qual_itf_files = glob.glob("data/tennis_wta/wta_matches_qual_itf_*.csv")
-    if wta_qual_itf_files:
+    # WTA Qualifying data
+    wta_qual_files = glob.glob(os.path.join(PROJECT_ROOT, "data/tennis_wta/wta_matches_qual_*.csv"))
+    if wta_qual_files:
         # Filter files by recent years if LOAD_RECENT_ONLY is True
         if LOAD_RECENT_ONLY:
             filtered_files = []
-            for file_path in wta_qual_itf_files:
+            for file_path in wta_qual_files:
                 year = int(file_path.split('_')[-1].split('.')[0])
                 if year in RECENT_YEARS:
                     filtered_files.append(file_path)
-            wta_qual_itf_files = filtered_files
+            wta_qual_files = filtered_files
         
-        print(f"Loading WTA Qualifying/ITF data ({len(wta_qual_itf_files)} files)...")
-        wta_qual_itf_dfs = []
-        for i, file_path in enumerate(sorted(wta_qual_itf_files), 1):
+        print(f"Loading WTA Qualifying data ({len(wta_qual_files)} files)...")
+        wta_qual_dfs = []
+        for i, file_path in enumerate(sorted(wta_qual_files), 1):
             try:
                 if i % 10 == 0:  # Progress indicator every 10 files
-                    print(f"  Processing file {i}/{len(wta_qual_itf_files)}: {os.path.basename(file_path)}")
-                df = pd.read_csv(file_path, low_memory=False)
+                    print(f"  Processing file {i}/{len(wta_qual_files)}: {os.path.basename(file_path)}")
+                df = pd.read_csv(file_path, low_memory=False, index_col=False)
                 df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
-                df['tournament_type'] = 'WTA_Qual_ITF'
-                wta_qual_itf_dfs.append(df)
+                df['tournament_type'] = 'WTA_Qualifying'
+                df['tour'] = 'WTA'  # Add tour column
+                wta_qual_dfs.append(df)
             except Exception as e:
                 print(f"  Error loading {file_path}: {e}")
         
-        if wta_qual_itf_dfs:
-            wta_qual_itf_df = pd.concat(wta_qual_itf_dfs, ignore_index=True)
-            master_df_list.append(wta_qual_itf_df)
-            print(f"  WTA Qualifying/ITF matches loaded: {len(wta_qual_itf_df)}")
+        if wta_qual_dfs:
+            wta_qual_df = pd.concat(wta_qual_dfs, ignore_index=True)
+            master_df_list.append(wta_qual_df)
+            print(f"  WTA Qualifying matches loaded: {len(wta_qual_df)}")
+    
+    # WTA ITF data
+    wta_itf_files = glob.glob(os.path.join(PROJECT_ROOT, "data/tennis_wta/wta_matches_itf_*.csv"))
+    if wta_itf_files:
+        # Filter files by recent years if LOAD_RECENT_ONLY is True
+        if LOAD_RECENT_ONLY:
+            filtered_files = []
+            for file_path in wta_itf_files:
+                year = int(file_path.split('_')[-1].split('.')[0])
+                if year in RECENT_YEARS:
+                    filtered_files.append(file_path)
+            wta_itf_files = filtered_files
+        
+        print(f"Loading WTA ITF data ({len(wta_itf_files)} files)...")
+        wta_itf_dfs = []
+        for i, file_path in enumerate(sorted(wta_itf_files), 1):
+            try:
+                if i % 10 == 0:  # Progress indicator every 10 files
+                    print(f"  Processing file {i}/{len(wta_itf_files)}: {os.path.basename(file_path)}")
+                df = pd.read_csv(file_path, low_memory=False, index_col=False)
+                df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
+                df['tournament_type'] = 'WTA_ITF'
+                df['tour'] = 'WTA'  # Add tour column
+                wta_itf_dfs.append(df)
+            except Exception as e:
+                print(f"  Error loading {file_path}: {e}")
+        
+        if wta_itf_dfs:
+            wta_itf_df = pd.concat(wta_itf_dfs, ignore_index=True)
+            master_df_list.append(wta_itf_df)
+            print(f"  WTA ITF matches loaded: {len(wta_itf_df)}")
+    
+    # Load Davis Cup data
+    print(f"\n--- Loading Davis Cup Data ---")
+    davis_cup_files = glob.glob(os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_matches_davis_cup_*.csv"))
+    if davis_cup_files:
+        print(f"Loading Davis Cup data ({len(davis_cup_files)} files)...")
+        davis_cup_dfs = []
+        for i, file_path in enumerate(sorted(davis_cup_files), 1):
+            try:
+                if i % 10 == 0:  # Progress indicator every 10 files
+                    print(f"  Processing file {i}/{len(davis_cup_files)}: {os.path.basename(file_path)}")
+                df = pd.read_csv(file_path, low_memory=False, index_col=False)
+                df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
+                df['tournament_type'] = 'Davis_Cup'
+                df['tour'] = 'ATP'  # Davis Cup is men's competition
+                davis_cup_dfs.append(df)
+            except Exception as e:
+                print(f"  Error loading {file_path}: {e}")
+        
+        if davis_cup_dfs:
+            davis_cup_df = pd.concat(davis_cup_dfs, ignore_index=True)
+            master_df_list.append(davis_cup_df)
+            print(f"  Davis Cup matches loaded: {len(davis_cup_df)}")
+    
+    # Load Fed Cup (BJK Cup) data
+    print(f"\n--- Loading Fed Cup (BJK Cup) Data ---")
+    fed_cup_files = glob.glob(os.path.join(PROJECT_ROOT, "data/tennis_wta/wta_matches_fed_cup_*.csv"))
+    if fed_cup_files:
+        print(f"Loading Fed Cup (BJK Cup) data ({len(fed_cup_files)} files)...")
+        fed_cup_dfs = []
+        for i, file_path in enumerate(sorted(fed_cup_files), 1):
+            try:
+                if i % 10 == 0:  # Progress indicator every 10 files
+                    print(f"  Processing file {i}/{len(fed_cup_files)}: {os.path.basename(file_path)}")
+                df = pd.read_csv(file_path, low_memory=False, index_col=False)
+                df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
+                df['tournament_type'] = 'Fed_Cup'
+                df['tour'] = 'WTA'  # Fed Cup is women's competition
+                fed_cup_dfs.append(df)
+            except Exception as e:
+                print(f"  Error loading {file_path}: {e}")
+        
+        if fed_cup_dfs:
+            fed_cup_df = pd.concat(fed_cup_dfs, ignore_index=True)
+            master_df_list.append(fed_cup_df)
+            print(f"  Fed Cup (BJK Cup) matches loaded: {len(fed_cup_df)}")
     
     # Combine the ATP, WTA, and amateur dataframes into one master dataframe
     matches_df = pd.concat(master_df_list, ignore_index=True)
     
     # Add era classification for all matches
-    matches_df['era'] = matches_df['era'].fillna('Professional')  # Default to professional era
+    # Classify based on year: 1968+ = Open Era, <1968 = Closed Era
+    def classify_era(row):
+        if pd.isna(row.get('tourney_date')):
+            return 'Unknown'
+        year = row['tourney_date'].year
+        if year >= 1968:
+            return 'Open Era'
+        else:
+            return 'Closed Era'
+    
+    # Apply era classification
+    matches_df['era'] = matches_df.apply(classify_era, axis=1)
     
     # Add tournament type classification for all matches
-    matches_df['tournament_type'] = matches_df['tournament_type'].fillna('Main_Tour')  # Default to main tour
+    # Don't fill missing values with default - keep them as NaN for proper classification
+    
+    # Add tour classification for all matches
+    matches_df['tour'] = matches_df['tour'].fillna('Unknown')  # Default to Unknown for any missing tour data
     
     # Convert tourney_date to datetime objects for proper sorting/filtering
     matches_df['tourney_date'] = pd.to_datetime(matches_df['tourney_date'], format='%Y%m%d', errors='coerce')
@@ -359,7 +532,7 @@ def load_doubles_data():
     print("\n--- Loading Doubles Match Data ---")
     
     # Find all ATP doubles files
-    doubles_files = glob.glob("data/tennis_atp/atp_matches_doubles_*.csv")
+    doubles_files = glob.glob(os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_matches_doubles_*.csv"))
     
     if not doubles_files:
         print("No doubles match files found.")
@@ -374,9 +547,10 @@ def load_doubles_data():
     for i, file_path in enumerate(sorted(doubles_files), 1):
         try:
             progress.update(1, f"Loading {os.path.basename(file_path)}...")
-            df = pd.read_csv(file_path, low_memory=False)
+            df = pd.read_csv(file_path, low_memory=False, index_col=False)
             df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
             df['match_type'] = 'Doubles'
+            df['tour'] = 'ATP'  # Doubles data is from ATP source
             doubles_dfs.append(df)
             
         except Exception as e:
@@ -393,7 +567,8 @@ def load_doubles_data():
 def parse_date_components(df):
     """
     Parse tourney_date into event_year, event_month, event_date columns.
-    Replaces the tourney_date column with three separate columns.
+    Adds three new columns while keeping the original tourney_date column.
+    Places the new columns right beside the tourney_date column.
     """
     print("\n--- Parsing Date Components ---")
     
@@ -401,45 +576,49 @@ def parse_date_components(df):
     df_copy = df.copy()
     
     # Extract date components
-    df_copy['event_year'] = df_copy['tourney_date'].dt.year
-    df_copy['event_month'] = df_copy['tourney_date'].dt.month
-    df_copy['event_date'] = df_copy['tourney_date'].dt.day
+    event_year = df_copy['tourney_date'].dt.year
+    event_month = df_copy['tourney_date'].dt.month
+    event_date = df_copy['tourney_date'].dt.day
     
-    # Add month name and season
-    df_copy['event_month_name'] = df_copy['tourney_date'].dt.month_name()
-    df_copy['event_season'] = df_copy['tourney_date'].dt.month.map({
-        12: 'Winter', 1: 'Winter', 2: 'Winter',
-        3: 'Spring', 4: 'Spring', 5: 'Spring',
-        6: 'Summer', 7: 'Summer', 8: 'Summer',
-        9: 'Fall', 10: 'Fall', 11: 'Fall'
-    })
+    # Find the position of tourney_date column
+    tourney_date_pos = df_copy.columns.get_loc('tourney_date')
     
-    # Remove the original tourney_date column
-    df_copy = df_copy.drop('tourney_date', axis=1)
+    # Create new column order with date components right after tourney_date
+    new_columns = []
+    for i, col in enumerate(df_copy.columns):
+        new_columns.append(col)
+        if col == 'tourney_date':
+            # Insert the 3 new columns right after tourney_date
+            new_columns.extend(['event_year', 'event_month', 'event_date'])
     
-    print(f"Date parsing completed: {len(df_copy)}/{len(df)} dates parsed (100.0%)")
-    print(f"Date range: {df_copy['event_year'].min()}-{df_copy['event_year'].max()}")
-    print(f"Year range: {df_copy['event_year'].min()} to {df_copy['event_year'].max()}")
+    # Create a new dataframe with reordered columns
+    df_reordered = df_copy.copy()
     
-    return df_copy
+    # Add the new columns
+    df_reordered['event_year'] = event_year
+    df_reordered['event_month'] = event_month
+    df_reordered['event_date'] = event_date
+    
+    # Reorder columns to place date components right after tourney_date
+    df_reordered = df_reordered[new_columns]
+    
+    print(f"Date parsing completed: {len(df_reordered)}/{len(df)} dates parsed (100.0%)")
+    print(f"Date range: {df_reordered['event_year'].min()}-{df_reordered['event_year'].max()}")
+    print(f"Year range: {df_reordered['event_year'].min()} to {df_reordered['event_year'].max()}")
+    
+    return df_reordered
 
 def parse_score_data(df):
     """
     Parse score column into set1, set2, set3, set4, set5 columns.
-    Replaces the score column with five separate columns.
+    Adds five new columns while keeping the original score column.
+    Places the new columns right beside the score column.
     Handles RET by putting 'RET' in subsequent set columns.
     """
     print("\n--- Parsing Score Data ---")
     
     # Create a copy to avoid modifying original
     df_copy = df.copy()
-    
-    # Initialize set columns
-    df_copy['set1'] = None
-    df_copy['set2'] = None
-    df_copy['set3'] = None
-    df_copy['set4'] = None
-    df_copy['set5'] = None
     
     def parse_score(score_str):
         """Parse a single score string into set scores."""
@@ -536,26 +715,49 @@ def parse_score_data(df):
     # Apply parsing to all scores
     parsed_scores = df_copy['score'].apply(parse_score)
     
-    # Assign to set columns
-    df_copy['set1'] = [s[0] for s in parsed_scores]
-    df_copy['set2'] = [s[1] for s in parsed_scores]
-    df_copy['set3'] = [s[2] for s in parsed_scores]
-    df_copy['set4'] = [s[3] for s in parsed_scores]
-    df_copy['set5'] = [s[4] for s in parsed_scores]
+    # Extract set scores
+    set1 = [s[0] for s in parsed_scores]
+    set2 = [s[1] for s in parsed_scores]
+    set3 = [s[2] for s in parsed_scores]
+    set4 = [s[3] for s in parsed_scores]
+    set5 = [s[4] for s in parsed_scores]
     
-    # Remove the original score column
-    df_copy = df_copy.drop('score', axis=1)
+    # Find the position of score column
+    score_pos = df_copy.columns.get_loc('score')
+    
+    # Create new column order with set columns right after score
+    new_columns = []
+    for i, col in enumerate(df_copy.columns):
+        new_columns.append(col)
+        if col == 'score':
+            # Insert the 5 new columns right after score
+            new_columns.extend(['set1', 'set2', 'set3', 'set4', 'set5'])
+    
+    # Create a new dataframe with reordered columns
+    df_reordered = df_copy.copy()
+    
+    # Add the new columns
+    df_reordered['set1'] = set1
+    df_reordered['set2'] = set2
+    df_reordered['set3'] = set3
+    df_reordered['set4'] = set4
+    df_reordered['set5'] = set5
+    
+    # Reorder columns to place set columns right after score
+    df_reordered = df_reordered[new_columns]
+    
+    # Keep the original score column - do not remove it
     
     # Show sample of parsed scores
-    print(f"Score parsing completed: {len(df_copy)}/{len(df)} matches parsed (100.0%)")
+    print(f"Score parsing completed: {len(df_reordered)}/{len(df)} matches parsed (100.0%)")
     print("Sample parsed scores:")
-    sample_scores = df_copy[['set1', 'set2', 'set3', 'set4', 'set5']].dropna(how='all').head(3)
+    sample_scores = df_reordered[['set1', 'set2', 'set3', 'set4', 'set5']].dropna(how='all').head(3)
     for idx, row in sample_scores.iterrows():
         original = df.loc[idx, 'score'] if idx < len(df) else 'N/A'
         parsed = ' | '.join([str(s) for s in row.values if pd.notna(s)])
         print(f"  Original: {original} -> Parsed: {parsed}")
     
-    return df_copy
+    return df_reordered
 
 def fix_missing_surface_data(matches_df):
     """
@@ -643,6 +845,51 @@ def fix_missing_surface_data(matches_df):
     
     return df
 
+def standardize_tourney_levels(df, tour_name):
+    """
+    Apply tourney level standardization to a dataframe.
+    
+    Args:
+        df: DataFrame with tourney_level column
+        tour_name: Tour name for context (ATP, WTA, Mixed, etc.)
+    
+    Returns:
+        DataFrame with standardized tourney_level values
+    """
+    if 'tourney_level' not in df.columns:
+        print(f"  No tourney_level column found in {tour_name} data, skipping standardization.")
+        return df
+    
+    print(f"\n--- Standardizing Tourney Levels for {tour_name} Data ---")
+    
+    # Count original levels
+    original_levels = df['tourney_level'].value_counts()
+    print(f"Original tourney levels found: {len(original_levels)}")
+    for level, count in original_levels.head(10).items():
+        print(f"  {level}: {count:,} matches")
+    
+    # Apply standardization
+    print("Applying standardization...")
+    df['tourney_level'] = df.apply(
+        lambda row: standardize_tourney_level(row['tourney_level'], tour_name), 
+        axis=1
+    )
+    
+    # Count standardized levels
+    standardized_levels = df['tourney_level'].value_counts()
+    print(f"Standardized tourney levels: {len(standardized_levels)}")
+    for level, count in standardized_levels.head(10).items():
+        print(f"  {level}: {count:,} matches")
+    
+    # Show transformation summary
+    changes = len(original_levels) - len(standardized_levels)
+    if changes > 0:
+        print(f"✅ Reduced from {len(original_levels)} to {len(standardized_levels)} unique levels ({changes} levels consolidated)")
+    else:
+        print(f"✅ No level consolidation needed")
+    
+    return df
+
 def create_database_with_players():
     """
     Creates the enhanced database with COMPLETE tennis history (1877-2024), 
@@ -651,7 +898,7 @@ def create_database_with_players():
     print("=== Enhanced Data Loading with COMPLETE Tournament Coverage (1877-2024) ===")
     
     # Initialize progress tracker for main steps
-    main_steps = 8  # players, rankings, matches, doubles, surface_fix, date_parsing, score_parsing, database_creation
+    main_steps = 9  # players, rankings, matches, doubles, surface_fix, date_parsing, score_parsing, tourney_level_standardization, database_creation
     progress = ProgressTracker(main_steps, "Database Creation")
     
     # Load player data
@@ -693,6 +940,12 @@ def create_database_with_players():
         else:
             print("  No 'score' column found in doubles data, skipping score parsing.")
     
+    # Standardize tourney levels
+    progress.update(1, "Standardizing tourney levels...")
+    matches_df = standardize_tourney_levels(matches_df, 'Mixed')  # Mixed ATP/WTA data
+    
+    if not doubles_df.empty:
+        doubles_df = standardize_tourney_levels(doubles_df, 'ATP')  # ATP doubles data
     
     if players_df.empty or matches_df.empty:
         print("Error: Could not load required data. Exiting.")
@@ -866,8 +1119,8 @@ def create_database_with_players():
     print(f"   - Player metadata integration")
     print(f"   - Rankings data integration")
     print(f"   - Surface data quality fix (missing surface inference)")
-    print(f"   - Amateur era tennis (1877-1967)")
-    print(f"   - Professional era tennis (1968-2024)")
+    print(f"   - Closed Era tennis (1877-1967)")
+    print(f"   - Open Era tennis (1968-2024)")
     print(f"   - Main tour matches (Grand Slams, Masters, etc.)")
     print(f"   - Qualifying/Challenger/Futures matches")
     print(f"   - Doubles matches (separate table)")
@@ -923,6 +1176,13 @@ def verify_enhancement():
     for era, count in era_counts:
         print(f"  {era}: {count:,} matches")
     
+    # Show era distribution with percentages
+    total_matches = conn.execute("SELECT COUNT(*) FROM matches").fetchone()[0]
+    print(f"\nEra distribution percentages:")
+    for era, count in era_counts:
+        percentage = (count / total_matches) * 100
+        print(f"  {era}: {count:,} matches ({percentage:.1f}%)")
+    
     # Check tournament type distribution
     tournament_type_counts = conn.execute("""
         SELECT tournament_type, COUNT(*) as matches 
@@ -934,6 +1194,18 @@ def verify_enhancement():
     print("Matches by tournament type:")
     for tournament_type, count in tournament_type_counts:
         print(f"  {tournament_type}: {count:,} matches")
+    
+    # Check standardized tourney level distribution
+    tourney_level_counts = conn.execute("""
+        SELECT tourney_level, COUNT(*) as matches 
+        FROM matches 
+        GROUP BY tourney_level 
+        ORDER BY matches DESC
+    """).fetchall()
+    
+    print("Matches by standardized tourney level:")
+    for tourney_level, count in tourney_level_counts:
+        print(f"  {tourney_level}: {count:,} matches")
     
     # Check matches by decade (expanded for complete history)
     decade_counts = conn.execute("""
@@ -1118,7 +1390,7 @@ def verify_enhancement():
     qualifying_query = """
         SELECT winner_name, loser_name, tourney_name, event_year, event_month, event_date, tournament_type, tourney_level
         FROM matches 
-        WHERE tournament_type = 'ATP_Qual_Chall'
+        WHERE tournament_type IN ('ATP_Qualifying', 'ATP_Challenger', 'ATP_Challenger_Qualifying')
         ORDER BY event_year DESC, event_month DESC, event_date DESC
         LIMIT 5
     """

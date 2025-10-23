@@ -5,6 +5,7 @@ Extracted from agent_setup.py for better modularity.
 
 from langchain_core.tools import tool
 from typing import Dict, Any, List
+import pandas as pd
 
 
 # --- Centralized Mapping Dictionaries ---
@@ -97,6 +98,47 @@ GRAND_SLAM_MAPPINGS = {
     "us open": "US Open"
 }
 
+TOURNEY_LEVEL_MAPPINGS = {
+    # ATP Levels (keep as-is)
+    'G': 'G',  # Grand Slam
+    'M': 'M',  # Masters 1000
+    'A': 'A',  # ATP Tour
+    'C': 'C',  # Challenger
+    'D': 'D',  # Davis Cup (ATP only)
+    'F': 'F',  # Tour Finals
+    'E': 'E',  # Exhibition
+    'J': 'J',  # Juniors
+    'O': 'O',  # Olympics
+    
+    # WTA Levels - Standardize
+    'PM': 'PM',  # Premier Mandatory
+    'P': 'P',    # Premier
+    'I': 'I',    # International
+    'W': 'W',    # WTA Tour
+    'CC': 'CC',  # Colgate Series
+    
+    # Historical WTA Tiers → Modern equivalents
+    'T1': 'PM',  # Tier I → Premier Mandatory
+    'T2': 'P',   # Tier II → Premier
+    'T3': 'I',   # Tier III → International
+    'T4': 'I',   # Tier IV → International
+    'T5': 'I',   # Tier V → International
+    
+    # ITF Prize Money Levels → Standardized format
+    '10': 'ITF_10K',
+    '15': 'ITF_15K',
+    '20': 'ITF_20K',
+    '25': 'ITF_25K',
+    '35': 'ITF_35K',
+    '40': 'ITF_40K',
+    '50': 'ITF_50K',
+    '60': 'ITF_60K',
+    '75': 'ITF_75K',
+    '80': 'ITF_80K',
+    '100': 'ITF_100K',
+    '200': 'ITF_200K'
+}
+
 COMBINED_TOURNAMENT_MAPPINGS = {
     "rome": {"atp": "Rome Masters", "wta": "Rome"},
     "basel": {"atp": "Basel", "wta": "Basel"},
@@ -119,6 +161,36 @@ COMBINED_TOURNAMENT_MAPPINGS = {
     "vienna": {"atp": "Vienna", "wta": "Vienna"},
     "paris": {"atp": "Paris Masters", "wta": "Paris"}
 }
+
+
+def standardize_tourney_level(level, tour=None, era=None):
+    """
+    Replace old tourney levels with new standardized levels.
+    
+    Args:
+        level: The original tourney_level value
+        tour: The tour (ATP or WTA) for context
+        era: The era for historical context (optional)
+    
+    Returns:
+        Standardized tourney_level value
+    """
+    if pd.isna(level) or level == '':
+        return level
+    
+    level_str = str(level).strip()
+    
+    # Special case: WTA D level → BJK_Cup
+    if level_str == 'D' and tour == 'WTA':
+        return 'BJK_Cup'
+    
+    # Direct mapping
+    if level_str in TOURNEY_LEVEL_MAPPINGS:
+        return TOURNEY_LEVEL_MAPPINGS[level_str]
+    
+    # Handle unknown levels
+    print(f"Warning: Unknown tourney_level '{level_str}' for tour '{tour}'")
+    return level_str  # Keep as-is if unknown
 
 
 class TennisMappingFactory:
@@ -258,6 +330,66 @@ class TennisMappingFactory:
         return get_tournament_mapping
     
     @staticmethod
+    def create_tourney_level_mapping_tool():
+        """Create the tennis tourney level mapping tool."""
+        @tool
+        def get_tourney_level_mapping(level: str) -> str:
+            """
+            Map tennis tournament level codes to descriptions.
+            Helps understand what each tourney_level code means.
+            
+            Args:
+                level: The tourney_level code to look up (e.g., 'G', 'M', 'PM', 'ITF_25K')
+                
+            Returns:
+                JSON string with level description
+            """
+            level_upper = level.upper().strip()
+            
+            # Level descriptions
+            level_descriptions = {
+                'G': 'Grand Slam tournaments (Australian Open, French Open, Wimbledon, US Open)',
+                'M': 'ATP Masters 1000 tournaments (Indian Wells, Miami, Madrid, etc.)',
+                'PM': 'WTA Premier Mandatory tournaments (Indian Wells, Miami, Madrid, Beijing)',
+                'A': 'ATP Tour events (ATP 250, ATP 500 level tournaments)',
+                'P': 'WTA Premier tournaments (500-level events)',
+                'I': 'WTA International tournaments (250-level events)',
+                'C': 'ATP Challenger tournaments',
+                'D': 'Davis Cup (men\'s team competition)',
+                'BJK_CUP': 'Billie Jean King Cup (women\'s team competition)',
+                'F': 'Tour Finals (ATP Finals, WTA Finals)',
+                'E': 'Exhibition events (non-sanctioned)',
+                'J': 'Junior tournaments',
+                'O': 'Olympic tennis events',
+                'W': 'WTA Tour events (general tour level)',
+                'CC': 'Colgate Series (historical WTA tournament series)',
+                'ITF_10K': 'ITF $10,000 tournaments',
+                'ITF_15K': 'ITF $15,000 tournaments',
+                'ITF_20K': 'ITF $20,000 tournaments',
+                'ITF_25K': 'ITF $25,000 tournaments',
+                'ITF_35K': 'ITF $35,000 tournaments',
+                'ITF_40K': 'ITF $40,000 tournaments',
+                'ITF_50K': 'ITF $50,000 tournaments',
+                'ITF_60K': 'ITF $60,000 tournaments',
+                'ITF_75K': 'ITF $75,000 tournaments',
+                'ITF_80K': 'ITF $80,000 tournaments',
+                'ITF_100K': 'ITF $100,000 tournaments',
+                'ITF_200K': 'ITF $200,000 tournaments'
+            }
+            
+            if level_upper in level_descriptions:
+                return str({
+                    "level_code": level_upper,
+                    "description": level_descriptions[level_upper],
+                    "type": "tourney_level"
+                })
+            
+            # Default: return as-is
+            return str({"level_code": level, "description": "Unknown level", "type": "unknown"})
+        
+        return get_tourney_level_mapping
+    
+    @staticmethod
     def create_all_mapping_tools() -> List:
         """
         Create all tennis mapping tools.
@@ -270,5 +402,6 @@ class TennisMappingFactory:
             TennisMappingFactory.create_surface_mapping_tool(),
             TennisMappingFactory.create_tour_mapping_tool(),
             TennisMappingFactory.create_hand_mapping_tool(),
-            TennisMappingFactory.create_tournament_mapping_tool()
+            TennisMappingFactory.create_tournament_mapping_tool(),
+            TennisMappingFactory.create_tourney_level_mapping_tool()
         ]
