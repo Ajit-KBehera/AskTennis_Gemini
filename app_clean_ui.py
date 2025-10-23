@@ -102,81 +102,54 @@ try:
         # PLAYER SEARCH
         # =============================================================================
         st.subheader("👤 Player")
-        player_search = st.text_input(
-            "Search Player",
-            key="player_search",
-            placeholder="Type player name (e.g., Federer, Nadal)",
-            help="Type 2+ characters to search"
-        )
         
-        if player_search and len(player_search) >= 2:
-            search_results = smart_dropdown.get_search_results(player_search, "players")
-            if search_results:
-                selected_player = st.selectbox(
-                    "Select Player:",
-                    ["All Players"] + search_results,
-                    key="player_select"
-                )
-            else:
-                st.info("No players found")
-                selected_player = "All Players"
-        else:
-            selected_player = "All Players"
+        # Get all players for search
+        all_players = db_service.get_all_players()
+        all_players = [p for p in all_players if p != "All Players"]
+        
+        # Use selectbox with search functionality
+        selected_player = st.selectbox(
+            "Search Player:",
+            ["All Players"] + all_players,
+            key="player_select",
+            help="Type to search players (e.g., Federer, Nadal)"
+        )
         
         # =============================================================================
         # OPPONENT SEARCH
         # =============================================================================
         st.subheader("⚔️ Opponent")
-        opponent_search = st.text_input(
-            "Search Opponent",
-            key="opponent_search",
-            placeholder="Type opponent name",
-            help="Type 2+ characters to search"
-        )
         
-        if opponent_search and len(opponent_search) >= 2:
-            if selected_player and selected_player != "All Players":
-                opponent_options = db_service.get_opponents_for_player(selected_player)
-                search_results = [o for o in opponent_options if opponent_search.lower() in o.lower()]
-            else:
-                search_results = smart_dropdown.get_search_results(opponent_search, "players")
-            
-            if search_results:
-                selected_opponent = st.selectbox(
-                    "Select Opponent:",
-                    ["All Opponents"] + search_results[:20],
-                    key="opponent_select"
-                )
-            else:
-                st.info("No opponents found")
-                selected_opponent = "All Opponents"
+        # Get opponent options based on selected player
+        if selected_player and selected_player != "All Players":
+            opponent_options = db_service.get_opponents_for_player(selected_player)
         else:
-            selected_opponent = "All Opponents"
+            opponent_options = all_players  # Show all players if no player selected
+        
+        # Use selectbox with search functionality
+        selected_opponent = st.selectbox(
+            "Search Opponent:",
+            ["All Opponents"] + opponent_options,
+            key="opponent_select",
+            help="Type to search opponents"
+        )
         
         # =============================================================================
         # TOURNAMENT SEARCH
         # =============================================================================
         st.subheader("🏆 Tournament")
-        tournament_search = st.text_input(
-            "Search Tournament",
-            key="tournament_search",
-            placeholder="Type tournament name (e.g., Wimbledon)",
-            help="Type 2+ characters to search"
-        )
         
-        if tournament_search and len(tournament_search) >= 2:
-            search_results = smart_dropdown.get_search_results(tournament_search, "tournaments")
-            if search_results:
-                selected_tournament = st.selectbox(
-                    "Select Tournament:",
-                    ["All Tournaments"] + search_results,
-                    key="tournament_select"
-                )
-            else:
-                st.info("No tournaments found")
-                selected_tournament = "All Tournaments"
-        else:
-            selected_tournament = "All Tournaments"
+        # Get all tournaments for search
+        all_tournaments = db_service.get_all_tournaments()
+        all_tournaments = [t for t in all_tournaments if t != "All Tournaments"]
+        
+        # Use selectbox with search functionality
+        selected_tournament = st.selectbox(
+            "Search Tournament:",
+            ["All Tournaments"] + all_tournaments,
+            key="tournament_select",
+            help="Type to search tournaments (e.g., Wimbledon, French Open)"
+        )
         
         # =============================================================================
         # YEAR AND SURFACE
@@ -306,11 +279,6 @@ try:
             context = st.session_state.get('analysis_context', {})
             st.markdown("### 🎯 Current Analysis")
             st.markdown(f"**{context.get('summary', 'Analysis')}**")
-            
-            if context.get('insights'):
-                st.markdown("**💡 Key Insights:**")
-                for insight in context['insights'][:3]:
-                    st.markdown(f"• {insight}")
         
         # Chat interface
         st.markdown("### 💭 Ask Questions")
