@@ -8,6 +8,7 @@ from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from sqlalchemy import create_engine
 from typing import Dict, Any
+from config.constants import DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_DB_PATH
 
 
 class LLMFactory:
@@ -17,7 +18,7 @@ class LLMFactory:
     """
     
     @staticmethod
-    def create_llm(api_key: str, model: str = "gemini-2.5-flash-lite", temperature: float = 0) -> ChatGoogleGenerativeAI:
+    def create_llm(api_key: str, model: str = DEFAULT_MODEL, temperature: float = DEFAULT_TEMPERATURE) -> ChatGoogleGenerativeAI:
         """
         Create a ChatGoogleGenerativeAI instance.
         
@@ -36,7 +37,7 @@ class LLMFactory:
         )
     
     @staticmethod
-    def create_database_connection(db_path: str = "sqlite:///tennis_data.db") -> SQLDatabase:
+    def create_database_connection(db_path: str = DEFAULT_DB_PATH) -> SQLDatabase:
         """
         Create a database connection.
         
@@ -77,13 +78,13 @@ class LLMFactory:
         # Create LLM
         llm = LLMFactory.create_llm(
             api_key=config['api_key'],
-            model=config.get('model', 'gemini-2.5-flash-lite'),
-            temperature=config.get('temperature', 0)
+            model=config.get('model', DEFAULT_MODEL),
+            temperature=config.get('temperature', DEFAULT_TEMPERATURE)
         )
         
         # Create database connection
         db = LLMFactory.create_database_connection(
-            db_path=config.get('db_path', 'sqlite:///tennis_data.db')
+            db_path=config.get('db_path', DEFAULT_DB_PATH)
         )
         
         # Create toolkit

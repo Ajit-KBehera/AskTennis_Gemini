@@ -5,6 +5,7 @@ Extracted from ui_components.py for better modularity.
 """
 
 import streamlit as st
+from config.constants import EXAMPLE_QUESTIONS
 
 
 class UIDisplay:
@@ -17,11 +18,7 @@ class UIDisplay:
     def display_example_questions():
         """Display example questions for users."""
         st.markdown("##### Example Questions:")
-        st.markdown("""
-        - *How many matches did Roger Federer win in 2006?*
-        - *Who won the most matches on clay in 2010?*
-        - *What was the score of the Wimbledon final in 2008?*
-        """)
+        st.markdown(EXAMPLE_QUESTIONS)
     
     @staticmethod
     def get_user_input():

@@ -58,33 +58,7 @@ class LoggingFactory:
         """Log errors with context."""
         return self.error_logger.log_error(error, context)
     
-    def get_setup(self):
-        """Get the logging setup instance."""
-        return self.setup
-    
-    def get_query_logger(self):
-        """Get the query logger instance."""
-        return self.query_logger
-    
-    def get_llm_logger(self):
-        """Get the LLM logger instance."""
-        return self.llm_logger
-    
-    def get_database_logger(self):
-        """Get the database logger instance."""
-        return self.database_logger
-    
-    def get_tool_logger(self):
-        """Get the tool logger instance."""
-        return self.tool_logger
-    
-    def get_response_logger(self):
-        """Get the response logger instance."""
-        return self.response_logger
-    
-    def get_error_logger(self):
-        """Get the error logger instance."""
-        return self.error_logger
+# Removed unnecessary getter methods - direct access not needed
 
 
 # Create global factory instance
