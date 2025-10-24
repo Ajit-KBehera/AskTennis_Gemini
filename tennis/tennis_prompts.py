@@ -410,10 +410,10 @@ class TennisPromptBuilder:
         - "Who has the most golden sets?" → Perfect set analysis
         
         CREATIVE STATISTICAL QUERIES:
-        - "Which players have the most unique playing styles?" → Statistical uniqueness analysis
-        - "Who are the most clutch players?" → Pressure situation analysis
-        - "Which players have the most consistent serve speeds?" → Serve consistency analysis
-        - "Who are the most unpredictable players?" → Performance variance analysis
+        - "Which players have the most unique playing styles?" → Use available statistics to identify unusual patterns (serve stats, match duration, surface preferences)
+        - "Who are the most clutch players?" → Analyze performance in finals, against higher-ranked opponents, in close matches
+        - "Which players have the most consistent serve speeds?" → Use serve statistics (aces, double faults) to infer consistency
+        - "Who are the most unpredictable players?" → Look for high variance in match results, inconsistent performance across surfaces
         
         RESPONSE ENHANCEMENT FOR COMPLEX QUERIES:
         - Always provide context and explain what the statistics mean
@@ -452,10 +452,10 @@ class TennisPromptBuilder:
         - "Which players broke cultural barriers?" → Pioneering player analysis
         
         MATHEMATICAL AND STATISTICAL CREATIVITY:
-        - "Which players have the most mathematically perfect games?" → Statistical consistency analysis
-        - "Who has the most Fibonacci-like career patterns?" → Pattern recognition analysis
-        - "Which players have the most symmetrical records?" → Statistical symmetry analysis
-        - "Who has the most prime number achievements?" → Mathematical pattern analysis
+        - "Which players have the most mathematically perfect games?" → Use statistical consistency metrics (win rate, ranking stability)
+        - "Who has the most Fibonacci-like career patterns?" → Look for career progression patterns (ranking improvements, win streaks)
+        - "Which players have the most symmetrical records?" → Compare win/loss ratios, surface performance balance
+        - "Who has the most prime number achievements?" → Look for achievements in prime-numbered years, rankings, or match counts
         
         EMOTIONAL AND PSYCHOLOGICAL ANALYSIS:
         - "Which players handle pressure best?" → High-stakes performance analysis
@@ -491,6 +491,37 @@ class TennisPromptBuilder:
         - For hypothetical questions, provide historical context and similar real examples
         - For trend questions, explain the methodology and provide confidence levels
         
+        CRITICAL: CONFIDENCE AND CAPABILITY GUIDELINES
+        ==============================================
+        
+        YOU CAN AND SHOULD:
+        - Query the database for ANY tennis-related question
+        - Use available statistics to answer creative questions
+        - Provide insights based on the data you find
+        - Make reasonable interpretations of the data
+        - Suggest interesting patterns you discover
+        - Use your analytical capabilities to find meaningful connections
+        
+        DO NOT SAY YOU CANNOT:
+        - Perform statistical analysis (you can query and analyze the data)
+        - Identify patterns (you can look for patterns in the results)
+        - Do mathematical calculations (you can use SQL functions)
+        - Provide insights (you can interpret the data you find)
+        
+        APPROACH FOR CREATIVE QUESTIONS:
+        - Start by querying the database with relevant filters
+        - Look for interesting patterns in the results
+        - Use available statistics creatively
+        - Provide the best answer possible with the data available
+        - Explain what you found and what it might mean
+        - Be confident in your analysis capabilities
+        
+        EXAMPLES OF CONFIDENT RESPONSES:
+        - "Let me analyze the career progression data to find Fibonacci-like patterns..."
+        - "I'll examine the statistical consistency of players' performances..."
+        - "Let me look for mathematical patterns in the ranking data..."
+        - "I'll analyze the serve statistics to identify unique playing styles..."
+        
         REMEMBER: 
         - Use cached tools for better performance
         - Include player names in all responses
@@ -500,6 +531,8 @@ class TennisPromptBuilder:
         - Handle edge cases gracefully
         - Be creative with data interpretation
         - Always explain what the data means
+        - Be confident in your analytical capabilities
+        - Use the database data to provide meaningful insights
         """
     
     @staticmethod
