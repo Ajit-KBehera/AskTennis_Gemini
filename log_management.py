@@ -46,6 +46,9 @@ class LogManager:
         handler.setFormatter(formatter)
         log_manager_logger.addHandler(handler)
         
+        # Disable console output
+        log_manager_logger.propagate = False
+        
         self.log_manager_logger = log_manager_logger
     
     def get_log_files(self):
@@ -311,33 +314,18 @@ def main():
     )
     
     if args.action == 'cleanup':
-        print("🧹 Starting log cleanup...")
         stats = log_manager.cleanup_all()
-        print(f"✅ Cleanup completed:")
-        print(f"   - Initial files: {stats['initial_files']}")
-        print(f"   - Initial sessions: {stats['initial_sessions']}")
-        print(f"   - Files deleted by age: {stats['age_deleted']}")
-        print(f"   - Files deleted by session: {stats['session_deleted']}")
-        print(f"   - Total deleted: {stats['total_deleted']}")
-        print(f"   - Final files: {stats['final_files']}")
-        print(f"   - Final sessions: {stats['final_sessions']}")
+        return stats
     
     elif args.action == 'stats':
         stats = log_manager.get_log_statistics()
-        print("📊 Log Statistics:")
-        print(f"   - Total files: {stats['total_files']}")
-        print(f"   - Total sessions: {stats['total_sessions']}")
-        print(f"   - Total size: {stats['total_size_mb']} MB")
-        print(f"   - Max sessions: {stats['max_sessions']}")
-        print(f"   - Max age: {stats['max_age_days']} days")
+        return stats
     
     elif args.action == 'list':
         sessions = log_manager.list_sessions()
-        print("📋 Current Sessions:")
-        for session in sessions:
-            print(f"   - Session {session['session_id']}: {session['file_count']} files, "
-                  f"{session['earliest'].strftime('%Y-%m-%d %H:%M:%S')} to "
-                  f"{session['latest'].strftime('%Y-%m-%d %H:%M:%S')}")
+        return sessions
 
 if __name__ == "__main__":
-    main()
+    result = main()
+    # Exit with appropriate code
+    exit(0 if result else 1)

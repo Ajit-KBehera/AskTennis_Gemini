@@ -50,6 +50,9 @@ class AutomaticLogCleanup:
         handler.setFormatter(formatter)
         logger.addHandler(handler)
         
+        # Disable console output
+        logger.propagate = False
+        
         return logger
     
     def should_cleanup(self):
@@ -143,21 +146,14 @@ def get_log_status():
     return cleanup.get_cleanup_status()
 
 if __name__ == "__main__":
-    # Test the cleanup system
-    print("🧹 Testing automatic log cleanup...")
-    
+    # Test the cleanup system silently
     cleanup = setup_automatic_cleanup()
     status = cleanup.get_cleanup_status()
     
-    print(f"📊 Current Status:")
-    print(f"   - Files: {status['current_files']}")
-    print(f"   - Sessions: {status['current_sessions']}")
-    print(f"   - Size: {status['current_size_mb']} MB")
-    print(f"   - Cleanup needed: {status['cleanup_needed']}")
-    
     if status['cleanup_needed']:
-        print("🧹 Performing cleanup...")
         result = cleanup.perform_cleanup()
-        print(f"✅ Cleanup completed: {result}")
+        # Return result for programmatic use
+        exit(0 if result.get('status') != 'error' else 1)
     else:
-        print("✅ No cleanup needed")
+        # No cleanup needed
+        exit(0)
