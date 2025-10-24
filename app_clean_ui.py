@@ -72,6 +72,8 @@ with col_clear:
     if st.button("Clear", width='stretch'):
         st.session_state.ai_search_input = ""
         st.session_state.ai_query_results = None
+        st.session_state.show_ai_results = False
+        st.session_state.analysis_generated = False
         st.rerun()
 
 # --- Agent Setup ---
@@ -193,6 +195,7 @@ try:
                 'surface': selected_surface
             }
             st.session_state.analysis_generated = True
+            st.session_state.show_ai_results = False  # Reset AI results to show table
             
             # Generate analysis context
             df = db_service.get_matches_with_filters(
