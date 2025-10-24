@@ -169,7 +169,7 @@ try:
         generate_button = st.button(
             "🔍 Generate Analysis",
             type="primary",
-            use_container_width=True
+            width='stretch'
         )
         
         # Update session state
@@ -217,31 +217,8 @@ try:
             )
             
             if not df.empty:
-                # Display metrics
-                if filters['player'] and filters['player'] != "All Players":
-                    stats = db_service.get_player_statistics(filters['player'])
-                    col1, col2, col3, col4 = st.columns(4)
-                    with col1:
-                        st.metric("Total Matches", stats['total_matches'])
-                    with col2:
-                        st.metric("Win Rate", f"{stats['win_rate']}%")
-                    with col3:
-                        st.metric("Wins", stats['wins'])
-                    with col4:
-                        st.metric("Losses", stats['losses'])
-                else:
-                    col1, col2, col3, col4 = st.columns(4)
-                    with col1:
-                        st.metric("Total Matches", len(df))
-                    with col2:
-                        st.metric("Unique Players", df['winner_name'].nunique() + df['loser_name'].nunique())
-                    with col3:
-                        st.metric("Tournaments", df['tourney_name'].nunique())
-                    with col4:
-                        st.metric("Years", df['event_year'].nunique())
-                
                 # Display results table
-                st.dataframe(df, use_container_width=True)
+                st.dataframe(df, width='stretch')
                 
                 # Export buttons
                 col_export, col_clear = st.columns(2)
@@ -290,7 +267,7 @@ try:
             if suggestions:
                 st.markdown("**💡 Suggestions:**")
                 for suggestion in suggestions[:3]:
-                    if st.button(f"💡 {suggestion}", key=f"suggestion_{suggestion}", use_container_width=True):
+                    if st.button(f"💡 {suggestion}", key=f"suggestion_{suggestion}", width='stretch'):
                         st.session_state.chat_input = suggestion
         else:
             st.info("Generate an analysis first for smart suggestions!")
@@ -303,7 +280,7 @@ try:
             key="chat_input_field"
         )
         
-        if st.button("🚀 Send", type="primary", use_container_width=True):
+        if st.button("🚀 Send", type="primary", width='stretch'):
             if chat_input:
                 st.session_state.chat_input = chat_input
                 try:
@@ -317,7 +294,7 @@ try:
                 except Exception as e:
                     st.error(f"Error: {e}")
         
-        if st.button("🗑️ Clear Chat", use_container_width=True):
+        if st.button("🗑️ Clear Chat", width='stretch'):
             st.session_state.chat_input = ''
             st.rerun()
         
