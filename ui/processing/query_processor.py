@@ -9,7 +9,7 @@ import ast
 from datetime import datetime
 from langchain_core.messages import HumanMessage, AIMessage
 from tennis_logging.logging_factory import log_user_query, log_llm_interaction, log_final_response, log_error
-from ui.formatting.data_formatter import DataFormatter
+from ui.consolidated_formatter import ConsolidatedFormatter
 
 
 class QueryProcessor:
@@ -18,12 +18,12 @@ class QueryProcessor:
     Handles agent interaction, response processing, and error handling.
     """
     
-    def __init__(self, data_formatter: DataFormatter):
+    def __init__(self, data_formatter: ConsolidatedFormatter):
         """
         Initialize the query processor.
         
         Args:
-            data_formatter: DataFormatter instance for formatting responses
+            data_formatter: ConsolidatedFormatter instance for formatting responses
         """
         self.data_formatter = data_formatter
     

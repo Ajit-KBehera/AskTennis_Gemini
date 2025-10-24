@@ -4,7 +4,7 @@ Orchestrates all components to create the complete LangGraph agent.
 """
 
 import streamlit as st
-from agent.agent_config import AgentConfigManager
+from agent.unified_config import UnifiedAgentConfig
 from llm.llm_setup import LLMFactory
 from tennis.tennis_core import TennisMappingTools, TennisPromptBuilder
 from graph.langgraph_builder import LangGraphBuilder
@@ -22,7 +22,7 @@ def setup_langgraph_agent():
     print("--- Initializing LangGraph Agent with Gemini ---")
     
     # Load configuration
-    config_manager = AgentConfigManager()
+    config_manager = UnifiedAgentConfig()
     
     # Validate configuration
     if not config_manager.validate_config():
@@ -43,7 +43,7 @@ def setup_langgraph_agent():
     base_tools = toolkit.get_tools()
     
     # Add cached tennis mapping and visualization tools for better performance
-    tennis_tools = TennisMappingTools.create_all_tennis_tools()
+    tennis_tools = TennisMappingTools.create_all_mapping_tools()
     all_tools = base_tools + tennis_tools
     
     # Create optimized prompt

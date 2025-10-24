@@ -323,17 +323,24 @@ class TennisMappingTools:
     @staticmethod
     def create_all_mapping_tools() -> List:
         """
-        Create all tennis mapping tools.
+        Create all tennis mapping tools using generic system.
         
         Returns:
             List of all mapping tools
         """
+        from .generic_mappings import (
+            create_round_mapping_tool,
+            create_surface_mapping_tool,
+            create_tour_mapping_tool,
+            create_hand_mapping_tool,
+            create_tournament_mapping_tool
+        )
         return [
-            TennisMappingTools.create_round_mapping_tool(),
-            TennisMappingTools.create_surface_mapping_tool(),
-            TennisMappingTools.create_tour_mapping_tool(),
-            TennisMappingTools.create_hand_mapping_tool(),
-            TennisMappingTools.create_tournament_mapping_tool()
+            create_round_mapping_tool(),
+            create_surface_mapping_tool(),
+            create_tour_mapping_tool(),
+            create_hand_mapping_tool(),
+            create_tournament_mapping_tool()
         ]
     
     @staticmethod

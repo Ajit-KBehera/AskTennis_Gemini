@@ -17,7 +17,7 @@ from agent.agent_factory import setup_langgraph_agent
 
 # --- UI Components ---
 from ui.display.ui_display import UIDisplay
-from ui.formatting.data_formatter import DataFormatter
+from ui.consolidated_formatter import ConsolidatedFormatter
 from ui.processing.query_processor import QueryProcessor
 
 
@@ -27,7 +27,7 @@ try:
     
     # Initialize UI components directly
     ui_display = UIDisplay()
-    data_formatter = DataFormatter()
+    data_formatter = ConsolidatedFormatter()
     query_processor = QueryProcessor(data_formatter)
     
     # Run the main application
