@@ -85,7 +85,6 @@ try:
     # =============================================================================
     with col1:
         st.markdown('<div class="filter-panel">', unsafe_allow_html=True)
-        st.header("🎾 Player Analyzer")
         st.markdown("Search and analyze tennis data:")
         
         # Initialize session state for filters
@@ -101,7 +100,6 @@ try:
         # =============================================================================
         # PLAYER SEARCH
         # =============================================================================
-        st.subheader("👤 Player")
         
         # Get all players for search
         all_players = db_service.get_all_players()
@@ -118,7 +116,6 @@ try:
         # =============================================================================
         # OPPONENT SEARCH
         # =============================================================================
-        st.subheader("⚔️ Opponent")
         
         # Get opponent options based on selected player
         if selected_player and selected_player != "All Players":
@@ -137,7 +134,6 @@ try:
         # =============================================================================
         # TOURNAMENT SEARCH
         # =============================================================================
-        st.subheader("🏆 Tournament")
         
         # Get all tournaments for search
         all_tournaments = db_service.get_all_tournaments()
@@ -154,11 +150,9 @@ try:
         # =============================================================================
         # YEAR AND SURFACE
         # =============================================================================
-        st.subheader("📅 Year")
         year_options = ["All Years"] + [str(year) for year in range(2024, 2015, -1)]
         selected_year = st.selectbox("Select Year:", year_options, key="year_select")
         
-        st.subheader("🏟️ Surface")
         surface_options = ["All Surfaces", "Hard", "Clay", "Grass", "Carpet"]
         selected_surface = st.selectbox("Select Surface:", surface_options, key="surface_select")
         
@@ -202,7 +196,6 @@ try:
     # =============================================================================
     with col2:
         st.markdown('<div class="results-panel">', unsafe_allow_html=True)
-        st.header("📊 Analysis Results")
         
         if st.session_state.get('analysis_generated', False):
             filters = st.session_state.analysis_filters
@@ -249,28 +242,7 @@ try:
     # =============================================================================
     with col3:
         st.markdown('<div class="chat-panel">', unsafe_allow_html=True)
-        st.header("💬 AskTennis AI")
-        
-        # Display current analysis context
-        if st.session_state.get('analysis_generated', False):
-            context = st.session_state.get('analysis_context', {})
-            st.markdown("### 🎯 Current Analysis")
-            st.markdown(f"**{context.get('summary', 'Analysis')}**")
-        
         # Chat interface
-        st.markdown("### 💭 Ask Questions")
-        
-        if st.session_state.get('analysis_generated', False):
-            context = st.session_state.get('analysis_context', {})
-            suggestions = context.get('suggestions', [])
-            
-            if suggestions:
-                st.markdown("**💡 Suggestions:**")
-                for suggestion in suggestions[:3]:
-                    if st.button(f"💡 {suggestion}", key=f"suggestion_{suggestion}", width='stretch'):
-                        st.session_state.chat_input = suggestion
-        else:
-            st.info("Generate an analysis first for smart suggestions!")
         
         # Chat input
         chat_input = st.text_input(
