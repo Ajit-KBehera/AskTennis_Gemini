@@ -14,7 +14,7 @@ import logging
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from log_management import LogManager
+from .log_management import LogManager
 
 class AutomaticLogCleanup:
     """Automatic log cleanup that integrates with the logging system."""
