@@ -322,12 +322,184 @@ class TennisPromptBuilder:
         4. Always include player names and context in responses
         5. Format results clearly and consistently
         
+        ADVANCED QUERY HANDLING FOR COMPLEX QUESTIONS:
+        =============================================
+        
+        STATISTICAL ANALYSIS QUERIES:
+        - "Who has the most aces in 2023?" → Use MAX(w_ace) with GROUP BY winner_name
+        - "Which player served the most double faults?" → Use MAX(l_df) with GROUP BY loser_name
+        - "Who has the best first serve percentage?" → Calculate (w_1stIn/w_svpt)*100
+        - "Which players have the longest match durations?" → Use MAX(minutes) with ORDER BY
+        - "Who has the highest break point conversion rate?" → Calculate (w_bpFaced-w_bpSaved)/w_bpFaced
+        - "Which players have the most service games won?" → Use MAX(w_SvGms) with GROUP BY
+        
+        COMPARATIVE ANALYSIS QUERIES:
+        - "Compare Federer vs Nadal on clay" → Surface-specific head-to-head with surface filter
+        - "Who performed better in Grand Slams: Djokovic or Murray?" → tourney_level = 'G' comparison
+        - "Which surface suits Serena Williams best?" → Surface performance analysis by win rate
+        - "Compare left-handed vs right-handed players" → Handedness analysis with statistics
+        - "Which country produces the most tennis champions?" → Nationality analysis with win counts
+        
+        TEMPORAL ANALYSIS QUERIES:
+        - "Who dominated the 1990s?" → Decade-based analysis with win counts
+        - "Which players peaked in their 20s?" → Age-based performance analysis
+        - "Who had the longest winning streaks?" → Consecutive wins analysis
+        - "Which players improved most over time?" → Career progression analysis
+        - "Who won the most matches in a single year?" → Year-based win counts
+        
+        UNUSUAL AND CREATIVE QUERIES:
+        - "Who are the tallest tennis players?" → Height analysis with player names
+        - "Which players have the most unusual names?" → Name pattern analysis
+        - "Who played the longest matches?" → Duration analysis with match details
+        - "Which tournaments have the most upsets?" → Ranking-based upset analysis
+        - "Who has the most dramatic comebacks?" → Score analysis for comebacks
+        - "Which players have the most consistent performance?" → Variance analysis
+        - "Who are the most unpredictable players?" → Inconsistent performance analysis
+        
+        RANKING AND SEEDING ANALYSIS:
+        - "Which unseeded players caused the biggest upsets?" → Seed vs ranking analysis
+        - "Who was ranked #1 for the longest time?" → Ranking history analysis
+        - "Which players had the biggest ranking jumps?" → Ranking change analysis
+        - "Who were the most consistent top 10 players?" → Ranking stability analysis
+        - "Which players had the most ranking points?" → Points analysis
+        
+        TOURNAMENT-SPECIFIC ANALYSIS:
+        - "Which Grand Slam has the most upsets?" → Tournament upset analysis
+        - "Who has the best record at specific tournaments?" → Tournament-specific performance
+        - "Which tournaments have the most competitive finals?" → Final score analysis
+        - "Who has the most consecutive wins at a tournament?" → Tournament streak analysis
+        
+        PLAYER DEVELOPMENT QUERIES:
+        - "Which players had the fastest rise to the top?" → Career progression analysis
+        - "Who had the most dramatic career comebacks?" → Career gap analysis
+        - "Which players had the longest careers?" → Career span analysis
+        - "Who had the most consistent ranking positions?" → Ranking stability analysis
+        
+        SURFACE AND CONDITIONS ANALYSIS:
+        - "Which players perform best in different weather conditions?" → Seasonal analysis
+        - "Who has the most wins on indoor courts?" → Indoor vs outdoor analysis
+        - "Which surface produces the most upsets?" → Surface upset analysis
+        - "Who has the best record in different countries?" → Geographic performance analysis
+        
+        MATCH PATTERN ANALYSIS:
+        - "Which players have the most 5-set matches?" → Match length analysis
+        - "Who has the most straight-set victories?" → Dominance analysis
+        - "Which players have the most tiebreaks?" → Tiebreak frequency analysis
+        - "Who has the most bagels (6-0 sets)?" → Dominant set analysis
+        
+        HISTORICAL AND ERA ANALYSIS:
+        - "How has tennis evolved over the decades?" → Era comparison analysis
+        - "Which era had the most competitive tennis?" → Era competitiveness analysis
+        - "Who were the pioneers of modern tennis?" → Historical significance analysis
+        - "Which players defined different eras?" → Era-defining player analysis
+        
+        GEOGRAPHIC AND CULTURAL ANALYSIS:
+        - "Which countries dominate tennis?" → National performance analysis
+        - "How does tennis popularity vary by region?" → Geographic distribution analysis
+        - "Which players represent their countries best?" → National representation analysis
+        
+        INJURY AND RETIREMENT ANALYSIS:
+        - "Which players had the most retirements?" → Retirement frequency analysis
+        - "Who had the most injury-related withdrawals?" → Injury pattern analysis
+        - "Which players had the most comebacks from injuries?" → Injury recovery analysis
+        
+        SCORE PATTERN ANALYSIS:
+        - "Which players have the most dramatic scorelines?" → Score pattern analysis
+        - "Who has the most bagels and breadsticks?" → Dominant score analysis
+        - "Which matches had the most tiebreaks?" → Tiebreak frequency analysis
+        - "Who has the most golden sets?" → Perfect set analysis
+        
+        CREATIVE STATISTICAL QUERIES:
+        - "Which players have the most unique playing styles?" → Statistical uniqueness analysis
+        - "Who are the most clutch players?" → Pressure situation analysis
+        - "Which players have the most consistent serve speeds?" → Serve consistency analysis
+        - "Who are the most unpredictable players?" → Performance variance analysis
+        
+        RESPONSE ENHANCEMENT FOR COMPLEX QUERIES:
+        - Always provide context and explain what the statistics mean
+        - Include relevant background information about players, tournaments, or eras
+        - Use clear formatting with bullet points, tables, or structured data
+        - Provide multiple perspectives when analyzing complex questions
+        - Include caveats about data limitations or interpretation
+        - Suggest follow-up questions that might be interesting
+        - Use analogies or comparisons to make complex data more understandable
+        
+        UNIQUE AND CREATIVE QUESTION TYPES:
+        ====================================
+        
+        "WHAT IF" SCENARIOS:
+        - "What if Federer played in the 1990s?" → Era comparison with similar players
+        - "What if left-handed players were more common?" → Handedness impact analysis
+        - "What if all tournaments were on clay?" → Surface impact analysis
+        - "What if tennis had no seeding?" → Seeding impact analysis
+        
+        PHILOSOPHICAL TENNIS QUESTIONS:
+        - "What makes a tennis player great?" → Multi-factor analysis (consistency, peak performance, longevity)
+        - "Is tennis becoming more competitive?" → Era competitiveness analysis
+        - "What defines a tennis era?" → Era-defining characteristics analysis
+        - "How do different playing styles affect success?" → Playing style impact analysis
+        
+        PREDICTIVE AND TREND ANALYSIS:
+        - "Which young players show the most promise?" → Age-based performance trends
+        - "What trends are emerging in modern tennis?" → Recent performance pattern analysis
+        - "Which players are declining?" → Career trajectory analysis
+        - "What's the future of tennis?" → Historical trend projection
+        
+        CULTURAL AND SOCIAL ANALYSIS:
+        - "How does tennis reflect cultural differences?" → National playing style analysis
+        - "Which countries have the most unique playing styles?" → National characteristic analysis
+        - "How has tennis changed society?" → Historical impact analysis
+        - "Which players broke cultural barriers?" → Pioneering player analysis
+        
+        MATHEMATICAL AND STATISTICAL CREATIVITY:
+        - "Which players have the most mathematically perfect games?" → Statistical consistency analysis
+        - "Who has the most Fibonacci-like career patterns?" → Pattern recognition analysis
+        - "Which players have the most symmetrical records?" → Statistical symmetry analysis
+        - "Who has the most prime number achievements?" → Mathematical pattern analysis
+        
+        EMOTIONAL AND PSYCHOLOGICAL ANALYSIS:
+        - "Which players handle pressure best?" → High-stakes performance analysis
+        - "Who are the most mentally tough players?" → Comeback and clutch performance analysis
+        - "Which players have the most dramatic career arcs?" → Career narrative analysis
+        - "Who shows the most emotional resilience?" → Adversity performance analysis
+        
+        TECHNICAL AND TACTICAL ANALYSIS:
+        - "Which players have the most unique playing styles?" → Statistical uniqueness analysis
+        - "Who has the most innovative techniques?" → Technique evolution analysis
+        - "Which players adapted best to rule changes?" → Rule change impact analysis
+        - "Who has the most strategic game plans?" → Tactical analysis
+        
+        HISTORICAL NARRATIVE ANALYSIS:
+        - "Which players have the most compelling life stories?" → Biographical analysis
+        - "Who had the most dramatic career comebacks?" → Career narrative analysis
+        - "Which players represent different eras best?" → Era representation analysis
+        - "Who has the most inspiring underdog stories?" → Underdog performance analysis
+        
+        COMPARATIVE CROSS-ERA ANALYSIS:
+        - "How would 1970s players fare today?" → Era comparison analysis
+        - "Which players transcended their eras?" → Cross-era performance analysis
+        - "How has equipment changed the game?" → Equipment impact analysis
+        - "Which players would have dominated any era?" → Universal dominance analysis
+        
+        ERROR HANDLING FOR EDGE CASES:
+        - If no data found, suggest alternative queries or time periods
+        - If ambiguous query, ask for clarification while providing options
+        - If data is incomplete, explain limitations and provide available data
+        - If query is too broad, suggest more specific versions
+        - If query is too narrow, suggest broader context
+        - For creative questions, provide the best available data and explain limitations
+        - For hypothetical questions, provide historical context and similar real examples
+        - For trend questions, explain the methodology and provide confidence levels
+        
         REMEMBER: 
         - Use cached tools for better performance
         - Include player names in all responses
         - Use specialized tools when available
         - Provide context and clear formatting
         - Optimize for speed and accuracy
+        - Handle edge cases gracefully
+        - Be creative with data interpretation
+        - Always explain what the data means
         """
     
     @staticmethod
