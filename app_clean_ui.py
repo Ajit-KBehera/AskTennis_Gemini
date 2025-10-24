@@ -48,13 +48,31 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- Header ---
-st.markdown("""
-<div class="main-header">
-    <h1>🎾 AskTennis AI - Clean Player Analyzer</h1>
-    <p>Simple search-based tennis analysis</p>
-</div>
-""", unsafe_allow_html=True)
+# --- Top Panel: AskTennis Search ---
+col_search, col_send, col_clear = st.columns([6, 1, 1])
+
+with col_search:
+    ai_query = st.text_input(
+        "AskTennis Search:",
+        placeholder="Ask any tennis question (e.g., Who won Wimbledon 2022?)",
+        key="ai_search_input",
+        width='stretch'
+    )
+
+with col_send:
+    st.markdown("<br>", unsafe_allow_html=True)  # Add some spacing
+    if st.button("Send", type="primary", width='stretch'):
+        if ai_query:
+            st.session_state.ai_query = ai_query
+            st.session_state.show_ai_results = True
+            st.session_state.analysis_generated = False  # Hide table results
+
+with col_clear:
+    st.markdown("<br>", unsafe_allow_html=True)  # Add some spacing
+    if st.button("Clear", width='stretch'):
+        st.session_state.ai_search_input = ""
+        st.session_state.ai_query_results = None
+        st.rerun()
 
 # --- Agent Setup ---
 from agent.agent_factory import setup_langgraph_agent
@@ -77,14 +95,13 @@ try:
     export_service = ExportService()
     smart_dropdown = SmartDropdownService(db_service)
     
-    # --- Main 3-Column Layout ---
-    col1, col2, col3 = st.columns([2, 4, 2])
+    # --- Main Layout: Left Panel + Remaining Space ---
+    col_left, col_remaining = st.columns([2, 6])
     
     # =============================================================================
     # COLUMN 1: CLEAN FILTER PANEL (Left Side)
     # =============================================================================
-    with col1:
-        st.markdown('<div class="filter-panel">', unsafe_allow_html=True)
+    with col_left:
         st.markdown("Search and analyze tennis data:")
         
         # Initialize session state for filters
@@ -189,15 +206,21 @@ try:
                 st.session_state.analysis_filters, df
             )
         
-        st.markdown('</div>', unsafe_allow_html=True)
     
     # =============================================================================
-    # COLUMN 2: RESULTS PANEL (Middle)
+    # REMAINING SPACE: RESULTS OR AI QUERY
     # =============================================================================
-    with col2:
-        st.markdown('<div class="results-panel">', unsafe_allow_html=True)
+    with col_remaining:
+        # Handle AI Query Results
+        if st.session_state.get('show_ai_results', False) and st.session_state.get('ai_query'):
+            try:
+                with st.spinner("AI is analyzing your question..."):
+                    query_processor.handle_user_query(st.session_state.ai_query, agent_graph, logger)
+            except Exception as e:
+                st.error(f"Error processing query: {e}")
         
-        if st.session_state.get('analysis_generated', False):
+        # Handle Table Results
+        elif st.session_state.get('analysis_generated', False):
             filters = st.session_state.analysis_filters
             
             # Get real data from database
@@ -233,44 +256,9 @@ try:
             else:
                 st.warning("No matches found for the selected criteria.")
         else:
-            st.info("👈 Use the search boxes on the left to find and analyze tennis data!")
+            pass
         
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    # =============================================================================
-    # COLUMN 3: CHAT PANEL (Right Side)
-    # =============================================================================
-    with col3:
-        st.markdown('<div class="chat-panel">', unsafe_allow_html=True)
-        # Chat interface
         
-        # Chat input
-        chat_input = st.text_input(
-            "Ask a question:",
-            value=st.session_state.get('chat_input', ''),
-            placeholder="e.g., Show me their head-to-head record",
-            key="chat_input_field"
-        )
-        
-        if st.button("🚀 Send", type="primary", width='stretch'):
-            if chat_input:
-                st.session_state.chat_input = chat_input
-                try:
-                    with st.spinner("AI is analyzing..."):
-                        if st.session_state.get('analysis_generated', False):
-                            context = st.session_state.get('analysis_context', {})
-                            enhanced_query = analysis_service.generate_enhanced_query(chat_input, context)
-                            query_processor.handle_user_query(enhanced_query, agent_graph, logger)
-                        else:
-                            query_processor.handle_user_query(chat_input, agent_graph, logger)
-                except Exception as e:
-                    st.error(f"Error: {e}")
-        
-        if st.button("🗑️ Clear Chat", width='stretch'):
-            st.session_state.chat_input = ''
-            st.rerun()
-        
-        st.markdown('</div>', unsafe_allow_html=True)
     
     # Footer
     st.markdown("---")
