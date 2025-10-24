@@ -45,6 +45,23 @@ st.markdown("""
         border-radius: 5px;
         padding: 0.5rem;
     }
+    
+    /* Remove margins and make full width */
+    .main .block-container {
+        padding-left: 0rem;
+        padding-right: 0rem;
+        max-width: 100%;
+    }
+    
+    /* Remove column gaps */
+    div[data-testid="column"] {
+        gap: 0rem;
+    }
+    
+    /* Full width layout */
+    .stApp {
+        max-width: 100%;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -98,7 +115,7 @@ try:
     smart_dropdown = SmartDropdownService(db_service)
     
     # --- Main Layout: Left Panel + Remaining Space ---
-    col_left, col_remaining = st.columns([2, 6])
+    col_left, col_remaining = st.columns([1.4, 6.6])
     
     # =============================================================================
     # COLUMN 1: CLEAN FILTER PANEL (Left Side)
