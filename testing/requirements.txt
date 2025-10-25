@@ -1,0 +1,22 @@
+# Testing Framework Requirements
+# These are in addition to the main project requirements
+
+# Database
+sqlite3  # Built-in with Python
+
+# Data Analysis
+difflib  # Built-in with Python
+
+# Optional: Enhanced testing capabilities
+# pytest>=7.0.0
+# pytest-cov>=4.0.0
+# pytest-mock>=3.10.0
+
+# Optional: Enhanced reporting
+# matplotlib>=3.5.0
+# seaborn>=0.11.0
+# pandas>=1.5.0
+
+# Optional: Performance monitoring
+# psutil>=5.9.0
+# memory-profiler>=0.60.0
