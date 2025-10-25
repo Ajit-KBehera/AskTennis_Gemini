@@ -77,13 +77,13 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 7,
         "question": "Who won the US Open in 2019?",
-        "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'US Open' AND event_year = 2019 AND round = 'F'",
-        "expected_answer": "Rafael Nadal",
+        "expected_sql": "SELECT winner_name FROM matches WHERE (tourney_name = 'US Open' OR tourney_name = 'Us Open') AND event_year = 2019 AND round = 'F'",
+        "expected_answer": "Rafael Nadal, Bianca Andreescu",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['US Open', '2019', 'winner'],
         "sql_verified": True,
-        "sql_results_count": 1,
+        "sql_results_count": 2,
     },
     {
         "id": 8,
