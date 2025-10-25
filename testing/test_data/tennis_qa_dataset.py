@@ -34,8 +34,8 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 3,
         "question": "Who won the US Open in 2020?",
-        "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'US Open' AND event_year = 2020 AND round = 'F'",
-        "expected_answer": "No data found",
+        "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Us Open' AND event_year = 2020 AND round = 'F'",
+        "expected_answer": "Dominic Thiem, Naomi Osaka",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['US Open', '2020', 'winner'],
