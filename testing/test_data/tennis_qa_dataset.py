@@ -221,7 +221,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 22,
         "question": "How many times has Novak Djokovic beaten Andy Murray?",
-        "expected_sql": "SELECT winner_name FROM matches WHERE round = 'F' ORDER BY event_year DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Djokovic', 'Murray', 'beaten', 'times'],
@@ -231,7 +234,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 23,
         "question": "What is the head-to-head record between Serena Williams and Venus Williams?",
-        "expected_sql": "SELECT COUNT(*) FROM matches WHERE winner_name LIKE '%Federer%' AND loser_name LIKE '%Nadal%'",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Roger Federer' 
+GROUP BY winner_name",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Serena Williams', 'Venus Williams', 'head-to-head'],
@@ -241,7 +247,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 24,
         "question": "How many times has Rafael Nadal beaten Roger Federer?",
-        "expected_sql": "SELECT winner_name FROM matches WHERE round = 'F' ORDER BY event_year DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Nadal', 'Federer', 'beaten', 'times'],
@@ -251,7 +260,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 25,
         "question": "What is the head-to-head record between Novak Djokovic and Roger Federer?",
-        "expected_sql": "SELECT COUNT(*) FROM matches WHERE winner_name LIKE '%Federer%' AND loser_name LIKE '%Nadal%'",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Roger Federer' 
+GROUP BY winner_name",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Djokovic', 'Federer', 'head-to-head'],
@@ -261,7 +273,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 26,
         "question": "How many times has Andy Murray beaten Novak Djokovic?",
-        "expected_sql": "SELECT winner_name FROM matches WHERE round = 'F' ORDER BY event_year DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Murray', 'Djokovic', 'beaten', 'times'],
@@ -271,7 +286,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 27,
         "question": "What is the head-to-head record between Rafael Nadal and Novak Djokovic?",
-        "expected_sql": "SELECT COUNT(*) FROM matches WHERE winner_name LIKE '%Federer%' AND loser_name LIKE '%Nadal%'",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Roger Federer' 
+GROUP BY winner_name",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Nadal', 'Djokovic', 'head-to-head'],
@@ -281,7 +299,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 28,
         "question": "How many times has Roger Federer beaten Rafael Nadal?",
-        "expected_sql": "SELECT winner_name FROM matches WHERE round = 'F' ORDER BY event_year DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Federer', 'Nadal', 'beaten', 'times'],
@@ -291,7 +312,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 29,
         "question": "What is the head-to-head record between Andy Murray and Roger Federer?",
-        "expected_sql": "SELECT COUNT(*) FROM matches WHERE winner_name LIKE '%Federer%' AND loser_name LIKE '%Nadal%'",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Roger Federer' 
+GROUP BY winner_name",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Murray', 'Federer', 'head-to-head'],
@@ -301,7 +325,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 30,
         "question": "How many times has Novak Djokovic beaten Rafael Nadal?",
-        "expected_sql": "SELECT winner_name FROM matches WHERE round = 'F' ORDER BY event_year DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Djokovic', 'Nadal', 'beaten', 'times'],
@@ -311,7 +338,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 31,
         "question": "What is the head-to-head record between Andy Murray and Rafael Nadal?",
-        "expected_sql": "SELECT COUNT(*) FROM matches WHERE winner_name LIKE '%Federer%' AND loser_name LIKE '%Nadal%'",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Roger Federer' 
+GROUP BY winner_name",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Murray', 'Nadal', 'head-to-head'],
@@ -321,7 +351,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 32,
         "question": "How many times has Rafael Nadal beaten Andy Murray?",
-        "expected_sql": "SELECT winner_name FROM matches WHERE round = 'F' ORDER BY event_year DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Nadal', 'Murray', 'beaten', 'times'],
@@ -341,7 +374,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 34,
         "question": "How many times has Roger Federer beaten Novak Djokovic?",
-        "expected_sql": "SELECT winner_name FROM matches WHERE round = 'F' ORDER BY event_year DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Federer', 'Djokovic', 'beaten', 'times'],
@@ -351,7 +387,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 35,
         "question": "What is the head-to-head record between Roger Federer and Andy Murray?",
-        "expected_sql": "SELECT COUNT(*) FROM matches WHERE winner_name LIKE '%Federer%' AND loser_name LIKE '%Nadal%'",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Roger Federer' 
+GROUP BY winner_name",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Federer', 'Murray', 'head-to-head'],
@@ -361,7 +400,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 36,
         "question": "Who has the best record on clay courts?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "medium",
         "keywords": ['clay', 'courts', 'best', 'record'],
@@ -371,7 +413,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 37,
         "question": "Which players perform best on grass courts?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "medium",
         "keywords": ['grass', 'courts', 'perform', 'best'],
@@ -381,7 +426,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 38,
         "question": "What is Rafael Nadal's win percentage on clay?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as clay_wins FROM matches WHERE surface = 'Clay' GROUP BY winner_name ORDER BY clay_wins DESC LIMIT 1",
+        "expected_sql": "SELECT ROUND((SUM(CASE WHEN winner_name = 'Rafael Nadal' THEN 1 ELSE 0 END) * 100.0 / COUNT(*)), 2) as win_percentage 
+FROM matches 
+WHERE surface = 'Clay' 
+AND (winner_name = 'Rafael Nadal' OR loser_name = 'Rafael Nadal')",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "hard",
         "keywords": ['Nadal', 'clay', 'win', 'percentage'],
@@ -391,7 +439,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 39,
         "question": "Who has the most wins on hard courts?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "medium",
         "keywords": ['hard', 'courts', 'most', 'wins'],
@@ -401,7 +452,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 40,
         "question": "Which surface does Novak Djokovic perform best on?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "hard",
         "keywords": ['Djokovic', 'surface', 'perform', 'best'],
@@ -411,7 +465,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 41,
         "question": "What is Roger Federer's win percentage on grass?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as grass_wins FROM matches WHERE surface = 'Grass' GROUP BY winner_name ORDER BY grass_wins DESC LIMIT 1",
+        "expected_sql": "SELECT ROUND((SUM(CASE WHEN winner_name = 'Roger Federer' THEN 1 ELSE 0 END) * 100.0 / COUNT(*)), 2) as win_percentage FROM matches WHERE surface = 'Grass' AND (winner_name = 'Roger Federer' OR loser_name = 'Roger Federer')",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "hard",
         "keywords": ['Federer', 'grass', 'win', 'percentage'],
@@ -421,7 +475,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 42,
         "question": "Who has the best record on indoor courts?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "medium",
         "keywords": ['indoor', 'courts', 'best', 'record'],
@@ -431,7 +488,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 43,
         "question": "Which players have the most wins on clay in 2020?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "medium",
         "keywords": ['clay', '2020', 'most', 'wins'],
@@ -441,7 +501,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 44,
         "question": "What is Andy Murray's win percentage on grass?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as grass_wins FROM matches WHERE surface = 'Grass' GROUP BY winner_name ORDER BY grass_wins DESC LIMIT 1",
+        "expected_sql": "SELECT ROUND((SUM(CASE WHEN winner_name = 'Andy Murray' THEN 1 ELSE 0 END) * 100.0 / COUNT(*)), 2) as win_percentage 
+FROM matches 
+WHERE surface = 'Grass' 
+AND (winner_name = 'Andy Murray' OR loser_name = 'Andy Murray')",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "hard",
         "keywords": ['Murray', 'grass', 'win', 'percentage'],
@@ -451,7 +514,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 45,
         "question": "Who has the most wins on hard courts in 2021?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "medium",
         "keywords": ['hard', 'courts', '2021', 'most', 'wins'],
@@ -461,7 +527,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 46,
         "question": "Which surface produces the most upsets?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "hard",
         "keywords": ['surface', 'upsets', 'most'],
@@ -471,7 +540,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 47,
         "question": "What is Novak Djokovic's win percentage on hard courts?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as hard_wins FROM matches WHERE surface = 'Hard' GROUP BY winner_name ORDER BY hard_wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "hard",
         "keywords": ['Djokovic', 'hard', 'courts', 'win', 'percentage'],
@@ -481,7 +553,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 48,
         "question": "Who has the most wins on grass courts in 2019?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "medium",
         "keywords": ['grass', 'courts', '2019', 'most', 'wins'],
@@ -491,7 +566,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 49,
         "question": "Which players have the best record on carpet courts?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "medium",
         "keywords": ['carpet', 'courts', 'best', 'record'],
@@ -501,7 +579,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 50,
         "question": "What is Rafael Nadal's win percentage on hard courts?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as hard_wins FROM matches WHERE surface = 'Hard' GROUP BY winner_name ORDER BY hard_wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "hard",
         "keywords": ['Nadal', 'hard', 'courts', 'win', 'percentage'],
@@ -521,7 +602,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 52,
         "question": "Which player has the highest ranking?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "medium",
         "keywords": ['player', 'highest', 'ranking'],
@@ -531,7 +615,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 53,
         "question": "What is the average age of top 10 players?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "hard",
         "keywords": ['average', 'age', 'top 10', 'players'],
@@ -541,7 +628,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 54,
         "question": "Who has the most ATP titles?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "medium",
         "keywords": ['ATP', 'titles', 'most'],
@@ -551,7 +641,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 55,
         "question": "Which player has the most aces in 2023?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "medium",
         "keywords": ['player', 'aces', '2023', 'most'],
@@ -571,7 +664,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 57,
         "question": "Who has the most consecutive weeks at number 1?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "hard",
         "keywords": ['consecutive', 'weeks', 'number 1'],
@@ -581,7 +677,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 58,
         "question": "Which player has the most double faults in 2022?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "medium",
         "keywords": ['player', 'double faults', '2022', 'most'],
@@ -601,7 +700,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 60,
         "question": "Who has the most wins in a single year?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "medium",
         "keywords": ['wins', 'single year', 'most'],
@@ -611,7 +713,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 61,
         "question": "Which player has the highest first serve percentage?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "hard",
         "keywords": ['player', 'first serve', 'percentage', 'highest'],
@@ -621,7 +726,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 62,
         "question": "What is the most common score in tennis matches?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "hard",
         "keywords": ['common', 'score', 'tennis', 'matches'],
@@ -631,7 +739,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 63,
         "question": "Who has the most bagels (6-0 sets) in their career?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "hard",
         "keywords": ['bagels', '6-0', 'sets', 'career', 'most'],
@@ -641,7 +752,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 64,
         "question": "Which player has the most tiebreaks won?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "hard",
         "keywords": ['player', 'tiebreaks', 'won', 'most'],
@@ -651,7 +765,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 65,
         "question": "What is the average height of top 100 players?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "hard",
         "keywords": ['average', 'height', 'top 100', 'players'],
@@ -671,7 +788,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 67,
         "question": "Which player has the longest winning streak?",
-        "expected_sql": "SELECT winner_name FROM matches WHERE round = 'F' ORDER BY event_year DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "hard",
         "keywords": ['player', 'longest', 'winning', 'streak'],
@@ -681,7 +801,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 68,
         "question": "Who won the most matches in a single year?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "medium",
         "keywords": ['matches', 'single year', 'most'],
@@ -711,7 +834,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 71,
         "question": "Which player has the most career wins?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "easy",
         "keywords": ['player', 'career', 'wins', 'most'],
@@ -721,7 +847,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 72,
         "question": "Who has the most consecutive weeks at number 1?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "hard",
         "keywords": ['consecutive', 'weeks', 'number 1'],
@@ -731,7 +860,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 73,
         "question": "Which player has the most 5-set match wins?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "medium",
         "keywords": ['player', '5-set', 'match', 'wins', 'most'],
@@ -741,7 +873,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 74,
         "question": "Who has the most wins against top 10 players?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "hard",
         "keywords": ['wins', 'top 10', 'players', 'most'],
@@ -751,7 +886,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 75,
         "question": "Which player has the most tournament wins in a single year?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "hard",
         "keywords": ['player', 'tournament', 'wins', 'single year', 'most'],
@@ -771,7 +909,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 77,
         "question": "Which players were in the top 10 in 2019?",
-        "expected_sql": "SELECT winner_name FROM matches WHERE round = 'F' ORDER BY event_year DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "medium",
         "keywords": ['players', 'top 10', '2019'],
@@ -781,7 +922,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 78,
         "question": "What was Roger Federer's highest ranking?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "medium",
         "keywords": ['Federer', 'highest', 'ranking'],
@@ -801,7 +945,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 80,
         "question": "Which player has spent the most weeks at number 1?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "hard",
         "keywords": ['player', 'weeks', 'number 1', 'most'],
@@ -821,7 +968,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 82,
         "question": "What was Rafael Nadal's highest ranking?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "medium",
         "keywords": ['Nadal', 'highest', 'ranking'],
@@ -841,7 +991,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 84,
         "question": "Which players were in the top 5 in 2020?",
-        "expected_sql": "SELECT winner_name FROM matches WHERE round = 'F' ORDER BY event_year DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "medium",
         "keywords": ['players', 'top 5', '2020'],
@@ -851,7 +1004,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 85,
         "question": "What was Novak Djokovic's highest ranking?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "medium",
         "keywords": ['Djokovic', 'highest', 'ranking'],
@@ -961,7 +1117,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 96,
         "question": "Compare Federer and Nadal's performance on different surfaces",
-        "expected_sql": "SELECT winner_name FROM matches WHERE round = 'F' ORDER BY event_year DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.COMPLEX_QUERIES,
         "difficulty": "hard",
         "keywords": ['compare', 'Federer', 'Nadal', 'performance', 'surfaces'],
@@ -971,7 +1130,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 97,
         "question": "Which players have won all four Grand Slams?",
-        "expected_sql": "SELECT winner_name FROM matches WHERE round = 'F' ORDER BY event_year DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.COMPLEX_QUERIES,
         "difficulty": "hard",
         "keywords": ['players', 'won', 'four', 'Grand Slams'],
@@ -981,7 +1143,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 98,
         "question": "Analyze the evolution of tennis over the decades",
-        "expected_sql": "SELECT winner_name FROM matches WHERE round = 'F' ORDER BY event_year DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.COMPLEX_QUERIES,
         "difficulty": "hard",
         "keywords": ['analyze', 'evolution', 'tennis', 'decades'],
@@ -991,7 +1156,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 99,
         "question": "Which players have the most consistent performance across all surfaces?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.COMPLEX_QUERIES,
         "difficulty": "hard",
         "keywords": ['players', 'consistent', 'performance', 'surfaces'],
@@ -1001,7 +1169,10 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 100,
         "question": "What are the key factors that determine tennis success?",
-        "expected_sql": "SELECT winner_name FROM matches WHERE round = 'F' ORDER BY event_year DESC LIMIT 1",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
+FROM matches 
+WHERE winner_name = 'Novak Djokovic' 
+GROUP BY winner_name",
         "category": TestCategory.COMPLEX_QUERIES,
         "difficulty": "hard",
         "keywords": ['key', 'factors', 'tennis', 'success'],
