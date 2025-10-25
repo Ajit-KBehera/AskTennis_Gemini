@@ -1,15 +1,15 @@
-# 🧪 AskTennis AI - Automated Testing Framework
+# 🧪 AskTennis AI - Simplified Testing Framework
 
-A comprehensive automated testing framework for the AskTennis AI system, designed to validate AI responses against a curated dataset of 100 tennis questions.
+A streamlined automated testing framework for the AskTennis AI system, designed to generate and capture AI responses for 100 curated tennis questions.
 
 ## 📋 Overview
 
-This testing framework provides:
-- **100 curated tennis Q&A pairs** across 8 categories
+This simplified testing framework provides:
+- **100 curated tennis questions** across 8 categories
 - **Automated test execution** with configurable intervals
-- **Comprehensive accuracy analysis** using multiple validation methods
-- **SQLite database storage** for test results and metrics
-- **Detailed reporting** with category and difficulty breakdowns
+- **AI response capture** (SQL queries and answers)
+- **SQLite database storage** for test results and sessions
+- **Basic performance metrics** and execution tracking
 - **Command-line interface** for easy test execution
 
 ## 🏗️ Architecture
@@ -19,13 +19,14 @@ testing/
 ├── __init__.py                 # Main testing module
 ├── test_runner.py              # Main test orchestrator
 ├── test_executor.py            # Individual test execution
-├── result_analyzer.py          # Response analysis & accuracy
+├── result_analyzer.py          # Basic result analysis
 ├── test_data/
 │   ├── tennis_qa_dataset.py    # 100 Q&A test cases
 │   └── test_categories.py      # Test categorization
 ├── database/
 │   └── test_db_manager.py      # SQLite database management
-└── demo_test.py               # Demo script
+├── README.md                   # This documentation
+└── requirements.txt            # Dependencies
 ```
 
 ## 🚀 Quick Start
@@ -75,11 +76,11 @@ The framework includes 100 test cases across 8 categories:
 ### Basic Commands
 
 ```bash
-# Run all 100 tests with 2-second intervals
+# Run all 100 tests with 30-second intervals
 python run_automated_tests.py --full
 
-# Run 20 quick tests with 1-second intervals
-python run_automated_tests.py --quick --num-tests 20 --interval 1
+# Run 20 quick tests with 30-second intervals
+python run_automated_tests.py --quick --num-tests 20
 
 # Run tournament winner tests only
 python run_automated_tests.py --category tournament_winner
@@ -101,150 +102,109 @@ python run_automated_tests.py --export 1 --output results.json
 python run_automated_tests.py --export 1 --format csv --output results.csv
 ```
 
-## 📈 Accuracy Analysis
+## 🔧 Framework Components
 
-The framework uses multiple validation methods:
+### Core Components
 
-### 1. **Exact Match**
-- Direct string comparison
-- Used for: Tournament winners, player names
+#### **TennisTestRunner** (`test_runner.py`)
+- Main orchestrator for test execution
+- Manages test sessions and intervals
+- Handles test subset selection
+- Provides progress tracking and reporting
 
-### 2. **Semantic Similarity**
-- Sequence matching algorithm
-- Used for: Complex answers, descriptions
+#### **TestExecutor** (`test_executor.py`)
+- Executes individual test cases
+- Sends questions to LangGraph agent
+- Extracts SQL queries and AI answers
+- Handles execution timing and error management
 
-### 3. **Numerical Accuracy**
-- Percentage-based accuracy for numbers
-- Used for: Statistics, rankings, scores
+#### **ResultAnalyzer** (`result_analyzer.py`)
+- Provides basic execution metrics
+- Generates category and difficulty breakdowns
+- Creates summary reports
+- Tracks performance statistics
 
-### 4. **Partial Match**
-- Keyword overlap analysis
-- Used for: Multi-part answers
+#### **TestDatabaseManager** (`database/test_db_manager.py`)
+- Manages SQLite database operations
+- Stores test sessions and results
+- Handles session lifecycle management
+- Provides querying capabilities
 
-### 5. **Keyword Match**
-- Important term extraction and comparison
-- Used for: Technical tennis terms
+### Test Data
 
-## 💾 Database Schema
+#### **Tennis Q&A Dataset** (`test_data/tennis_qa_dataset.py`)
+- Contains 100 curated tennis questions
+- Includes categories, difficulty levels, and keywords
+- Simplified structure without expected answers
+
+#### **Test Categories** (`test_data/test_categories.py`)
+- Defines 8 test categories
+- Provides category metadata and descriptions
+- Manages test classification system
+
+## 📊 Database Schema
 
 ### Test Sessions Table
 ```sql
 CREATE TABLE test_sessions (
-    id INTEGER PRIMARY KEY,
-    session_name TEXT,
-    start_time DATETIME,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_name TEXT NOT NULL,
+    start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     end_time DATETIME,
-    total_tests INTEGER,
-    passed_tests INTEGER,
-    failed_tests INTEGER,
-    average_accuracy REAL,
-    average_execution_time REAL,
-    status TEXT
+    total_tests INTEGER DEFAULT 0,
+    completed_tests INTEGER DEFAULT 0,
+    error_tests INTEGER DEFAULT 0,
+    average_execution_time REAL DEFAULT 0.0,
+    status TEXT DEFAULT 'running'
 );
 ```
 
 ### Test Results Table
 ```sql
 CREATE TABLE test_results (
-    id INTEGER PRIMARY KEY,
-    session_id INTEGER,
-    test_id INTEGER,
-    question TEXT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id INTEGER NOT NULL,
+    test_id INTEGER NOT NULL,
+    question TEXT NOT NULL,
     generated_sql TEXT,
     ai_answer TEXT,
-    expected_answer TEXT,
-    accuracy_score REAL,
-    execution_time REAL,
-    status TEXT,
+    execution_time REAL DEFAULT 0.0,
+    test_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    error_message TEXT,
     category TEXT,
-    difficulty TEXT
+    difficulty TEXT,
+    FOREIGN KEY (session_id) REFERENCES test_sessions (id)
 );
 ```
 
-## 🔧 Configuration
+## 🎯 What This Framework Does
 
-### Test Intervals
-- **Default**: 2 seconds between tests
-- **Quick tests**: 1 second intervals
-- **Custom**: Specify with `--interval` parameter
+### ✅ Captures:
+- **AI Generated SQL** - SQL queries produced by the AI
+- **AI Answers** - Natural language responses from the AI
+- **Execution Times** - How long each test takes
+- **Test Metadata** - Category, difficulty, question ID
+- **Error Information** - Any errors during execution
 
-### Test Selection
-- **Full suite**: All 100 tests
-- **Quick tests**: Random subset (default 10)
-- **Category tests**: Specific category only
-- **Custom subset**: Specify test IDs
+### ✅ Provides:
+- **Basic Metrics** - Total tests, completion rates, execution times
+- **Category Breakdown** - Results by test category
+- **Difficulty Analysis** - Performance by difficulty level
+- **Session Management** - Track multiple test runs
+- **Data Export** - JSON/CSV export capabilities
 
-## 📊 Reporting
+## 🚫 What This Framework Does NOT Do
 
-### Basic Metrics
-- Total tests executed
-- Pass/fail/error counts
-- Pass rate percentage
-- Average accuracy score
-- Average execution time
+### ❌ Removed Components:
+- **Accuracy Calculation** - No comparison with expected answers
+- **Status Determination** - No pass/fail evaluation
+- **Confidence Scoring** - No confidence metrics
+- **Complex Analysis** - No detailed result evaluation
+- **Expected Answer Validation** - No correctness checking
 
-### Category Analysis
-- Performance by test category
-- Accuracy breakdown by category
-- Execution time by category
+## 🔧 Usage Examples
 
-### Difficulty Analysis
-- Performance by difficulty level
-- Accuracy by difficulty
-- Recommendations for improvement
-
-## 🎪 Demo
-
-Run the demo script to see the framework in action:
-
-```bash
-python testing/demo_test.py
-```
-
-The demo includes:
-- Test data structure examples
-- Quick test execution
-- Category-specific testing
-- Database operations
-
-## 🛠️ Development
-
-### Adding New Test Cases
-
-1. **Edit the dataset** in `testing/test_data/tennis_qa_dataset.py`
-2. **Add test case** with proper structure:
-```python
-{
-    "id": 101,
-    "question": "Your new question?",
-    "expected_answer": "Expected answer",
-    "expected_sql": "SELECT ...",
-    "category": TestCategory.YOUR_CATEGORY,
-    "difficulty": "easy|medium|hard",
-    "keywords": ["keyword1", "keyword2"]
-}
-```
-
-### Adding New Categories
-
-1. **Update categories** in `testing/test_data/test_categories.py`
-2. **Add validation method** if needed
-3. **Update category enum** and mappings
-
-### Custom Validation Methods
-
-Add new validation methods in `testing/result_analyzer.py`:
-
-```python
-def _custom_validation(self, ai_answer: str, expected_answer: str) -> float:
-    """Custom validation logic."""
-    # Your validation logic here
-    return accuracy_score
-```
-
-## 📝 Example Usage
-
-### Python API
+### Python API Usage
 
 ```python
 from testing.test_runner import TennisTestRunner
@@ -252,108 +212,53 @@ from testing.test_runner import TennisTestRunner
 # Initialize test runner
 runner = TennisTestRunner()
 
-# Run quick test
-results = runner.run_quick_test(num_tests=10)
+# Run specific test questions
+result = runner.run_automated_tests(
+    test_subset=[1, 2, 3, 4, 5],
+    interval_seconds=30
+)
 
-# Run category test
-results = runner.run_category_test('tournament_winner')
+# Run all tests
+result = runner.run_automated_tests(interval_seconds=60)
 
-# Get session results
-session_data = runner.get_session_results(session_id=1)
-
-# Export data
-json_data = runner.export_session_data(session_id=1, format='json')
+# Run category-specific tests
+result = runner.run_category_test("tournament_winner", interval_seconds=30)
 ```
 
-### Command Line
+### Command Line Usage
 
 ```bash
-# Full test suite with custom interval
-python run_automated_tests.py --full --interval 3
-
-# Quick test with more tests
-python run_automated_tests.py --quick --num-tests 50
-
-# Export specific session
-python run_automated_tests.py --export 5 --output my_results.json
+# Run tests 80-100 with 60-second intervals
+python -c "
+from testing.test_runner import TennisTestRunner
+runner = TennisTestRunner()
+result = runner.run_automated_tests(test_subset=list(range(80, 101)), interval_seconds=60)
+print('Completed!')
+"
 ```
 
-## 🔍 Troubleshooting
+## 📈 Performance Metrics
 
-### Common Issues
+The framework tracks:
+- **Execution Time** - How long each test takes
+- **Completion Rate** - Percentage of successful tests
+- **Error Rate** - Percentage of failed tests
+- **Category Performance** - Results by test category
+- **Difficulty Analysis** - Performance by difficulty level
 
-1. **Agent initialization fails**
-   - Check if the main AskTennis AI system is properly configured
-   - Verify database connection and API keys
+## 🛠️ Requirements
 
-2. **Tests fail with errors**
-   - Check test case format and expected answers
-   - Verify SQL query syntax in expected_sql field
+- Python 3.8+
+- SQLite3 (built-in)
+- AskTennis AI system components
+- LangGraph agent setup
 
-3. **Database connection issues**
-   - Ensure SQLite is available
-   - Check file permissions for database directory
+## 📝 Notes
 
-4. **Low accuracy scores**
-   - Review expected answers for accuracy
-   - Check if AI responses are being parsed correctly
-   - Consider adjusting validation thresholds
+This is a **simplified testing framework** focused purely on:
+1. **Generating AI responses** to tennis questions
+2. **Capturing SQL queries** and answers
+3. **Tracking basic performance** metrics
+4. **Storing results** in database
 
-### Debug Mode
-
-Enable verbose output for debugging:
-
-```bash
-python run_automated_tests.py --full --verbose
-```
-
-## 📚 API Reference
-
-### TennisTestRunner
-
-Main test orchestrator class.
-
-#### Methods
-
-- `run_automated_tests(interval_seconds, test_subset, progress_callback)`
-- `run_quick_test(num_tests)`
-- `run_category_test(category, interval_seconds)`
-- `get_session_results(session_id)`
-- `export_session_data(session_id, format)`
-- `list_all_sessions()`
-
-### TestExecutor
-
-Individual test execution engine.
-
-#### Methods
-
-- `execute_single_test(test_case)`
-- `batch_execute_tests(test_cases, progress_callback)`
-
-### ResultAnalyzer
-
-Response analysis and accuracy calculation.
-
-#### Methods
-
-- `calculate_accuracy(ai_answer, expected_answer, category)`
-- `analyze_test_results(results)`
-- `identify_problematic_tests(results)`
-- `generate_improvement_suggestions(results)`
-
-## 🤝 Contributing
-
-1. **Add new test cases** to the dataset
-2. **Improve validation methods** for better accuracy
-3. **Add new test categories** for specialized testing
-4. **Enhance reporting** with additional metrics
-5. **Optimize performance** for faster execution
-
-## 📄 License
-
-This testing framework is part of the AskTennis AI project and follows the same licensing terms.
-
----
-
-**🎾 Happy Testing!** 🎾
+The framework does **NOT** evaluate correctness or accuracy - it simply captures what the AI produces for analysis and review.
