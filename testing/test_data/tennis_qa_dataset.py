@@ -253,8 +253,8 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 23,
         "question": "What is the head-to-head record between Serena Williams and Venus Williams?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Roger Federer' \nGROUP BY winner_name",
-        "expected_answer": "Roger Federer: 1305",
+        "expected_sql": "SELECT COUNT(*) FROM matches WHERE (winner_name = 'Serena Williams' AND loser_name = 'Venus Williams') OR (winner_name = 'Venus Williams' AND loser_name = 'Serena Williams')",
+        "expected_answer": "33",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Serena Williams', 'Venus Williams', 'head-to-head'],
