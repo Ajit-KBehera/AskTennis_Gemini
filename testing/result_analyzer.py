@@ -38,15 +38,27 @@ class ResultAnalyzer:
         ai_clean = self._clean_answer(ai_answer)
         expected_clean = self._clean_answer(expected_answer)
         
-        # Try different accuracy methods
+        # Try different accuracy methods in order of preference
         methods = [
             self._exact_match_accuracy,
-            self._semantic_similarity_accuracy,
             self._numerical_accuracy,
-            self._partial_match_accuracy,
-            self._keyword_match_accuracy
+            self._semantic_similarity_accuracy,
+            self._keyword_match_accuracy,
+            self._partial_match_accuracy
         ]
         
+        # For numerical answers, prioritize numerical accuracy
+        ai_numbers = self._extract_numbers(ai_clean)
+        expected_numbers = self._extract_numbers(expected_clean)
+        
+        if ai_numbers and expected_numbers:
+            # For numerical answers, use numerical accuracy only
+            try:
+                return min(self._numerical_accuracy(ai_clean, expected_clean), 1.0)
+            except Exception:
+                return 0.0
+        
+        # For non-numerical answers, try all methods and take the best
         max_accuracy = 0.0
         for method in methods:
             try:
@@ -142,22 +154,47 @@ class ResultAnalyzer:
                 ai_num = ai_numbers[0]
                 expected_num = expected_numbers[0]
                 
+                # Exact match gets perfect score
+                if ai_num == expected_num:
+                    return 1.0
+                
+                # For non-zero expected numbers, use percentage-based accuracy
                 if expected_num == 0:
                     return 1.0 if ai_num == 0 else 0.0
                 
-                accuracy = 1.0 - abs(ai_num - expected_num) / abs(expected_num)
-                return max(0.0, min(1.0, accuracy))
+                # Calculate percentage difference
+                percentage_diff = abs(ai_num - expected_num) / abs(expected_num)
+                
+                # Use exponential decay for accuracy (more forgiving for small differences)
+                if percentage_diff <= 0.1:  # Within 10%
+                    return 0.9
+                elif percentage_diff <= 0.2:  # Within 20%
+                    return 0.7
+                elif percentage_diff <= 0.5:  # Within 50%
+                    return 0.4
+                else:  # More than 50% difference
+                    return 0.0
             
             # For multiple numbers, calculate average accuracy
             total_accuracy = 0.0
             min_length = min(len(ai_numbers), len(expected_numbers))
             
             for i in range(min_length):
-                if expected_numbers[i] == 0:
+                if ai_numbers[i] == expected_numbers[i]:
+                    accuracy = 1.0
+                elif expected_numbers[i] == 0:
                     accuracy = 1.0 if ai_numbers[i] == 0 else 0.0
                 else:
-                    accuracy = 1.0 - abs(ai_numbers[i] - expected_numbers[i]) / abs(expected_numbers[i])
-                total_accuracy += max(0.0, min(1.0, accuracy))
+                    percentage_diff = abs(ai_numbers[i] - expected_numbers[i]) / abs(expected_numbers[i])
+                    if percentage_diff <= 0.1:
+                        accuracy = 0.9
+                    elif percentage_diff <= 0.2:
+                        accuracy = 0.7
+                    elif percentage_diff <= 0.5:
+                        accuracy = 0.4
+                    else:
+                        accuracy = 0.0
+                total_accuracy += accuracy
             
             return total_accuracy / min_length if min_length > 0 else 0.0
             
@@ -198,6 +235,14 @@ class ResultAnalyzer:
         Returns:
             Partial match accuracy score
         """
+        # If both answers contain numbers, use numerical accuracy instead
+        ai_numbers = self._extract_numbers(ai_answer)
+        expected_numbers = self._extract_numbers(expected_answer)
+        
+        if ai_numbers and expected_numbers:
+            # For numerical answers, be more strict
+            return 0.0  # Let numerical_accuracy handle this
+        
         ai_words = set(ai_answer.split())
         expected_words = set(expected_answer.split())
         
