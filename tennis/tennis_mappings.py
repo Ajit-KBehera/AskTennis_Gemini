@@ -55,20 +55,20 @@ ROUND_MAPPINGS = {
 
 SURFACE_MAPPINGS = {
     # Clay courts
-    "clay": "Clay", "clay court": "Clay", "red clay": "Clay", "terre battue": "Clay",
+    "clay": "Clay", "clay court": "Clay", "clay courts": "Clay", "red clay": "Clay", "terre battue": "Clay",
     "dirt": "Clay", "slow court": "Clay",
     
     # Hard courts
-    "hard": "Hard", "hard court": "Hard", "concrete": "Hard", "asphalt": "Hard",
+    "hard": "Hard", "hard court": "Hard", "hard courts": "Hard", "concrete": "Hard", "asphalt": "Hard",
     "acrylic": "Hard", "deco turf": "Hard", "plexicushion": "Hard", "fast court": "Hard",
     "indoor hard": "Hard", "outdoor hard": "Hard",
     
     # Grass courts
-    "grass": "Grass", "grass court": "Grass", "lawn": "Grass", "natural grass": "Grass",
+    "grass": "Grass", "grass court": "Grass", "grass courts": "Grass", "lawn": "Grass", "natural grass": "Grass",
     "very fast court": "Grass", "quick court": "Grass",
     
     # Carpet courts
-    "carpet": "Carpet", "carpet court": "Carpet", "indoor carpet": "Carpet",
+    "carpet": "Carpet", "carpet court": "Carpet", "carpet courts": "Carpet", "indoor carpet": "Carpet",
     "synthetic": "Carpet", "artificial": "Carpet"
 }
 

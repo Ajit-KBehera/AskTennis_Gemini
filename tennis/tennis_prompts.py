@@ -285,6 +285,104 @@ class TennisPromptBuilder:
         - "Most Grand Slam titles" → Map tournament names → Use correct names with round = 'F'
         - "Grand Slam finalists" → Map tournament names → Use correct names with round = 'F'
         
+        CRITICAL: HEAD-TO-HEAD ANALYSIS (CACHED)
+        =======================================
+        
+        For head-to-head questions, ALWAYS distinguish between different question types:
+        
+        ✅ SPECIFIC PLAYER WINS:
+        - "How many times has X beaten Y?" → COUNT only X's wins
+        - "How many times has Y beaten X?" → COUNT only Y's wins
+        - SQL: WHERE winner_name = 'X' AND loser_name = 'Y'
+        - Examples:
+          * "How many times has Federer beaten Nadal?" → WHERE winner_name = 'Roger Federer' AND loser_name = 'Rafael Nadal'
+          * "How many times has Nadal beaten Federer?" → WHERE winner_name = 'Rafael Nadal' AND loser_name = 'Roger Federer'
+        
+        ✅ HEAD-TO-HEAD RECORD:
+        - "Head-to-head record between X and Y" → COUNT both directions
+        - "Total matches between X and Y" → COUNT all matches
+        - SQL: WHERE (winner_name = 'X' AND loser_name = 'Y') OR (winner_name = 'Y' AND loser_name = 'X')
+        
+        ✅ KEYWORD ANALYSIS:
+        - "beaten" = specific player's wins only
+        - "head-to-head" = both directions
+        - "total matches" = all matches
+        - "record" = both directions
+        
+        CRITICAL: TENNIS SURFACE MAPPING (CACHED)
+        ========================================
+        
+        Tennis fans use colloquial surface names that don't match database values:
+        
+        ✅ SURFACE MAPPINGS:
+        - "indoor courts" → "Carpet" surface
+        - "outdoor hard courts" → "Hard" surface
+        - "clay courts" → "Clay" surface
+        - "grass courts" → "Grass" surface
+        - "hard courts" → "Hard" surface
+        - "outdoor courts" → "Hard" surface (usually)
+        
+        ✅ EXAMPLES:
+        - "Who has the best record on indoor courts?" → WHERE surface = 'Carpet'
+        - "Best player on clay courts?" → WHERE surface = 'Clay'
+        - "Grass court specialists?" → WHERE surface = 'Grass'
+        - "Hard court performance?" → WHERE surface = 'Hard'
+        
+        ✅ ALWAYS use get_surface_mapping tool to convert surface names:
+        - "indoor" → get_surface_mapping("indoor") → "Carpet"
+        - "clay" → get_surface_mapping("clay") → "Clay"
+        - "grass" → get_surface_mapping("grass") → "Grass"
+        
+        CRITICAL: UPSET ANALYSIS (KEEP IT SIMPLE)
+        =========================================
+        
+        For upset analysis questions, use simple SQL logic:
+        
+        ✅ SIMPLE UPSET QUERY:
+        - "Which surface produces the most upsets?" → Simple COUNT with WHERE condition
+        - SQL: SELECT surface, COUNT(*) FROM matches WHERE winner_rank > loser_rank AND winner_rank IS NOT NULL AND loser_rank IS NOT NULL GROUP BY surface ORDER BY COUNT(*) DESC
+        - DON'T use complex CTEs or CASE statements for simple upset counting
+        
+        ✅ ANSWER FORMAT:
+        - Use simple format: "Surface: count, Surface: count, ..."
+        - Example: "Hard: 194188, Clay: 190511, Carpet: 22631, Grass: 16723"
+        - DON'T use full sentences or explanations for statistical results
+        
+        ✅ EXAMPLES:
+        - "Most upsets by surface" → Simple COUNT with winner_rank > loser_rank
+        - "Upset analysis" → Direct WHERE condition, not CTE
+        - "Ranking upsets" → Keep SQL simple and direct
+        
+        CRITICAL: SURFACE-SPECIFIC QUERIES (USE MAPPING)
+        ================================================
+        
+        For surface-specific questions, ALWAYS use surface mapping:
+        
+        ✅ SURFACE MAPPING REQUIRED:
+        - "grass courts" → get_surface_mapping("grass courts") → "Grass"
+        - "clay courts" → get_surface_mapping("clay courts") → "Clay"
+        - "hard courts" → get_surface_mapping("hard courts") → "Hard"
+        - "indoor courts" → get_surface_mapping("indoor courts") → "Carpet"
+        
+        ✅ SURFACE QUERY PATTERN:
+        - "Who has most wins on [surface] in [year]?" → Use mapped surface name
+        - SQL: SELECT winner_name, COUNT(*) as wins FROM matches WHERE surface = '[MAPPED_SURFACE]' AND event_year = [YEAR] GROUP BY winner_name ORDER BY wins DESC LIMIT 5
+        - ALWAYS include COUNT(*) for win counting
+        - ALWAYS use LIMIT 5 for top results
+        - ALWAYS use proper ORDER BY wins DESC
+        
+        ✅ ANSWER FORMAT FOR SURFACE QUERIES:
+        - Use simple format: "Player: count, Player: count, ..."
+        - Example: "Daniel Evans: 14, Alison Riske Amritraj: 14, Brydan Klein: 13, Viktor Troicki: 12, Matteo Berrettini: 12"
+        - DON'T use full sentences or explanations
+        - DON'T say "Player has the most wins" - just list the results
+        - Match the exact format from the SQL results
+        
+        ✅ EXAMPLES:
+        - "Most wins on grass courts in 2019" → surface = 'Grass' (mapped)
+        - "Best on clay courts" → surface = 'Clay' (mapped)
+        - "Hard court performance" → surface = 'Hard' (mapped)
+        
         CRITICAL: TENNIS ROUND TERMINOLOGY (CACHED)
         - Tennis fans use various round names that don't match database values
         - ALWAYS use get_tennis_round_mapping tool to convert fan round names to database values
