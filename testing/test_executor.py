@@ -347,9 +347,9 @@ class TestExecutor:
                 'category': category_str,
                 'difficulty': test_case.get('difficulty', '')
             }
-                results.append(error_result)
-                
-                if progress_callback:
-                    progress_callback(i + 1, total_tests, error_result)
+            results.append(error_result)
+            
+            if progress_callback:
+                progress_callback(i + 1, total_tests, error_result)
         
         return results
