@@ -63,13 +63,9 @@ class TestDatabaseManager:
                     question TEXT NOT NULL,
                     generated_sql TEXT,
                     ai_answer TEXT,
-                    expected_answer TEXT,
-                    accuracy_score REAL DEFAULT 0.0,
                     execution_time REAL DEFAULT 0.0,
                     test_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    status TEXT CHECK(status IN ('passed', 'failed', 'error')) DEFAULT 'failed',
                     error_message TEXT,
-                    confidence_score REAL DEFAULT 0.0,
                     category TEXT,
                     difficulty TEXT,
                     FOREIGN KEY (session_id) REFERENCES test_sessions (id)
@@ -160,21 +156,16 @@ class TestDatabaseManager:
             cursor.execute("""
                 INSERT INTO test_results (
                     session_id, test_id, question, generated_sql,
-                    ai_answer, expected_answer, accuracy_score, execution_time,
-                    status, error_message, confidence_score, category, difficulty
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ai_answer, execution_time, error_message, category, difficulty
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 session_id,
                 test_result.get('test_id', 0),
                 test_result.get('question', ''),
                 test_result.get('generated_sql', ''),
                 test_result.get('ai_answer', ''),
-                test_result.get('expected_answer', ''),
-                test_result.get('accuracy_score', 0.0),
                 test_result.get('execution_time', 0.0),
-                test_result.get('status', 'failed'),
                 test_result.get('error_message', ''),
-                test_result.get('confidence_score', 0.0),
                 test_result.get('category', ''),
                 test_result.get('difficulty', '')
             ))

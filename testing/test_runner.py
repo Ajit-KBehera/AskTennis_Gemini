@@ -104,8 +104,7 @@ class TennisTestRunner:
                 self.db_manager.store_test_result(self.current_session_id, result)
                 
                 # Print result summary
-                status_emoji = "✅" if result['status'] == 'passed' else "❌" if result['status'] == 'failed' else "⚠️"
-                print(f"   {status_emoji} Status: {result['status']} | Accuracy: {result['accuracy_score']:.2f} | Time: {result['execution_time']:.2f}s")
+                print(f"   ✅ Test completed | Time: {result['execution_time']:.2f}s")
                 
                 # Progress callback
                 if progress_callback:
@@ -126,12 +125,8 @@ class TennisTestRunner:
                     'question': test_case.get('question', ''),
                     'generated_sql': '',
                     'ai_answer': '',
-                    'expected_answer': test_case.get('expected_answer', ''),
-                    'accuracy_score': 0.0,
                     'execution_time': 0.0,
-                    'status': 'error',
                     'error_message': str(e),
-                    'confidence_score': 0.0,
                     'category': category_str,
                     'difficulty': test_case.get('difficulty', '')
                 }
@@ -145,8 +140,7 @@ class TennisTestRunner:
         final_report = self._generate_final_report(results)
         
         print(f"\n🎉 Test run completed!")
-        print(f"📊 Results: {final_report['basic_metrics']['passed_tests']}/{final_report['basic_metrics']['total_tests']} passed")
-        print(f"📈 Average accuracy: {final_report['accuracy_metrics']['average_accuracy']:.2%}")
+        print(f"📊 Results: {final_report['basic_metrics']['total_tests']} tests completed")
         print(f"⏱️  Average execution time: {final_report['performance_metrics']['average_execution_time']:.2f}s")
         
         return {
@@ -209,11 +203,9 @@ class TennisTestRunner:
         
         # Calculate metrics
         total_tests = len(results)
-        passed_tests = sum(1 for r in results if r.get('status') == 'passed')
-        failed_tests = sum(1 for r in results if r.get('status') == 'failed')
-        error_tests = sum(1 for r in results if r.get('status') == 'error')
+        completed_tests = sum(1 for r in results if not r.get('error_message'))
+        error_tests = sum(1 for r in results if r.get('error_message'))
         
-        avg_accuracy = sum(r.get('accuracy_score', 0.0) for r in results) / total_tests if total_tests > 0 else 0.0
         avg_execution_time = sum(r.get('execution_time', 0.0) for r in results) / total_tests if total_tests > 0 else 0.0
         
         # Update session
@@ -221,9 +213,8 @@ class TennisTestRunner:
             self.current_session_id,
             end_time=datetime.now(),
             total_tests=total_tests,
-            passed_tests=passed_tests,
-            failed_tests=failed_tests,
-            average_accuracy=avg_accuracy,
+            completed_tests=completed_tests,
+            error_tests=error_tests,
             average_execution_time=avg_execution_time,
             status='completed'
         )
