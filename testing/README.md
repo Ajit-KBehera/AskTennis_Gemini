@@ -45,9 +45,9 @@ python run_automated_tests.py --full
 python run_automated_tests.py --category tournament_winner
 ```
 
-### 4. Run with Custom Interval (minimum 90 seconds)
+### 4. Run with Custom Interval (minimum 30 seconds)
 ```bash
-python run_automated_tests.py --full --interval 120
+python run_automated_tests.py --full --interval 60
 ```
 
 ### 5. List Available Categories

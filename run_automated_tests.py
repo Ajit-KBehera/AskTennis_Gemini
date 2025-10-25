@@ -208,10 +208,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python run_automated_tests.py --full                    # Run all tests (90s intervals)
-  python run_automated_tests.py --quick --num-tests 5     # Run 5 quick tests (90s intervals)
-  python run_automated_tests.py --category tournament_winner  # Run category tests (90s intervals)
-  python run_automated_tests.py --interval 120           # Run with 120s intervals
+  python run_automated_tests.py --full                    # Run all tests (30s intervals)
+  python run_automated_tests.py --quick --num-tests 5     # Run 5 quick tests (30s intervals)
+  python run_automated_tests.py --category tournament_winner  # Run category tests (30s intervals)
+  python run_automated_tests.py --interval 60           # Run with 60s intervals
   python run_automated_tests.py --list-sessions           # List all sessions
   python run_automated_tests.py --export 1 --output results.json  # Export session
         """
@@ -222,7 +222,7 @@ Examples:
     parser.add_argument('--quick', action='store_true', help='Run quick test with subset')
     parser.add_argument('--category', type=str, help='Run tests for specific category')
     parser.add_argument('--num-tests', type=int, default=10, help='Number of tests for quick run')
-    parser.add_argument('--interval', type=int, default=90, help='Interval between tests (seconds, minimum 90)')
+    parser.add_argument('--interval', type=int, default=30, help='Interval between tests (seconds, minimum 30)')
     
     # Session management options
     parser.add_argument('--list-sessions', action='store_true', help='List all test sessions')

@@ -51,24 +51,24 @@ class TennisTestRunner:
             return False
     
     def run_automated_tests(self, 
-                          interval_seconds: int = 90,
+                          interval_seconds: int = 30,
                           test_subset: Optional[List[int]] = None,
                           progress_callback: Optional[Callable] = None) -> Dict[str, Any]:
         """
         Run automated tests with specified interval.
         
         Args:
-            interval_seconds: Seconds to wait between tests (minimum 90 seconds)
+            interval_seconds: Seconds to wait between tests (minimum 30 seconds)
             test_subset: Optional list of test IDs to run (if None, runs all tests)
             progress_callback: Optional callback function for progress updates
             
         Returns:
             Dictionary containing test execution results
         """
-        # Ensure minimum interval of 90 seconds
-        if interval_seconds < 90:
-            print(f"⚠️  Warning: Interval {interval_seconds}s is less than minimum 90s. Setting to 90s.")
-            interval_seconds = 90
+        # Ensure minimum interval of 30 seconds
+        if interval_seconds < 30:
+            print(f"⚠️  Warning: Interval {interval_seconds}s is less than minimum 30s. Setting to 30s.")
+            interval_seconds = 30
         if not self.agent_graph:
             if not self.initialize_agent():
                 return {"error": "Failed to initialize agent"}
@@ -173,17 +173,17 @@ class TennisTestRunner:
         test_subset = random.sample([tc['id'] for tc in TENNIS_QA_DATASET], min(num_tests, len(TENNIS_QA_DATASET)))
         
         return self.run_automated_tests(
-            interval_seconds=90,  # Minimum 90 seconds between tests
+            interval_seconds=30,  # Minimum 30 seconds between tests
             test_subset=test_subset
         )
     
-    def run_category_test(self, category: str, interval_seconds: int = 90) -> Dict[str, Any]:
+    def run_category_test(self, category: str, interval_seconds: int = 30) -> Dict[str, Any]:
         """
         Run tests for a specific category.
         
         Args:
             category: Test category to run
-            interval_seconds: Seconds to wait between tests (minimum 90 seconds)
+            interval_seconds: Seconds to wait between tests (minimum 30 seconds)
             
         Returns:
             Dictionary containing test execution results
@@ -261,14 +261,14 @@ class TennisTestRunner:
         return self.db_manager.delete_test_session(session_id)
     
     def run_continuous_testing(self, 
-                             interval_seconds: int = 90,
+                             interval_seconds: int = 30,
                              max_tests: int = 100,
                              progress_callback: Optional[Callable] = None) -> Dict[str, Any]:
         """
         Run continuous testing with specified parameters.
         
         Args:
-            interval_seconds: Seconds to wait between tests (minimum 90 seconds)
+            interval_seconds: Seconds to wait between tests (minimum 30 seconds)
             max_tests: Maximum number of tests to run
             progress_callback: Optional callback function for progress updates
             

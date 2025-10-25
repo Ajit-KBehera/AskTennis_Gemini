@@ -160,7 +160,7 @@ def main():
         print("  python run_automated_tests.py --quick --num-tests 5")
         print("  python run_automated_tests.py --full")
         print("  python run_automated_tests.py --category tournament_winner")
-        print("  python run_automated_tests.py --interval 120  # Custom interval (min 90s)")
+        print("  python run_automated_tests.py --interval 60  # Custom interval (min 30s)")
         
     except KeyboardInterrupt:
         print("\n\n⏹️  Demo interrupted by user")
