@@ -7,6 +7,13 @@ from langchain_core.tools import tool
 from typing import List
 from functools import lru_cache
 import json
+from .ranking_analysis import (
+    get_ranking_context, 
+    determine_tour_context, 
+    get_ranking_sql_approach,
+    extract_ranking_parameters,
+    classify_ranking_question
+)
 
 # =============================================================================
 # TENNIS MAPPING DICTIONARIES
@@ -354,6 +361,86 @@ class TennisMappingTools:
         return get_tournament_case_variations
     
     @staticmethod
+    def create_ranking_analysis_tool():
+        """Create the tennis ranking analysis tool."""
+        @tool
+        def analyze_ranking_question(question: str, year: int = None) -> str:
+            """
+            Analyze ranking questions and determine appropriate data source and SQL approach.
+            
+            Args:
+                question: The ranking question to analyze
+                year: Optional year for temporal context
+                
+            Returns:
+                JSON string with ranking analysis and recommended approach
+            """
+            return get_ranking_context(question, year)
+        
+        return analyze_ranking_question
+    
+    @staticmethod
+    def create_tour_detection_tool():
+        """Create the tour detection tool."""
+        @tool
+        def detect_tour_context(question: str) -> str:
+            """
+            Detect if question is about ATP (men's) or WTA (women's) tennis.
+            
+            Args:
+                question: The question to analyze for tour context
+                
+            Returns:
+                JSON string with tour detection results
+            """
+            tour_enum = determine_tour_context(question)
+            return json.dumps({
+                "tour": tour_enum.value,
+                "tour_name": "Men's Tennis (ATP)" if tour_enum.value == "ATP" else "Women's Tennis (WTA)",
+                "confidence": "high" if any(keyword in question.lower() for keyword in ["men", "women", "atp", "wta"]) else "medium"
+            })
+        
+        return detect_tour_context
+    
+    @staticmethod
+    def create_ranking_sql_tool():
+        """Create the ranking SQL approach tool."""
+        @tool
+        def get_ranking_sql_approach(question_type: str, tour: str = "ATP", year: int = None) -> str:
+            """
+            Get SQL approach for ranking questions.
+            
+            Args:
+                question_type: Type of ranking question (official_rankings, match_time_rankings, etc.)
+                tour: Tour type (ATP or WTA)
+                year: Optional year for temporal context
+                
+            Returns:
+                JSON string with SQL approach and recommendations
+            """
+            return get_ranking_sql_approach(question_type, tour, year)
+        
+        return get_ranking_sql_approach
+    
+    @staticmethod
+    def create_ranking_parameters_tool():
+        """Create the ranking parameters extraction tool."""
+        @tool
+        def extract_ranking_parameters(question: str) -> str:
+            """
+            Extract key parameters from ranking questions (year, rank limit, players, tour).
+            
+            Args:
+                question: The ranking question to analyze
+                
+            Returns:
+                JSON string with extracted parameters
+            """
+            return json.dumps(extract_ranking_parameters(question))
+        
+        return extract_ranking_parameters
+    
+    @staticmethod
     def create_all_mapping_tools() -> List:
         """
         Create all tennis mapping tools using the correct, decorated methods.
@@ -367,7 +454,11 @@ class TennisMappingTools:
             TennisMappingTools.create_tour_mapping_tool(),
             TennisMappingTools.create_hand_mapping_tool(),
             TennisMappingTools.create_tournament_mapping_tool(),
-            TennisMappingTools.create_tournament_case_variations_tool()
+            TennisMappingTools.create_tournament_case_variations_tool(),
+            TennisMappingTools.create_ranking_analysis_tool(),
+            TennisMappingTools.create_tour_detection_tool(),
+            TennisMappingTools.create_ranking_sql_tool(),
+            TennisMappingTools.create_ranking_parameters_tool()
         ]
     
     @staticmethod
@@ -379,6 +470,11 @@ class TennisMappingTools:
         _get_hand_mapping.cache_clear()
         _get_tournament_mapping.cache_clear()
         _get_tournament_case_variations.cache_clear()
+        # Clear ranking analysis caches
+        get_ranking_context.cache_clear()
+        determine_tour_context.cache_clear()
+        get_ranking_sql_approach.cache_clear()
+        classify_ranking_question.cache_clear()
     
     @staticmethod
     def get_cache_info():
@@ -389,7 +485,11 @@ class TennisMappingTools:
             "tour_mapping": _get_tour_mapping.cache_info(),
             "hand_mapping": _get_hand_mapping.cache_info(),
             "tournament_mapping": _get_tournament_mapping.cache_info(),
-            "tournament_case_variations": _get_tournament_case_variations.cache_info()
+            "tournament_case_variations": _get_tournament_case_variations.cache_info(),
+            "ranking_context": get_ranking_context.cache_info(),
+            "tour_context": determine_tour_context.cache_info(),
+            "ranking_sql_approach": get_ranking_sql_approach.cache_info(),
+            "ranking_classification": classify_ranking_question.cache_info()
         }
 
 # =============================================================================

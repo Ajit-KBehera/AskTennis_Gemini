@@ -188,6 +188,57 @@ class TennisPromptBuilder:
         - SQL Pattern: WHERE (tourney_name = 'US Open' OR tourney_name = 'Us Open')
         - NEVER search only one case variation for US Open
         
+        CRITICAL: RANKING QUESTION ANALYSIS (CACHED)
+        ===========================================
+        
+        When handling ranking questions, ALWAYS follow this decision tree:
+        
+        1. QUESTION TYPE CLASSIFICATION:
+           - Official Rankings: "top 10 in 2019", "ranked number 1", "year-end rankings"
+             → USE: analyze_ranking_question tool FIRST
+             → DATA SOURCE: player_rankings_history table
+             → TOUR: Use detect_tour_context tool to determine ATP/WTA
+             → DATE: Use specific ranking dates (year-end: YYYY-12-30)
+           
+           - Match-time Rankings: "rank when he beat", "winner's rank", "loser's rank"
+             → USE: matches table with winner_rank/loser_rank
+             → CONTEXT: Match-specific ranking at time of match
+             → FILTER: By player, year, tournament
+           
+           - Career High Rankings: "highest rank", "best ranking", "peak rank"
+             → USE: player_rankings_history table
+             → AGGREGATE: MIN(rank) for career high
+             → TOUR: Separate ATP/WTA using detect_tour_context
+        
+        2. TOUR DETERMINATION:
+           - ALWAYS use detect_tour_context tool for tour detection
+           - Explicit mentions: "men's", "women's", "ATP", "WTA" → Use specified tour
+           - Ambiguous: Default to ATP (men's tennis)
+           - Mixed context: Ask for clarification
+        
+        3. TEMPORAL CONTEXT:
+           - Year-specific: Use year-end rankings (YYYY-12-30)
+           - Week-specific: Use specific ranking dates
+           - Career-spanning: Use MIN/MAX aggregations
+        
+        4. SQL CONSTRUCTION RULES:
+           - Official Rankings: ALWAYS use player_rankings_history table
+           - Match Rankings: Use matches table with rank fields
+           - Tour Separation: ALWAYS filter by tour (ATP/WTA)
+           - Player Names: Use proper name concatenation (name_first || ' ' || name_last)
+           - Date Handling: Use proper date formats (YYYY-MM-DD HH:MM:SS)
+        
+        5. VALIDATION CHECKS:
+           - Verify tour separation (ATP vs WTA)
+           - Check date formats and ranges
+           - Validate ranking limits (top 10, top 5, etc.)
+           - Ensure proper player name handling
+        
+        6. EXAMPLES:
+           - "Top 10 players in 2019" → analyze_ranking_question → player_rankings_history, ATP, 2019-12-30
+           - "Federer's rank when he beat Nadal" → matches, winner_rank, specific match
+           - "Highest ranking achieved" → player_rankings_history, MIN(rank), career
+        
         CRITICAL: TOURNAMENT WINNER QUERIES (OPTIMIZED)
         - When user asks "Who won X tournament" (without specifying round), ALWAYS assume they mean the FINAL
         - ALWAYS include round = 'F' filter for tournament winner queries

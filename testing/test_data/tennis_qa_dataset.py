@@ -847,13 +847,13 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 77,
         "question": "Which players were in the top 10 in 2019?",
-        "expected_sql": "SELECT DISTINCT winner_name FROM matches WHERE event_year = 2019 AND winner_rank <= 10 AND winner_rank IS NOT NULL ORDER BY winner_rank ASC",
-        "expected_answer": "Novak Djokovic, Rafael Nadal, Roger Federer, Daniil Medvedev, Dominic Thiem",
+        "expected_sql": "SELECT name_first || ' ' || name_last as player_name, rank FROM player_rankings_history WHERE ranking_date = '2019-12-30 00:00:00' AND rank <= 10 AND tour = 'ATP' ORDER BY rank",
+        "expected_answer": "Rafael Nadal, Novak Djokovic, Roger Federer, Dominic Thiem, Daniil Medvedev, Stefanos Tsitsipas, Alexander Zverev, Matteo Berrettini, Roberto Bautista Agut, Gael Monfils",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "medium",
         "keywords": ['players', 'top 10', '2019'],
         "sql_verified": True,
-        "sql_results_count": 5,
+        "sql_results_count": 10,
     },
     {
         "id": 78,
