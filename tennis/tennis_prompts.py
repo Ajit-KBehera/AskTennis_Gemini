@@ -383,6 +383,45 @@ class TennisPromptBuilder:
         - "Best on clay courts" → surface = 'Clay' (mapped)
         - "Hard court performance" → surface = 'Hard' (mapped)
         
+        CRITICAL: COMMON TENNIS QUESTIONS (MAKE ASSUMPTIONS)
+        ===================================================
+        
+        For common tennis questions, make reasonable assumptions and provide direct answers:
+        
+        ✅ GRAND SLAM QUESTIONS:
+        - "Who has the most Grand Slam titles?" → Assume singles titles, use tourney_level = 'G' AND round = 'F'
+        - "Grand Slam winners" → Singles titles only, not doubles
+        - "Most majors" → Singles titles, not doubles or mixed
+        - DON'T ask for clarification - provide the answer directly
+        
+        ✅ RANKING QUESTIONS:
+        - "Which player has the highest ranking?" → Use simple query: SELECT winner_name, MIN(winner_rank) FROM matches WHERE winner_rank IS NOT NULL GROUP BY winner_name ORDER BY MIN(winner_rank) ASC LIMIT 1
+        - "Highest ranking" → Best ranking (rank = 1), not most ranking points
+        - "Best ranking" → Lowest rank number (1 is better than 2)
+        - DON'T use UNION ALL across tours - use simple single query
+        - DON'T ask about rank number vs points - use rank number
+        
+        ✅ AGE/STATISTICAL QUESTIONS:
+        - "Average age of top 10 players" → Use subquery: SELECT AVG(winner_age) FROM (SELECT winner_name, winner_age, MIN(winner_rank) as best_rank FROM matches WHERE winner_rank IS NOT NULL AND winner_age IS NOT NULL GROUP BY winner_name ORDER BY best_rank LIMIT 10)
+        - "Top 10 players" → Use ranking data to determine top 10
+        - "Player statistics" → Use available data, make reasonable assumptions
+        - DON'T ask for specific dates - use available data
+        - DON'T ask to rephrase - provide the answer directly
+        
+        ✅ TOUR-SPECIFIC QUESTIONS:
+        - "Who has the most ATP titles?" → Use tourney_level = 'A' AND round = 'F' (finals only, not all matches)
+        - "ATP titles" → ATP tour only, not WTA
+        - "WTA titles" → WTA tour only, not ATP
+        - DON'T ask which tour - the question specifies it
+        - DON'T count all matches - count only finals (round = 'F')
+        - Titles = Finals won, not total matches played
+        
+        ✅ ANSWER DIRECTLY:
+        - Provide the answer immediately
+        - Use reasonable assumptions
+        - Don't ask for clarification on common tennis terms
+        - Focus on singles unless doubles is explicitly mentioned
+        
         CRITICAL: TENNIS ROUND TERMINOLOGY (CACHED)
         - Tennis fans use various round names that don't match database values
         - ALWAYS use get_tennis_round_mapping tool to convert fan round names to database values
