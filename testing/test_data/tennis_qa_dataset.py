@@ -343,8 +343,8 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 31,
         "question": "What is the head-to-head record between Andy Murray and Rafael Nadal?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Roger Federer' \nGROUP BY winner_name",
-        "expected_answer": "Roger Federer: 1305",
+        "expected_sql": "SELECT COUNT(*) FROM matches WHERE (winner_name = 'Andy Murray' AND loser_name = 'Rafael Nadal') OR (winner_name = 'Rafael Nadal' AND loser_name = 'Andy Murray')",
+        "expected_answer": "25",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Murray', 'Nadal', 'head-to-head'],
