@@ -31,7 +31,7 @@ We have successfully implemented a comprehensive automated testing framework for
 test_sessions (id, session_name, start_time, end_time, total_tests, passed_tests, average_accuracy, status)
 
 -- Test Results  
-test_results (id, session_id, test_id, question, ai_response, generated_sql, ai_answer, expected_answer, accuracy_score, execution_time, status, category, difficulty)
+test_results (id, session_id, test_id, question, generated_sql, ai_answer, expected_answer, accuracy_score, execution_time, status, category, difficulty)
 ```
 
 ### **4. Accuracy Validation Methods**

@@ -59,7 +59,6 @@ class TestExecutor:
             return {
                 'test_id': test_case.get('id', 0),
                 'question': test_case.get('question', ''),
-                'ai_response': '',
                 'generated_sql': '',
                 'ai_answer': '',
                 'expected_answer': test_case.get('expected_answer', ''),
@@ -96,7 +95,6 @@ class TestExecutor:
         )
         
         # Extract components from response
-        ai_response = self._extract_ai_response(response)
         generated_sql = self._extract_sql_query(response)
         ai_answer = self._extract_final_answer(response)
         
@@ -122,34 +120,6 @@ class TestExecutor:
             'difficulty': difficulty
         }
     
-    def _extract_ai_response(self, response: Dict[str, Any]) -> str:
-        """
-        Extract the complete AI response from the agent output.
-        
-        Args:
-            response: Agent response dictionary
-            
-        Returns:
-            Complete AI response as string
-        """
-        try:
-            messages = response.get('messages', [])
-            if not messages:
-                return ''
-            
-            # Get the last AI message
-            last_message = messages[-1]
-            if isinstance(last_message, AIMessage):
-                content = last_message.content
-                if isinstance(content, list) and content:
-                    # For Gemini, content is a list of dicts
-                    return content[0].get('text', '')
-                else:
-                    return str(content)
-            
-            return ''
-        except Exception:
-            return ''
     
     def _extract_sql_query(self, response: Dict[str, Any]) -> str:
         """

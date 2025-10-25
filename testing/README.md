@@ -150,7 +150,6 @@ CREATE TABLE test_results (
     session_id INTEGER,
     test_id INTEGER,
     question TEXT,
-    ai_response TEXT,
     generated_sql TEXT,
     ai_answer TEXT,
     expected_answer TEXT,

@@ -80,7 +80,6 @@ def test_database_operations():
         test_result = {
             'test_id': 1,
             'question': 'Test question?',
-            'ai_response': 'Test response',
             'generated_sql': 'SELECT * FROM test',
             'ai_answer': 'Test answer',
             'expected_answer': 'Expected answer',
