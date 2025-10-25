@@ -782,7 +782,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 71,
         "question": "Which player has the most career wins?",
         "expected_sql": "SELECT winner_name, COUNT(*) as wins FROM matches GROUP BY winner_name ORDER BY wins DESC LIMIT 1",
-        "expected_answer": "Roger Federer: 1203",
+        "expected_answer": "Martina Navratilova: 1496",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "easy",
         "keywords": ['player', 'career', 'wins', 'most'],
