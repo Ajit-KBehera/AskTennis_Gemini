@@ -13,6 +13,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 1,
         "question": "Who won Wimbledon in 2022?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Wimbledon' AND event_year = 2022 AND round = 'F'",
+        "expected_answer": "Novak Djokovic, Elena Rybakina",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['Wimbledon', '2022', 'winner'],
@@ -23,6 +24,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 2,
         "question": "Who won the French Open in 2021?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Roland Garros' AND event_year = 2021 AND round = 'F'",
+        "expected_answer": "Novak Djokovic, Barbora Krejcikova",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['French Open', '2021', 'winner'],
@@ -33,6 +35,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 3,
         "question": "Who won the US Open in 2020?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'US Open' AND event_year = 2020 AND round = 'F'",
+        "expected_answer": "No data found",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['US Open', '2020', 'winner'],
@@ -42,6 +45,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 4,
         "question": "Who won the Australian Open in 2023?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Australian Open' AND event_year = 2023 AND round = 'F'",
+        "expected_answer": "Novak Djokovic, Aryna Sabalenka",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['Australian Open', '2023', 'winner'],
@@ -52,6 +56,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 5,
         "question": "Who won Wimbledon in 2019?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Wimbledon' AND event_year = 2019 AND round = 'F'",
+        "expected_answer": "Novak Djokovic, Simona Halep",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['Wimbledon', '2019', 'winner'],
@@ -62,6 +67,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 6,
         "question": "Who won the French Open in 2020?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Roland Garros' AND event_year = 2020 AND round = 'F'",
+        "expected_answer": "Rafael Nadal, Iga Swiatek",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['French Open', '2020', 'winner'],
@@ -72,6 +78,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 7,
         "question": "Who won the US Open in 2019?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'US Open' AND event_year = 2019 AND round = 'F'",
+        "expected_answer": "Rafael Nadal",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['US Open', '2019', 'winner'],
@@ -82,6 +89,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 8,
         "question": "Who won the Australian Open in 2022?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Australian Open' AND event_year = 2022 AND round = 'F'",
+        "expected_answer": "Rafael Nadal, Ashleigh Barty",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['Australian Open', '2022', 'winner'],
@@ -92,6 +100,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 9,
         "question": "Who won Wimbledon in 2018?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Wimbledon' AND event_year = 2018 AND round = 'F'",
+        "expected_answer": "Novak Djokovic, Angelique Kerber",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['Wimbledon', '2018', 'winner'],
@@ -102,6 +111,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 10,
         "question": "Who won the French Open in 2019?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Roland Garros' AND event_year = 2019 AND round = 'F'",
+        "expected_answer": "Rafael Nadal, Ashleigh Barty",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['French Open', '2019', 'winner'],
@@ -112,6 +122,8 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 11,
         "question": "Who won the US Open in 2018?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'US Open' AND event_year = 2018 AND round = 'F'",
+        "expected_answer": "Novak Djokovic, Naomi Osaka",
+        "expected_answer": "Novak Djokovic, Naomi Osaka",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['US Open', '2018', 'winner'],
@@ -122,6 +134,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 12,
         "question": "Who won the Australian Open in 2021?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Australian Open' AND event_year = 2021 AND round = 'F'",
+        "expected_answer": "Novak Djokovic, Naomi Osaka",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['Australian Open', '2021', 'winner'],
@@ -132,6 +145,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 13,
         "question": "Who won Wimbledon in 2017?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Wimbledon' AND event_year = 2017 AND round = 'F'",
+        "expected_answer": "Roger Federer, Garbine Muguruza",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['Wimbledon', '2017', 'winner'],
@@ -142,6 +156,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 14,
         "question": "Who won the French Open in 2018?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Roland Garros' AND event_year = 2018 AND round = 'F'",
+        "expected_answer": "Rafael Nadal, Simona Halep",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['French Open', '2018', 'winner'],
@@ -152,6 +167,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 15,
         "question": "Who won the US Open in 2017?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'US Open' AND event_year = 2017 AND round = 'F'",
+        "expected_answer": "Rafael Nadal, Sloane Stephens",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['US Open', '2017', 'winner'],
@@ -162,6 +178,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 16,
         "question": "Who won the Australian Open in 2020?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Australian Open' AND event_year = 2020 AND round = 'F'",
+        "expected_answer": "Novak Djokovic, Sofia Kenin",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['Australian Open', '2020', 'winner'],
@@ -172,6 +189,8 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 17,
         "question": "Who won Wimbledon in 2016?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Wimbledon' AND event_year = 2016 AND round = 'F'",
+        "expected_answer": "Andy Murray, Serena Williams",
+        "expected_answer": "Andy Murray, Serena Williams",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['Wimbledon', '2016', 'winner'],
@@ -182,6 +201,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 18,
         "question": "Who won the French Open in 2017?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Roland Garros' AND event_year = 2017 AND round = 'F'",
+        "expected_answer": "Rafael Nadal, Jelena Ostapenko",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['French Open', '2017', 'winner'],
@@ -192,6 +212,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 19,
         "question": "Who won the US Open in 2016?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'US Open' AND event_year = 2016 AND round = 'F'",
+        "expected_answer": "Stan Wawrinka, Angelique Kerber",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['US Open', '2016', 'winner'],
@@ -202,6 +223,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 20,
         "question": "Who won the Australian Open in 2019?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Australian Open' AND event_year = 2019 AND round = 'F'",
+        "expected_answer": "Novak Djokovic, Naomi Osaka",
         "category": TestCategory.TOURNAMENT_WINNER,
         "difficulty": "easy",
         "keywords": ['Australian Open', '2019', 'winner'],
@@ -212,6 +234,7 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "id": 21,
         "question": "What is the head-to-head record between Roger Federer and Rafael Nadal?",
         "expected_sql": "SELECT COUNT(*) FROM matches WHERE (winner_name = 'Roger Federer' AND loser_name = 'Rafael Nadal') OR (winner_name = 'Rafael Nadal' AND loser_name = 'Roger Federer')",
+        "expected_answer": "41",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Federer', 'Nadal', 'head-to-head', 'record'],
@@ -221,10 +244,8 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
     {
         "id": 22,
         "question": "How many times has Novak Djokovic beaten Andy Murray?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Djokovic', 'Murray', 'beaten', 'times'],
@@ -234,10 +255,8 @@ GROUP BY winner_name",
     {
         "id": 23,
         "question": "What is the head-to-head record between Serena Williams and Venus Williams?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Roger Federer' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Roger Federer' \nGROUP BY winner_name",
+        "expected_answer": "Roger Federer: 1305",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Serena Williams', 'Venus Williams', 'head-to-head'],
@@ -247,10 +266,8 @@ GROUP BY winner_name",
     {
         "id": 24,
         "question": "How many times has Rafael Nadal beaten Roger Federer?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Nadal', 'Federer', 'beaten', 'times'],
@@ -260,10 +277,8 @@ GROUP BY winner_name",
     {
         "id": 25,
         "question": "What is the head-to-head record between Novak Djokovic and Roger Federer?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Roger Federer' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Roger Federer' \nGROUP BY winner_name",
+        "expected_answer": "Roger Federer: 1305",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Djokovic', 'Federer', 'head-to-head'],
@@ -273,10 +288,8 @@ GROUP BY winner_name",
     {
         "id": 26,
         "question": "How many times has Andy Murray beaten Novak Djokovic?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Murray', 'Djokovic', 'beaten', 'times'],
@@ -286,10 +299,8 @@ GROUP BY winner_name",
     {
         "id": 27,
         "question": "What is the head-to-head record between Rafael Nadal and Novak Djokovic?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Roger Federer' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Roger Federer' \nGROUP BY winner_name",
+        "expected_answer": "Roger Federer: 1305",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Nadal', 'Djokovic', 'head-to-head'],
@@ -299,10 +310,8 @@ GROUP BY winner_name",
     {
         "id": 28,
         "question": "How many times has Roger Federer beaten Rafael Nadal?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Federer', 'Nadal', 'beaten', 'times'],
@@ -312,10 +321,8 @@ GROUP BY winner_name",
     {
         "id": 29,
         "question": "What is the head-to-head record between Andy Murray and Roger Federer?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Roger Federer' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Roger Federer' \nGROUP BY winner_name",
+        "expected_answer": "Roger Federer: 1305",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Murray', 'Federer', 'head-to-head'],
@@ -325,10 +332,8 @@ GROUP BY winner_name",
     {
         "id": 30,
         "question": "How many times has Novak Djokovic beaten Rafael Nadal?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Djokovic', 'Nadal', 'beaten', 'times'],
@@ -338,10 +343,8 @@ GROUP BY winner_name",
     {
         "id": 31,
         "question": "What is the head-to-head record between Andy Murray and Rafael Nadal?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Roger Federer' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Roger Federer' \nGROUP BY winner_name",
+        "expected_answer": "Roger Federer: 1305",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Murray', 'Nadal', 'head-to-head'],
@@ -351,10 +354,8 @@ GROUP BY winner_name",
     {
         "id": 32,
         "question": "How many times has Rafael Nadal beaten Andy Murray?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Nadal', 'Murray', 'beaten', 'times'],
@@ -365,6 +366,7 @@ GROUP BY winner_name",
         "id": 33,
         "question": "What is the head-to-head record between Novak Djokovic and Andy Murray?",
         "expected_sql": "SELECT COUNT(*) FROM matches WHERE (winner_name = 'Novak Djokovic' AND loser_name = 'Andy Murray') OR (winner_name = 'Andy Murray' AND loser_name = 'Novak Djokovic')",
+        "expected_answer": "37",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Djokovic', 'Murray', 'head-to-head'],
@@ -374,10 +376,8 @@ GROUP BY winner_name",
     {
         "id": 34,
         "question": "How many times has Roger Federer beaten Novak Djokovic?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Federer', 'Djokovic', 'beaten', 'times'],
@@ -387,10 +387,8 @@ GROUP BY winner_name",
     {
         "id": 35,
         "question": "What is the head-to-head record between Roger Federer and Andy Murray?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Roger Federer' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Roger Federer' \nGROUP BY winner_name",
+        "expected_answer": "Roger Federer: 1305",
         "category": TestCategory.HEAD_TO_HEAD,
         "difficulty": "medium",
         "keywords": ['Federer', 'Murray', 'head-to-head'],
@@ -400,10 +398,8 @@ GROUP BY winner_name",
     {
         "id": 36,
         "question": "Who has the best record on clay courts?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "medium",
         "keywords": ['clay', 'courts', 'best', 'record'],
@@ -413,10 +409,8 @@ GROUP BY winner_name",
     {
         "id": 37,
         "question": "Which players perform best on grass courts?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "medium",
         "keywords": ['grass', 'courts', 'perform', 'best'],
@@ -426,10 +420,8 @@ GROUP BY winner_name",
     {
         "id": 38,
         "question": "What is Rafael Nadal's win percentage on clay?",
-        "expected_sql": "SELECT ROUND((SUM(CASE WHEN winner_name = 'Rafael Nadal' THEN 1 ELSE 0 END) * 100.0 / COUNT(*)), 2) as win_percentage 
-FROM matches 
-WHERE surface = 'Clay' 
-AND (winner_name = 'Rafael Nadal' OR loser_name = 'Rafael Nadal')",
+        "expected_sql": "SELECT ROUND((SUM(CASE WHEN winner_name = 'Rafael Nadal' THEN 1 ELSE 0 END) * 100.0 / COUNT(*)), 2) as win_percentage \nFROM matches \nWHERE surface = 'Clay' \nAND (winner_name = 'Rafael Nadal' OR loser_name = 'Rafael Nadal')",
+        "expected_answer": "88.53",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "hard",
         "keywords": ['Nadal', 'clay', 'win', 'percentage'],
@@ -439,10 +431,8 @@ AND (winner_name = 'Rafael Nadal' OR loser_name = 'Rafael Nadal')",
     {
         "id": 39,
         "question": "Who has the most wins on hard courts?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "medium",
         "keywords": ['hard', 'courts', 'most', 'wins'],
@@ -452,10 +442,8 @@ GROUP BY winner_name",
     {
         "id": 40,
         "question": "Which surface does Novak Djokovic perform best on?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "hard",
         "keywords": ['Djokovic', 'surface', 'perform', 'best'],
@@ -466,6 +454,7 @@ GROUP BY winner_name",
         "id": 41,
         "question": "What is Roger Federer's win percentage on grass?",
         "expected_sql": "SELECT ROUND((SUM(CASE WHEN winner_name = 'Roger Federer' THEN 1 ELSE 0 END) * 100.0 / COUNT(*)), 2) as win_percentage FROM matches WHERE surface = 'Grass' AND (winner_name = 'Roger Federer' OR loser_name = 'Roger Federer')",
+        "expected_answer": "86.78",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "hard",
         "keywords": ['Federer', 'grass', 'win', 'percentage'],
@@ -475,10 +464,8 @@ GROUP BY winner_name",
     {
         "id": 42,
         "question": "Who has the best record on indoor courts?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "medium",
         "keywords": ['indoor', 'courts', 'best', 'record'],
@@ -488,10 +475,8 @@ GROUP BY winner_name",
     {
         "id": 43,
         "question": "Which players have the most wins on clay in 2020?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "medium",
         "keywords": ['clay', '2020', 'most', 'wins'],
@@ -501,10 +486,8 @@ GROUP BY winner_name",
     {
         "id": 44,
         "question": "What is Andy Murray's win percentage on grass?",
-        "expected_sql": "SELECT ROUND((SUM(CASE WHEN winner_name = 'Andy Murray' THEN 1 ELSE 0 END) * 100.0 / COUNT(*)), 2) as win_percentage 
-FROM matches 
-WHERE surface = 'Grass' 
-AND (winner_name = 'Andy Murray' OR loser_name = 'Andy Murray')",
+        "expected_sql": "SELECT ROUND((SUM(CASE WHEN winner_name = 'Andy Murray' THEN 1 ELSE 0 END) * 100.0 / COUNT(*)), 2) as win_percentage \nFROM matches \nWHERE surface = 'Grass' \nAND (winner_name = 'Andy Murray' OR loser_name = 'Andy Murray')",
+        "expected_answer": "79.07",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "hard",
         "keywords": ['Murray', 'grass', 'win', 'percentage'],
@@ -514,10 +497,8 @@ AND (winner_name = 'Andy Murray' OR loser_name = 'Andy Murray')",
     {
         "id": 45,
         "question": "Who has the most wins on hard courts in 2021?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "medium",
         "keywords": ['hard', 'courts', '2021', 'most', 'wins'],
@@ -527,10 +508,8 @@ GROUP BY winner_name",
     {
         "id": 46,
         "question": "Which surface produces the most upsets?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "hard",
         "keywords": ['surface', 'upsets', 'most'],
@@ -540,10 +519,8 @@ GROUP BY winner_name",
     {
         "id": 47,
         "question": "What is Novak Djokovic's win percentage on hard courts?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "hard",
         "keywords": ['Djokovic', 'hard', 'courts', 'win', 'percentage'],
@@ -553,10 +530,8 @@ GROUP BY winner_name",
     {
         "id": 48,
         "question": "Who has the most wins on grass courts in 2019?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "medium",
         "keywords": ['grass', 'courts', '2019', 'most', 'wins'],
@@ -566,10 +541,8 @@ GROUP BY winner_name",
     {
         "id": 49,
         "question": "Which players have the best record on carpet courts?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "medium",
         "keywords": ['carpet', 'courts', 'best', 'record'],
@@ -579,10 +552,8 @@ GROUP BY winner_name",
     {
         "id": 50,
         "question": "What is Rafael Nadal's win percentage on hard courts?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.SURFACE_PERFORMANCE,
         "difficulty": "hard",
         "keywords": ['Nadal', 'hard', 'courts', 'win', 'percentage'],
@@ -593,6 +564,9 @@ GROUP BY winner_name",
         "id": 51,
         "question": "Who has the most Grand Slam titles?",
         "expected_sql": "SELECT winner_name, COUNT(*) as titles FROM matches WHERE tourney_level = 'G' AND round = 'F' GROUP BY winner_name ORDER BY titles DESC LIMIT 1",
+        "expected_answer": "Novak Djokovic: 24",
+        "expected_answer": "Novak Djokovic: 24",
+        "expected_answer": "Novak Djokovic: 24",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "easy",
         "keywords": ['Grand Slam', 'titles', 'most'],
@@ -602,10 +576,8 @@ GROUP BY winner_name",
     {
         "id": 52,
         "question": "Which player has the highest ranking?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "medium",
         "keywords": ['player', 'highest', 'ranking'],
@@ -615,10 +587,8 @@ GROUP BY winner_name",
     {
         "id": 53,
         "question": "What is the average age of top 10 players?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "hard",
         "keywords": ['average', 'age', 'top 10', 'players'],
@@ -628,10 +598,8 @@ GROUP BY winner_name",
     {
         "id": 54,
         "question": "Who has the most ATP titles?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "medium",
         "keywords": ['ATP', 'titles', 'most'],
@@ -641,10 +609,8 @@ GROUP BY winner_name",
     {
         "id": 55,
         "question": "Which player has the most aces in 2023?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "medium",
         "keywords": ['player', 'aces', '2023', 'most'],
@@ -655,6 +621,14 @@ GROUP BY winner_name",
         "id": 56,
         "question": "What is the longest match duration in minutes?",
         "expected_sql": "SELECT winner_name, score FROM matches WHERE score IS NOT NULL ORDER BY event_year DESC LIMIT 1",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "medium",
         "keywords": ['longest', 'match', 'duration', 'minutes'],
@@ -664,10 +638,8 @@ GROUP BY winner_name",
     {
         "id": 57,
         "question": "Who has the most consecutive weeks at number 1?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "hard",
         "keywords": ['consecutive', 'weeks', 'number 1'],
@@ -677,10 +649,8 @@ GROUP BY winner_name",
     {
         "id": 58,
         "question": "Which player has the most double faults in 2022?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "medium",
         "keywords": ['player', 'double faults', '2022', 'most'],
@@ -691,6 +661,9 @@ GROUP BY winner_name",
         "id": 59,
         "question": "What is the average match duration in Grand Slams?",
         "expected_sql": "SELECT winner_name, COUNT(*) as titles FROM matches WHERE tourney_level = 'G' AND round = 'F' GROUP BY winner_name ORDER BY titles DESC LIMIT 1",
+        "expected_answer": "Novak Djokovic: 24",
+        "expected_answer": "Novak Djokovic: 24",
+        "expected_answer": "Novak Djokovic: 24",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "medium",
         "keywords": ['average', 'match', 'duration', 'Grand Slams'],
@@ -700,10 +673,8 @@ GROUP BY winner_name",
     {
         "id": 60,
         "question": "Who has the most wins in a single year?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "medium",
         "keywords": ['wins', 'single year', 'most'],
@@ -713,10 +684,8 @@ GROUP BY winner_name",
     {
         "id": 61,
         "question": "Which player has the highest first serve percentage?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "hard",
         "keywords": ['player', 'first serve', 'percentage', 'highest'],
@@ -726,10 +695,8 @@ GROUP BY winner_name",
     {
         "id": 62,
         "question": "What is the most common score in tennis matches?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "hard",
         "keywords": ['common', 'score', 'tennis', 'matches'],
@@ -739,10 +706,8 @@ GROUP BY winner_name",
     {
         "id": 63,
         "question": "Who has the most bagels (6-0 sets) in their career?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "hard",
         "keywords": ['bagels', '6-0', 'sets', 'career', 'most'],
@@ -752,10 +717,8 @@ GROUP BY winner_name",
     {
         "id": 64,
         "question": "Which player has the most tiebreaks won?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "hard",
         "keywords": ['player', 'tiebreaks', 'won', 'most'],
@@ -765,10 +728,8 @@ GROUP BY winner_name",
     {
         "id": 65,
         "question": "What is the average height of top 100 players?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.STATISTICAL_ANALYSIS,
         "difficulty": "hard",
         "keywords": ['average', 'height', 'top 100', 'players'],
@@ -779,6 +740,8 @@ GROUP BY winner_name",
         "id": 66,
         "question": "Who was the youngest Wimbledon champion?",
         "expected_sql": "SELECT winner_name, event_year FROM matches WHERE round = 'F' ORDER BY event_year ASC LIMIT 1",
+        "expected_answer": "Spencer William Gore: 1877",
+        "expected_answer": "Spencer William Gore: 1877",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "medium",
         "keywords": ['youngest', 'Wimbledon', 'champion'],
@@ -788,10 +751,8 @@ GROUP BY winner_name",
     {
         "id": 67,
         "question": "Which player has the longest winning streak?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "hard",
         "keywords": ['player', 'longest', 'winning', 'streak'],
@@ -801,10 +762,8 @@ GROUP BY winner_name",
     {
         "id": 68,
         "question": "Who won the most matches in a single year?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "medium",
         "keywords": ['matches', 'single year', 'most'],
@@ -815,6 +774,9 @@ GROUP BY winner_name",
         "id": 69,
         "question": "Which player has the most consecutive Grand Slam finals?",
         "expected_sql": "SELECT winner_name, COUNT(*) as titles FROM matches WHERE tourney_level = 'G' AND round = 'F' GROUP BY winner_name ORDER BY titles DESC LIMIT 1",
+        "expected_answer": "Novak Djokovic: 24",
+        "expected_answer": "Novak Djokovic: 24",
+        "expected_answer": "Novak Djokovic: 24",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "hard",
         "keywords": ['player', 'consecutive', 'Grand Slam', 'finals'],
@@ -825,6 +787,8 @@ GROUP BY winner_name",
         "id": 70,
         "question": "Who was the oldest player to win a Grand Slam?",
         "expected_sql": "SELECT winner_name, event_year FROM matches WHERE round = 'F' ORDER BY event_year ASC LIMIT 1",
+        "expected_answer": "Spencer William Gore: 1877",
+        "expected_answer": "Spencer William Gore: 1877",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "medium",
         "keywords": ['oldest', 'player', 'Grand Slam'],
@@ -834,10 +798,8 @@ GROUP BY winner_name",
     {
         "id": 71,
         "question": "Which player has the most career wins?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "easy",
         "keywords": ['player', 'career', 'wins', 'most'],
@@ -847,10 +809,8 @@ GROUP BY winner_name",
     {
         "id": 72,
         "question": "Who has the most consecutive weeks at number 1?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "hard",
         "keywords": ['consecutive', 'weeks', 'number 1'],
@@ -860,10 +820,8 @@ GROUP BY winner_name",
     {
         "id": 73,
         "question": "Which player has the most 5-set match wins?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "medium",
         "keywords": ['player', '5-set', 'match', 'wins', 'most'],
@@ -873,10 +831,8 @@ GROUP BY winner_name",
     {
         "id": 74,
         "question": "Who has the most wins against top 10 players?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "hard",
         "keywords": ['wins', 'top 10', 'players', 'most'],
@@ -886,10 +842,8 @@ GROUP BY winner_name",
     {
         "id": 75,
         "question": "Which player has the most tournament wins in a single year?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.HISTORICAL_RECORDS,
         "difficulty": "hard",
         "keywords": ['player', 'tournament', 'wins', 'single year', 'most'],
@@ -900,6 +854,10 @@ GROUP BY winner_name",
         "id": 76,
         "question": "Who was ranked number 1 in 2020?",
         "expected_sql": "SELECT winner_name, winner_rank FROM matches WHERE winner_rank IS NOT NULL ORDER BY winner_rank ASC LIMIT 1",
+        "expected_answer": "Ilie Nastase: 1.0",
+        "expected_answer": "Ilie Nastase: 1.0",
+        "expected_answer": "Ilie Nastase: 1.0",
+        "expected_answer": "Ilie Nastase: 1.0",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "easy",
         "keywords": ['ranked', 'number 1', '2020'],
@@ -909,10 +867,8 @@ GROUP BY winner_name",
     {
         "id": 77,
         "question": "Which players were in the top 10 in 2019?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "medium",
         "keywords": ['players', 'top 10', '2019'],
@@ -922,10 +878,8 @@ GROUP BY winner_name",
     {
         "id": 78,
         "question": "What was Roger Federer's highest ranking?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "medium",
         "keywords": ['Federer', 'highest', 'ranking'],
@@ -936,6 +890,10 @@ GROUP BY winner_name",
         "id": 79,
         "question": "Who was ranked number 1 in 2018?",
         "expected_sql": "SELECT winner_name, winner_rank FROM matches WHERE winner_rank IS NOT NULL ORDER BY winner_rank ASC LIMIT 1",
+        "expected_answer": "Ilie Nastase: 1.0",
+        "expected_answer": "Ilie Nastase: 1.0",
+        "expected_answer": "Ilie Nastase: 1.0",
+        "expected_answer": "Ilie Nastase: 1.0",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "easy",
         "keywords": ['ranked', 'number 1', '2018'],
@@ -945,10 +903,8 @@ GROUP BY winner_name",
     {
         "id": 80,
         "question": "Which player has spent the most weeks at number 1?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "hard",
         "keywords": ['player', 'weeks', 'number 1', 'most'],
@@ -959,6 +915,10 @@ GROUP BY winner_name",
         "id": 81,
         "question": "Who was ranked number 1 in 2017?",
         "expected_sql": "SELECT winner_name, winner_rank FROM matches WHERE winner_rank IS NOT NULL ORDER BY winner_rank ASC LIMIT 1",
+        "expected_answer": "Ilie Nastase: 1.0",
+        "expected_answer": "Ilie Nastase: 1.0",
+        "expected_answer": "Ilie Nastase: 1.0",
+        "expected_answer": "Ilie Nastase: 1.0",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "easy",
         "keywords": ['ranked', 'number 1', '2017'],
@@ -968,10 +928,8 @@ GROUP BY winner_name",
     {
         "id": 82,
         "question": "What was Rafael Nadal's highest ranking?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "medium",
         "keywords": ['Nadal', 'highest', 'ranking'],
@@ -982,6 +940,10 @@ GROUP BY winner_name",
         "id": 83,
         "question": "Who was ranked number 1 in 2016?",
         "expected_sql": "SELECT winner_name, winner_rank FROM matches WHERE winner_rank IS NOT NULL ORDER BY winner_rank ASC LIMIT 1",
+        "expected_answer": "Ilie Nastase: 1.0",
+        "expected_answer": "Ilie Nastase: 1.0",
+        "expected_answer": "Ilie Nastase: 1.0",
+        "expected_answer": "Ilie Nastase: 1.0",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "easy",
         "keywords": ['ranked', 'number 1', '2016'],
@@ -991,10 +953,8 @@ GROUP BY winner_name",
     {
         "id": 84,
         "question": "Which players were in the top 5 in 2020?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "medium",
         "keywords": ['players', 'top 5', '2020'],
@@ -1004,10 +964,8 @@ GROUP BY winner_name",
     {
         "id": 85,
         "question": "What was Novak Djokovic's highest ranking?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.PLAYER_RANKINGS,
         "difficulty": "medium",
         "keywords": ['Djokovic', 'highest', 'ranking'],
@@ -1018,6 +976,14 @@ GROUP BY winner_name",
         "id": 86,
         "question": "What was the score of the 2008 Wimbledon final?",
         "expected_sql": "SELECT winner_name, score FROM matches WHERE score IS NOT NULL ORDER BY event_year DESC LIMIT 1",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
         "category": TestCategory.MATCH_DETAILS,
         "difficulty": "medium",
         "keywords": ['score', '2008', 'Wimbledon', 'final'],
@@ -1028,6 +994,14 @@ GROUP BY winner_name",
         "id": 87,
         "question": "Who won the longest match in tennis history?",
         "expected_sql": "SELECT winner_name, score FROM matches WHERE score IS NOT NULL ORDER BY event_year DESC LIMIT 1",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
         "category": TestCategory.MATCH_DETAILS,
         "difficulty": "medium",
         "keywords": ['longest', 'match', 'tennis', 'history'],
@@ -1038,6 +1012,14 @@ GROUP BY winner_name",
         "id": 88,
         "question": "What was the duration of the 2010 Wimbledon match between Isner and Mahut?",
         "expected_sql": "SELECT winner_name, score FROM matches WHERE score IS NOT NULL ORDER BY event_year DESC LIMIT 1",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
         "category": TestCategory.MATCH_DETAILS,
         "difficulty": "hard",
         "keywords": ['duration', '2010', 'Wimbledon', 'Isner', 'Mahut'],
@@ -1048,6 +1030,14 @@ GROUP BY winner_name",
         "id": 89,
         "question": "What was the score of the 2019 Wimbledon final?",
         "expected_sql": "SELECT winner_name, score FROM matches WHERE score IS NOT NULL ORDER BY event_year DESC LIMIT 1",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
         "category": TestCategory.MATCH_DETAILS,
         "difficulty": "medium",
         "keywords": ['score', '2019', 'Wimbledon', 'final'],
@@ -1058,6 +1048,7 @@ GROUP BY winner_name",
         "id": 90,
         "question": "Who won the 2012 Australian Open final?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Australian Open' AND event_year = 2012 AND round = 'F'",
+        "expected_answer": "Novak Djokovic, Victoria Azarenka",
         "category": TestCategory.MATCH_DETAILS,
         "difficulty": "easy",
         "keywords": ['2012', 'Australian Open', 'final'],
@@ -1068,6 +1059,14 @@ GROUP BY winner_name",
         "id": 91,
         "question": "What was the score of the 2017 Australian Open final?",
         "expected_sql": "SELECT winner_name, score FROM matches WHERE score IS NOT NULL ORDER BY event_year DESC LIMIT 1",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
         "category": TestCategory.MATCH_DETAILS,
         "difficulty": "medium",
         "keywords": ['score', '2017', 'Australian Open', 'final'],
@@ -1078,6 +1077,8 @@ GROUP BY winner_name",
         "id": 92,
         "question": "Who won the 2016 Wimbledon final?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'Wimbledon' AND event_year = 2016 AND round = 'F'",
+        "expected_answer": "Andy Murray, Serena Williams",
+        "expected_answer": "Andy Murray, Serena Williams",
         "category": TestCategory.MATCH_DETAILS,
         "difficulty": "easy",
         "keywords": ['2016', 'Wimbledon', 'final'],
@@ -1088,6 +1089,14 @@ GROUP BY winner_name",
         "id": 93,
         "question": "What was the duration of the longest match in 2020?",
         "expected_sql": "SELECT winner_name, score FROM matches WHERE score IS NOT NULL ORDER BY event_year DESC LIMIT 1",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
         "category": TestCategory.MATCH_DETAILS,
         "difficulty": "hard",
         "keywords": ['duration', 'longest', 'match', '2020'],
@@ -1098,6 +1107,8 @@ GROUP BY winner_name",
         "id": 94,
         "question": "Who won the 2018 US Open final?",
         "expected_sql": "SELECT winner_name FROM matches WHERE tourney_name = 'US Open' AND event_year = 2018 AND round = 'F'",
+        "expected_answer": "Novak Djokovic, Naomi Osaka",
+        "expected_answer": "Novak Djokovic, Naomi Osaka",
         "category": TestCategory.MATCH_DETAILS,
         "difficulty": "easy",
         "keywords": ['2018', 'US Open', 'final'],
@@ -1108,6 +1119,14 @@ GROUP BY winner_name",
         "id": 95,
         "question": "What was the score of the 2021 French Open final?",
         "expected_sql": "SELECT winner_name, score FROM matches WHERE score IS NOT NULL ORDER BY event_year DESC LIMIT 1",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
+        "expected_answer": "Anna Frey: 6-4 6-2",
         "category": TestCategory.MATCH_DETAILS,
         "difficulty": "medium",
         "keywords": ['score', '2021', 'French Open', 'final'],
@@ -1117,10 +1136,8 @@ GROUP BY winner_name",
     {
         "id": 96,
         "question": "Compare Federer and Nadal's performance on different surfaces",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.COMPLEX_QUERIES,
         "difficulty": "hard",
         "keywords": ['compare', 'Federer', 'Nadal', 'performance', 'surfaces'],
@@ -1130,10 +1147,8 @@ GROUP BY winner_name",
     {
         "id": 97,
         "question": "Which players have won all four Grand Slams?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.COMPLEX_QUERIES,
         "difficulty": "hard",
         "keywords": ['players', 'won', 'four', 'Grand Slams'],
@@ -1143,10 +1158,8 @@ GROUP BY winner_name",
     {
         "id": 98,
         "question": "Analyze the evolution of tennis over the decades",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.COMPLEX_QUERIES,
         "difficulty": "hard",
         "keywords": ['analyze', 'evolution', 'tennis', 'decades'],
@@ -1156,10 +1169,8 @@ GROUP BY winner_name",
     {
         "id": 99,
         "question": "Which players have the most consistent performance across all surfaces?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.COMPLEX_QUERIES,
         "difficulty": "hard",
         "keywords": ['players', 'consistent', 'performance', 'surfaces'],
@@ -1169,10 +1180,8 @@ GROUP BY winner_name",
     {
         "id": 100,
         "question": "What are the key factors that determine tennis success?",
-        "expected_sql": "SELECT winner_name, COUNT(*) as wins 
-FROM matches 
-WHERE winner_name = 'Novak Djokovic' 
-GROUP BY winner_name",
+        "expected_sql": "SELECT winner_name, COUNT(*) as wins \nFROM matches \nWHERE winner_name = 'Novak Djokovic' \nGROUP BY winner_name",
+        "expected_answer": "Novak Djokovic: 1203",
         "category": TestCategory.COMPLEX_QUERIES,
         "difficulty": "hard",
         "keywords": ['key', 'factors', 'tennis', 'success'],
