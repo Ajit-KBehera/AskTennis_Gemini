@@ -61,7 +61,6 @@ class TestDatabaseManager:
                     session_id INTEGER NOT NULL,
                     test_id INTEGER NOT NULL,
                     question TEXT NOT NULL,
-                    ai_response TEXT,
                     generated_sql TEXT,
                     ai_answer TEXT,
                     expected_answer TEXT,
@@ -160,15 +159,14 @@ class TestDatabaseManager:
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO test_results (
-                    session_id, test_id, question, ai_response, generated_sql,
+                    session_id, test_id, question, generated_sql,
                     ai_answer, expected_answer, accuracy_score, execution_time,
                     status, error_message, confidence_score, category, difficulty
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 session_id,
                 test_result.get('test_id', 0),
                 test_result.get('question', ''),
-                test_result.get('ai_response', ''),
                 test_result.get('generated_sql', ''),
                 test_result.get('ai_answer', ''),
                 test_result.get('expected_answer', ''),

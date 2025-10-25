@@ -124,7 +124,6 @@ class TennisTestRunner:
                 error_result = {
                     'test_id': test_case.get('id', 0),
                     'question': test_case.get('question', ''),
-                    'ai_response': '',
                     'generated_sql': '',
                     'ai_answer': '',
                     'expected_answer': test_case.get('expected_answer', ''),

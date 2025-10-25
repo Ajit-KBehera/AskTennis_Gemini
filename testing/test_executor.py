@@ -113,7 +113,6 @@ class TestExecutor:
         return {
             'test_id': test_case.get('id', 0),
             'question': question,
-            'ai_response': ai_response,
             'generated_sql': generated_sql,
             'ai_answer': ai_answer,
             'expected_answer': expected_answer,
@@ -364,21 +363,20 @@ class TestExecutor:
                 category = test_case.get('category', '')
                 category_str = category.value if hasattr(category, 'value') else str(category)
                 
-                error_result = {
-                    'test_id': test_case.get('id', 0),
-                    'question': test_case.get('question', ''),
-                    'ai_response': '',
-                    'generated_sql': '',
-                    'ai_answer': '',
-                    'expected_answer': test_case.get('expected_answer', ''),
-                    'accuracy_score': 0.0,
-                    'execution_time': 0.0,
-                    'status': 'error',
-                    'error_message': str(e),
-                    'confidence_score': 0.0,
-                    'category': category_str,
-                    'difficulty': test_case.get('difficulty', '')
-                }
+            error_result = {
+                'test_id': test_case.get('id', 0),
+                'question': test_case.get('question', ''),
+                'generated_sql': '',
+                'ai_answer': '',
+                'expected_answer': test_case.get('expected_answer', ''),
+                'accuracy_score': 0.0,
+                'execution_time': 0.0,
+                'status': 'error',
+                'error_message': str(e),
+                'confidence_score': 0.0,
+                'category': category_str,
+                'difficulty': test_case.get('difficulty', '')
+            }
                 results.append(error_result)
                 
                 if progress_callback:
