@@ -100,6 +100,13 @@ GRAND_SLAM_MAPPINGS = {
     "us open": "US Open"
 }
 
+# Case-sensitive tournament name variations
+TOURNAMENT_CASE_VARIATIONS = {
+    "US Open": ["US Open", "Us Open"],
+    "us open": ["US Open", "Us Open"],
+    "Us Open": ["US Open", "Us Open"]
+}
+
 TOURNEY_LEVEL_MAPPINGS = {
     # ATP Levels
     'G': 'G',  # Grand Slam
@@ -214,6 +221,17 @@ def _get_tournament_mapping(tournament: str) -> str:
     
     return json.dumps({"database_name": tournament, "type": "unknown"})
 
+@lru_cache(maxsize=128)
+def _get_tournament_case_variations(tournament: str) -> str:
+    """Cached tournament case variations function."""
+    tournament_clean = tournament.strip()
+    
+    # Check for case variations
+    if tournament_clean in TOURNAMENT_CASE_VARIATIONS:
+        return json.dumps({"variations": TOURNAMENT_CASE_VARIATIONS[tournament_clean], "type": "case_variations"})
+    
+    return json.dumps({"variations": [tournament_clean], "type": "single"})
+
 # =============================================================================
 # TENNIS MAPPING TOOLS
 # =============================================================================
@@ -317,6 +335,25 @@ class TennisMappingTools:
         return get_tournament_mapping
     
     @staticmethod
+    def create_tournament_case_variations_tool():
+        """Create the tennis tournament case variations tool."""
+        @tool
+        def get_tournament_case_variations(tournament: str) -> str:
+            """
+            Get case variations for tournament names to handle database inconsistencies.
+            Handles cases like 'US Open' vs 'Us Open' with caching.
+            
+            Args:
+                tournament: The tournament name to get variations for (e.g., 'US Open', 'us open')
+                
+            Returns:
+                JSON string with tournament name variations
+            """
+            return _get_tournament_case_variations(tournament)
+        
+        return get_tournament_case_variations
+    
+    @staticmethod
     def create_all_mapping_tools() -> List:
         """
         Create all tennis mapping tools using the correct, decorated methods.
@@ -329,7 +366,8 @@ class TennisMappingTools:
             TennisMappingTools.create_surface_mapping_tool(),
             TennisMappingTools.create_tour_mapping_tool(),
             TennisMappingTools.create_hand_mapping_tool(),
-            TennisMappingTools.create_tournament_mapping_tool()
+            TennisMappingTools.create_tournament_mapping_tool(),
+            TennisMappingTools.create_tournament_case_variations_tool()
         ]
     
     @staticmethod
@@ -340,6 +378,7 @@ class TennisMappingTools:
         _get_tour_mapping.cache_clear()
         _get_hand_mapping.cache_clear()
         _get_tournament_mapping.cache_clear()
+        _get_tournament_case_variations.cache_clear()
     
     @staticmethod
     def get_cache_info():
@@ -349,7 +388,8 @@ class TennisMappingTools:
             "surface_mapping": _get_surface_mapping.cache_info(),
             "tour_mapping": _get_tour_mapping.cache_info(),
             "hand_mapping": _get_hand_mapping.cache_info(),
-            "tournament_mapping": _get_tournament_mapping.cache_info()
+            "tournament_mapping": _get_tournament_mapping.cache_info(),
+            "tournament_case_variations": _get_tournament_case_variations.cache_info()
         }
 
 # =============================================================================
@@ -363,6 +403,7 @@ __all__ = [
     'TOUR_MAPPINGS',
     'HAND_MAPPINGS',
     'GRAND_SLAM_MAPPINGS',
+    'TOURNAMENT_CASE_VARIATIONS',
     'TOURNEY_LEVEL_MAPPINGS',
     'COMBINED_TOURNAMENT_MAPPINGS'
 ]

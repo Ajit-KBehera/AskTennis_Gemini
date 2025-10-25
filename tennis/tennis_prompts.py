@@ -168,12 +168,25 @@ class TennisPromptBuilder:
         - These mappings are now CACHED for better performance
         - Grand Slams: "French Open" → "Roland Garros", "Aus Open" → "Australian Open", "The Championship" → "Wimbledon"
         - Combined tournaments: "Rome" → ATP="Rome Masters" + WTA="Rome", "Madrid" → ATP="Madrid Masters" + WTA="Madrid"
-        - CRITICAL: For combined tournaments (without ATP/WTA specification), ALWAYS search BOTH tournaments using UNION
+        - CRITICAL: For combined tournaments (without ATP/WTA specification), ALWAYS search BOTH ATP AND WTA using UNION
         - Examples:
           * "Miami 2017" → Search both "Miami Masters" (ATP) AND "Miami" (WTA) using UNION
           * "Rome 2022" → Search both "Rome Masters" (ATP) AND "Rome" (WTA) using UNION
           * "Madrid 2021" → Search both "Madrid Masters" (ATP) AND "Madrid" (WTA) using UNION
         - NEVER search only one tournament when user doesn't specify ATP/WTA
+        
+        CRITICAL: TOURNAMENT CASE SENSITIVITY (CACHED)
+        - Database has inconsistent case sensitivity for tournament names
+        - ALWAYS use get_tournament_case_variations tool to handle case variations
+        - These mappings are now CACHED for better performance
+        - US Open variations: "US Open" and "Us Open" both exist in database
+        - CRITICAL: For US Open queries, ALWAYS search BOTH case variations using OR
+        - Examples:
+          * "US Open 2019" → Search both "US Open" AND "Us Open" using OR
+          * "US Open 2020" → Search both "US Open" AND "Us Open" using OR
+          * "US Open finals" → Search both "US Open" AND "Us Open" using OR
+        - SQL Pattern: WHERE (tourney_name = 'US Open' OR tourney_name = 'Us Open')
+        - NEVER search only one case variation for US Open
         
         CRITICAL: TOURNAMENT WINNER QUERIES (OPTIMIZED)
         - When user asks "Who won X tournament" (without specifying round), ALWAYS assume they mean the FINAL
