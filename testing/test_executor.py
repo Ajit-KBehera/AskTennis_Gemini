@@ -67,7 +67,7 @@ class TestExecutor:
                 'status': 'error',
                 'error_message': str(e),
                 'confidence_score': 0.0,
-                'category': test_case.get('category', ''),
+                'category': test_case.get('category', '').value if hasattr(test_case.get('category', ''), 'value') else str(test_case.get('category', '')),
                 'difficulty': test_case.get('difficulty', '')
             }
     
@@ -84,6 +84,7 @@ class TestExecutor:
         question = test_case['question']
         expected_answer = test_case['expected_answer']
         category = test_case.get('category', '')
+        category_str = category.value if hasattr(category, 'value') else str(category)
         difficulty = test_case.get('difficulty', '')
         
         # Send question to AI system
@@ -116,7 +117,7 @@ class TestExecutor:
             'expected_answer': expected_answer,
             'accuracy_score': accuracy_score,
             'confidence_score': confidence_score,
-            'category': category.value if hasattr(category, 'value') else str(category),
+            'category': category_str,
             'difficulty': difficulty
         }
     

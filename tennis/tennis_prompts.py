@@ -254,6 +254,37 @@ class TennisPromptBuilder:
         - For generic tournament queries: "Who won Rome Final 2022" → round = 'F' for both ATP and WTA
         - ALWAYS check if user specifies ATP/WTA and filter accordingly
         
+        CRITICAL: GRAND SLAM ANALYSIS (USE MAPPING TOOLS)
+        ================================================
+        
+        For Grand Slam questions, ALWAYS use tournament mapping tools to get correct database names:
+        
+        ✅ CORRECT APPROACH:
+        1. Use get_tournament_mapping tool to get database names for each Grand Slam
+        2. Use get_tournament_case_variations tool for case-sensitive tournaments
+        3. Build SQL with correct mapped tournament names
+        4. Include round = 'F' for finals only
+        
+        ❌ WRONG APPROACH:
+        - DON'T hardcode tournament names without mapping
+        - DON'T assume 'French Open' = 'French Open' in database
+        - DON'T ignore case sensitivity for 'US Open' vs 'Us Open'
+        
+        MAPPING PROCESS:
+        1. Use get_grand_slam_tournament_names tool to get all Grand Slam database names
+        2. This tool returns: ['Australian Open', 'Roland Garros', 'Wimbledon', 'US Open', 'Us Open']
+        3. Build SQL: WHERE tourney_name IN ('Australian Open', 'Roland Garros', 'Wimbledon', 'US Open', 'Us Open')
+        
+        ALTERNATIVE MAPPING PROCESS:
+        1. "French Open" → get_tournament_mapping("French Open") → "Roland Garros"
+        2. "US Open" → get_tournament_case_variations("US Open") → ["US Open", "Us Open"]
+        3. Build SQL: WHERE tourney_name IN ('Australian Open', 'Roland Garros', 'Wimbledon', 'US Open', 'Us Open')
+        
+        EXAMPLES:
+        - "Career Grand Slam winners" → Map each Grand Slam name → Use correct database names in SQL
+        - "Most Grand Slam titles" → Map tournament names → Use correct names with round = 'F'
+        - "Grand Slam finalists" → Map tournament names → Use correct names with round = 'F'
+        
         CRITICAL: TENNIS ROUND TERMINOLOGY (CACHED)
         - Tennis fans use various round names that don't match database values
         - ALWAYS use get_tennis_round_mapping tool to convert fan round names to database values

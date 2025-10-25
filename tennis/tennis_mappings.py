@@ -101,17 +101,49 @@ HAND_MAPPINGS = {
 }
 
 GRAND_SLAM_MAPPINGS = {
-    "french open": "Roland Garros", "roland garros": "Roland Garros",
-    "aus open": "Australian Open", "australian open": "Australian Open",
-    "wimbledon": "Wimbledon", "the championship": "Wimbledon",
-    "us open": "US Open"
+    # French Open variations
+    "french open": "Roland Garros", "roland garros": "Roland Garros", "french": "Roland Garros",
+    "French Open": "Roland Garros", "Roland Garros": "Roland Garros", "French": "Roland Garros",
+    
+    # Australian Open variations
+    "aus open": "Australian Open", "australian open": "Australian Open", "aus": "Australian Open",
+    "Australian Open": "Australian Open", "Aus Open": "Australian Open", "Australian": "Australian Open",
+    
+    # Wimbledon variations
+    "wimbledon": "Wimbledon", "the championship": "Wimbledon", "wimby": "Wimbledon",
+    "Wimbledon": "Wimbledon", "The Championship": "Wimbledon", "Wimby": "Wimbledon",
+    
+    # US Open variations
+    "us open": "US Open", "us": "US Open",
+    "US Open": "US Open", "US": "US Open"
 }
 
 # Case-sensitive tournament name variations
 TOURNAMENT_CASE_VARIATIONS = {
+    # US Open case variations
     "US Open": ["US Open", "Us Open"],
     "us open": ["US Open", "Us Open"],
-    "Us Open": ["US Open", "Us Open"]
+    "Us Open": ["US Open", "Us Open"],
+    "US": ["US Open", "Us Open"],
+    "us": ["US Open", "Us Open"],
+    
+    # Australian Open case variations (if any exist)
+    "Australian Open": ["Australian Open"],
+    "australian open": ["Australian Open"],
+    "Aus Open": ["Australian Open"],
+    "aus open": ["Australian Open"],
+    
+    # French Open case variations (if any exist)
+    "French Open": ["Roland Garros"],
+    "french open": ["Roland Garros"],
+    "Roland Garros": ["Roland Garros"],
+    "roland garros": ["Roland Garros"],
+    
+    # Wimbledon case variations (if any exist)
+    "Wimbledon": ["Wimbledon"],
+    "wimbledon": ["Wimbledon"],
+    "The Championship": ["Wimbledon"],
+    "the championship": ["Wimbledon"]
 }
 
 TOURNEY_LEVEL_MAPPINGS = {
@@ -441,6 +473,32 @@ class TennisMappingTools:
         return extract_ranking_parameters
     
     @staticmethod
+    def create_grand_slam_mapping_tool():
+        """Create the Grand Slam mapping tool."""
+        @tool
+        def get_grand_slam_tournament_names() -> str:
+            """
+            Get all Grand Slam tournament names as they appear in the database.
+            Use this for Grand Slam analysis questions.
+            
+            Returns:
+                JSON string with all Grand Slam tournament names
+            """
+            return json.dumps({
+                "grand_slams": [
+                    "Australian Open",
+                    "Roland Garros", 
+                    "Wimbledon",
+                    "US Open",
+                    "Us Open"  # Case variation
+                ],
+                "sql_pattern": "WHERE tourney_name IN ('Australian Open', 'Roland Garros', 'Wimbledon', 'US Open', 'Us Open')",
+                "usage": "For Grand Slam questions, use these exact tournament names in SQL queries"
+            })
+        
+        return get_grand_slam_tournament_names
+    
+    @staticmethod
     def create_all_mapping_tools() -> List:
         """
         Create all tennis mapping tools using the correct, decorated methods.
@@ -455,6 +513,7 @@ class TennisMappingTools:
             TennisMappingTools.create_hand_mapping_tool(),
             TennisMappingTools.create_tournament_mapping_tool(),
             TennisMappingTools.create_tournament_case_variations_tool(),
+            TennisMappingTools.create_grand_slam_mapping_tool(),
             TennisMappingTools.create_ranking_analysis_tool(),
             TennisMappingTools.create_tour_detection_tool(),
             TennisMappingTools.create_ranking_sql_tool(),
