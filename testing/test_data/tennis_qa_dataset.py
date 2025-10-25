@@ -2461,3 +2461,17 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
         "sql_results_count": 1,
     }
 ]
+
+
+def get_test_categories():
+    """
+    Get all unique test categories from the dataset.
+    
+    Returns:
+        List of unique test categories
+    """
+    categories = set()
+    for test_case in TENNIS_QA_DATASET:
+        if 'category' in test_case:
+            categories.add(test_case['category'])
+    return list(categories)
