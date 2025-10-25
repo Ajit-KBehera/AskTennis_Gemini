@@ -5,6 +5,7 @@ Consolidates AgentConfigManager and AgentConfig into a single class.
 
 import streamlit as st
 from typing import Optional, Dict, Any
+from config.constants import DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_DB_PATH
 
 
 class UnifiedAgentConfig:
@@ -15,9 +16,9 @@ class UnifiedAgentConfig:
     
     def __init__(self):
         """Initialize with default configuration."""
-        self.model_name = "gemini-2.5-flash-lite"
-        self.temperature = 0
-        self.db_path = "sqlite:///tennis_data.db"
+        self.model_name = DEFAULT_MODEL
+        self.temperature = DEFAULT_TEMPERATURE
+        self.db_path = DEFAULT_DB_PATH
         self.api_key = self._get_api_key()
     
     def _get_api_key(self) -> str:
