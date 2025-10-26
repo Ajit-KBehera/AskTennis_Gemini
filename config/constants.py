@@ -24,3 +24,7 @@ EXAMPLE_QUESTIONS = """
 # Logging Configuration
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 LOG_LEVEL = "INFO"
+
+# Testing Configuration
+MINIMUM_TEST_INTERVAL_SECONDS = 75
+DEFAULT_TEST_INTERVAL_SECONDS = 75

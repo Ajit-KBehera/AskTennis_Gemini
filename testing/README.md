@@ -6,7 +6,7 @@ A streamlined automated testing framework for the AskTennis AI system, designed 
 
 This simplified testing framework provides:
 - **100 curated tennis questions** across 8 categories
-- **Automated test execution** with configurable intervals
+- **Automated test execution** with configurable intervals (minimum 75 seconds, configurable in `config/constants.py`)
 - **AI response capture** (SQL queries and answers)
 - **SQLite database storage** for test results and sessions
 - **Basic performance metrics** and execution tracking
@@ -47,11 +47,11 @@ python run_automated_tests.py --full
 python run_automated_tests.py --questions 28                    # Run single question 28
 python run_automated_tests.py --questions 1,5,10,15            # Run multiple specific questions
 python run_automated_tests.py --questions 80-100               # Run question range 80-100
-python run_automated_tests.py --questions 1-20 --interval 60   # Run questions 1-20 with 60s intervals
+python run_automated_tests.py --questions 1-20 --interval 90   # Run questions 1-20 with 90s intervals
 
 # Python API (Alternative)
-python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=[28], interval_seconds=30)"
-python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=[1, 5, 10, 15], interval_seconds=30)"
+python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=[28], interval_seconds=75)"
+python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=[1, 5, 10, 15], interval_seconds=75)"
 ```
 
 ### 4. Run Question Range (X to Y)
@@ -62,9 +62,9 @@ python run_automated_tests.py --questions 50-75                # Run questions 5
 python run_automated_tests.py --questions 80-100               # Run questions 80-100
 
 # Python API (Alternative)
-python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=list(range(80, 101)), interval_seconds=30)"
-python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=list(range(1, 21)), interval_seconds=30)"
-python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=list(range(50, 76)), interval_seconds=30)"
+python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=list(range(80, 101)), interval_seconds=75)"
+python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=list(range(1, 21)), interval_seconds=75)"
+python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=list(range(50, 76)), interval_seconds=75)"
 ```
 
 ### 5. Run Category-Specific Tests
@@ -72,9 +72,9 @@ python -c "from testing.test_runner import TennisTestRunner; runner = TennisTest
 python run_automated_tests.py --category tournament_winner
 ```
 
-### 6. Run with Custom Interval (minimum 30 seconds)
+### 6. Run with Custom Interval (minimum 75 seconds, configurable in `config/constants.py`)
 ```bash
-python run_automated_tests.py --full --interval 60
+python run_automated_tests.py --full --interval 90
 ```
 
 ### 7. List Available Categories
@@ -102,10 +102,10 @@ The framework includes 100 test cases across 8 categories:
 ### Basic Commands
 
 ```bash
-# Run all 100 tests with 30-second intervals
+# Run all 100 tests with 75-second intervals
 python run_automated_tests.py --full
 
-# Run 20 quick tests with 30-second intervals
+# Run 20 quick tests with 75-second intervals
 python run_automated_tests.py --quick --num-tests 20
 
 # Run tournament winner tests only
@@ -124,8 +124,8 @@ python run_automated_tests.py --questions 28                    # Run question 2
 python run_automated_tests.py --questions 42                    # Run question 42
 
 # Python API (Alternative)
-python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=[28], interval_seconds=30)"
-python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=[42], interval_seconds=30)"
+python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=[28], interval_seconds=75)"
+python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=[42], interval_seconds=75)"
 ```
 
 #### Run Multiple Specific Questions
@@ -135,8 +135,8 @@ python run_automated_tests.py --questions 1,5,10,15            # Run questions 1
 python run_automated_tests.py --questions 28,42,67,89          # Run questions 28, 42, 67, 89
 
 # Python API (Alternative)
-python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=[1, 5, 10, 15], interval_seconds=30)"
-python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=[28, 42, 67, 89], interval_seconds=30)"
+python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=[1, 5, 10, 15], interval_seconds=75)"
+python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=[28, 42, 67, 89], interval_seconds=75)"
 ```
 
 #### Run Question Ranges
@@ -145,13 +145,13 @@ python -c "from testing.test_runner import TennisTestRunner; runner = TennisTest
 python run_automated_tests.py --questions 1-20                 # Run questions 1-20
 python run_automated_tests.py --questions 50-75                # Run questions 50-75
 python run_automated_tests.py --questions 80-100               # Run questions 80-100
-python run_automated_tests.py --questions 1-10 --interval 60   # Run questions 1-10 with 60s intervals
+python run_automated_tests.py --questions 1-10 --interval 90   # Run questions 1-10 with 90s intervals
 
 # Python API (Alternative)
-python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=list(range(1, 21)), interval_seconds=30)"
-python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=list(range(50, 76)), interval_seconds=30)"
-python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=list(range(80, 101)), interval_seconds=30)"
-python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=list(range(1, 11)), interval_seconds=60)"
+python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=list(range(1, 21)), interval_seconds=75)"
+python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=list(range(50, 76)), interval_seconds=75)"
+python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=list(range(80, 101)), interval_seconds=75)"
+python -c "from testing.test_runner import TennisTestRunner; runner = TennisTestRunner(); runner.run_automated_tests(test_subset=list(range(1, 11)), interval_seconds=90)"
 ```
 
 ### Session Management
@@ -280,24 +280,24 @@ runner = TennisTestRunner()
 # Run specific test questions
 result = runner.run_automated_tests(
     test_subset=[1, 2, 3, 4, 5],
-    interval_seconds=30
+    interval_seconds=75
 )
 
 # Run all tests
-result = runner.run_automated_tests(interval_seconds=60)
+result = runner.run_automated_tests(interval_seconds=90)
 
 # Run category-specific tests
-result = runner.run_category_test("tournament_winner", interval_seconds=30)
+result = runner.run_category_test("tournament_winner", interval_seconds=75)
 ```
 
 ### Command Line Usage
 
 ```bash
-# Run tests 80-100 with 60-second intervals
+# Run tests 80-100 with 90-second intervals
 python -c "
 from testing.test_runner import TennisTestRunner
 runner = TennisTestRunner()
-result = runner.run_automated_tests(test_subset=list(range(80, 101)), interval_seconds=60)
+result = runner.run_automated_tests(test_subset=list(range(80, 101)), interval_seconds=90)
 print('Completed!')
 "
 ```

@@ -300,7 +300,7 @@ AskTennis includes a comprehensive automated testing framework with **100 curate
 ### **Testing Features**
 - **100 Test Cases**: Curated questions covering all tennis aspects
 - **8 Categories**: Tournament winners, head-to-head, surface performance, statistics, historical records, rankings, match details, and complex queries
-- **Automated Execution**: Run tests with configurable intervals
+- **Automated Execution**: Run tests with configurable intervals (minimum 75 seconds, configurable in `config/constants.py`)
 - **SQLite Database**: Store test results and sessions
 - **Performance Metrics**: Track execution times and completion rates
 - **Command-Line Interface**: Easy test execution and management
@@ -319,7 +319,7 @@ python run_automated_tests.py --questions 80-100
 python run_automated_tests.py --category tournament_winner
 
 # Run with custom intervals
-python run_automated_tests.py --full --interval 60
+python run_automated_tests.py --full --interval 90
 ```
 
 ### **Test Categories**

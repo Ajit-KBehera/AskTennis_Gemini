@@ -15,6 +15,7 @@ sys.path.append(str(Path(__file__).parent))
 
 from testing.test_runner import TennisTestRunner
 from testing.test_data.tennis_qa_dataset import TENNIS_QA_DATASET, get_test_categories
+from config.constants import MINIMUM_TEST_INTERVAL_SECONDS, DEFAULT_TEST_INTERVAL_SECONDS
 
 
 def print_banner():
@@ -185,16 +186,16 @@ def main():
     parser = argparse.ArgumentParser(
         description="AskTennis AI - Automated Testing Framework",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+        epilog=f"""
 Examples:
-  python run_automated_tests.py --full                    # Run all tests (30s intervals)
-  python run_automated_tests.py --quick --num-tests 5     # Run 5 quick tests (30s intervals)
-  python run_automated_tests.py --category tournament_winner  # Run category tests (30s intervals)
+  python run_automated_tests.py --full                    # Run all tests ({DEFAULT_TEST_INTERVAL_SECONDS}s intervals)
+  python run_automated_tests.py --quick --num-tests 5     # Run 5 quick tests ({DEFAULT_TEST_INTERVAL_SECONDS}s intervals)
+  python run_automated_tests.py --category tournament_winner  # Run category tests ({DEFAULT_TEST_INTERVAL_SECONDS}s intervals)
   python run_automated_tests.py --questions 28            # Run specific question 28
   python run_automated_tests.py --questions 1,5,10,15     # Run specific questions 1,5,10,15
   python run_automated_tests.py --questions 80-100        # Run questions 80-100
-  python run_automated_tests.py --questions 1-20 --interval 60  # Run questions 1-20 with 60s intervals
-  python run_automated_tests.py --interval 60           # Run with 60s intervals
+  python run_automated_tests.py --questions 1-20 --interval 90  # Run questions 1-20 with 90s intervals
+  python run_automated_tests.py --interval 90           # Run with 90s intervals
   python run_automated_tests.py --list-sessions           # List all sessions
   python run_automated_tests.py --export 1 --output results.json  # Export session
         """
@@ -206,7 +207,7 @@ Examples:
     parser.add_argument('--category', type=str, help='Run tests for specific category')
     parser.add_argument('--questions', nargs='+', help='Run specific question numbers (e.g., --questions 1,2,3 or --questions 1-10)')
     parser.add_argument('--num-tests', type=int, default=10, help='Number of tests for quick run')
-    parser.add_argument('--interval', type=int, default=30, help='Interval between tests (seconds, minimum 30)')
+    parser.add_argument('--interval', type=int, default=DEFAULT_TEST_INTERVAL_SECONDS, help=f'Interval between tests (seconds, minimum {MINIMUM_TEST_INTERVAL_SECONDS})')
     
     # Session management options
     parser.add_argument('--list-sessions', action='store_true', help='List all test sessions')
