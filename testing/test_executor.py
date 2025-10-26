@@ -49,8 +49,8 @@ class TestExecutor:
             execution_time = time.time() - start_time
             result['execution_time'] = execution_time
             
-            # Determine test status
-            result['status'] = self._determine_test_status(result)
+            # Set status based on whether there was an error
+            result['status'] = 'completed' if not result.get('error_message') else 'error'
             
             return result
             
