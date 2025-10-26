@@ -87,7 +87,6 @@ class TestDatabaseManager:
             # Create indexes for better performance
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_test_results_session_id ON test_results(session_id)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_test_results_test_id ON test_results(test_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_test_results_status ON test_results(status)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_test_results_category ON test_results(category)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_test_sessions_status ON test_sessions(status)")
             
@@ -212,29 +211,6 @@ class TestDatabaseManager:
                 SELECT * FROM test_results WHERE session_id = ?
                 ORDER BY test_timestamp
             """, (session_id,))
-            
-            rows = cursor.fetchall()
-            columns = [description[0] for description in cursor.description]
-            return [dict(zip(columns, row)) for row in rows]
-    
-    def get_test_results_by_status(self, session_id: int, status: str) -> List[Dict[str, Any]]:
-        """
-        Get test results filtered by status.
-        
-        Args:
-            session_id: ID of the test session
-            status: Status to filter by ('passed', 'failed', 'error')
-            
-        Returns:
-            List of test results with the specified status
-        """
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT * FROM test_results 
-                WHERE session_id = ? AND status = ?
-                ORDER BY test_timestamp
-            """, (session_id, status))
             
             rows = cursor.fetchall()
             columns = [description[0] for description in cursor.description]
