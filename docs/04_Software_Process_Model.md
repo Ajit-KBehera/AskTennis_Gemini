@@ -211,11 +211,13 @@ flowchart LR
 ```
 
 **Testing Components:**
+- **Automated Testing Framework**: 100 curated tennis questions across 8 categories
 - **Unit Tests**: Individual component testing
 - **Integration Tests**: Component interaction testing
 - **Performance Tests**: Load and stress testing
 - **Security Tests**: Vulnerability and penetration testing
 - **User Acceptance Tests**: End-user scenario testing
+- **AI Response Testing**: Automated testing of AI-generated SQL and responses
 
 ## 🚀 Deployment Process
 

@@ -171,12 +171,19 @@ graph TB
 - **Rankings Table**: 5.3M+ ranking records (1973-2024)
 - **Doubles Table**: 26K+ doubles matches (2000-2020)
 
-### 5. **Logging Layer**
+### 5. **Testing Layer**
+- **Test Runner**: Main test orchestrator and execution engine
+- **Test Executor**: Individual test case execution
+- **Result Analyzer**: Test result analysis and reporting
+- **Test Database**: SQLite database for storing test results and sessions
+- **Test Data**: 100 curated tennis questions across 8 categories
+
+### 6. **Logging Layer**
 - **Logging Factory**: Centralized logging management
 - **Base Logger**: Core logging functionality
 - **Specialized Handlers**: Query, response, error, and database logging
 
-### 6. **Configuration Layer**
+### 7. **Configuration Layer**
 - **Unified Config**: Centralized configuration management
 - **Constants**: Application constants and settings
 - **LLM Setup**: Language model configuration

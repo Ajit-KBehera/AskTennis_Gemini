@@ -67,6 +67,7 @@ AskTennis features a clean, modular architecture designed for maintainability, t
 - **`tennis_logging/`** - Comprehensive logging system with handlers
 - **`ui/`** - User interface components
 - **`graph/`** - LangGraph builder and state management
+- **`testing/`** - Automated testing framework with 100 curated tennis questions
 
 ### 🎯 **Benefits of Modular Design**
 - **Single Responsibility**: Each module has a focused purpose
@@ -81,34 +82,61 @@ AskTennis features a clean, modular architecture designed for maintainability, t
 ```
 AskTennis_Streamlit/
 ├── app.py                          # 🚀 Main Streamlit application (58 lines)
-├── database_utils.py              # 🗄️ Database utilities and fuzzy matching
-├── load_data.py                    # 🗄️ Enhanced database creation
+├── run_automated_tests.py          # 🧪 Automated testing framework CLI
 ├── requirements.txt               # 📦 Unified dependencies
 ├── tennis_data.db                 # 🗃️ SQLite database (created after setup)
 ├── agent/                         # 🤖 AI Agent Configuration
-│   ├── agent_config.py            # Configuration management
 │   ├── agent_factory.py           # Agent factory with performance optimizations
-│   └── agent_state.py             # Agent state management
+│   ├── agent_state.py             # Agent state management
+│   └── unified_config.py          # Unified configuration management
 ├── llm/                          # 🧠 LLM Setup and Configuration
 │   └── llm_setup.py               # LLM factory and configuration
 ├── tennis/                        # 🎾 Tennis-Specific Tools
+│   ├── tennis_core.py             # Core tennis functionality
 │   ├── tennis_mappings.py         # Tennis terminology mappings
-│   ├── tennis_mappings_cached.py  # Cached mappings (4x speedup)
 │   ├── tennis_prompts.py          # Tennis-specific prompts
-│   ├── tennis_prompts_optimized.py # Performance-optimized prompts
-│   ├── performance_optimizer.py   # Performance monitoring system
-│   └── optimized_db_tools.py      # Database optimization utilities
+│   ├── tennis_utils.py            # Tennis utility functions
+│   ├── ranking_analysis.py        # Ranking analysis tools
+│   └── ranking_validator.py       # Ranking validation tools
 ├── tennis_logging/                # 📝 Comprehensive Logging System
+│   ├── base_logger.py             # Base logging functionality
+│   ├── logging_factory.py         # Logging factory
+│   ├── simplified_factory.py      # Simplified logging setup
 │   ├── handlers/                  # Specialized logging handlers
 │   └── setup/                     # Logging configuration
 ├── ui/                           # 🎨 User Interface Components
+│   ├── consolidated_formatter.py  # Consolidated data formatting
 │   ├── display/                  # UI display components
 │   ├── formatting/               # Data formatting utilities
 │   └── processing/               # Query processing
 ├── graph/                        # 🔗 LangGraph Builder
 │   └── langgraph_builder.py      # Graph construction and management
+├── testing/                       # 🧪 Automated Testing Framework
+│   ├── test_runner.py             # Main test orchestrator
+│   ├── test_executor.py           # Individual test execution
+│   ├── result_analyzer.py         # Result analysis and reporting
+│   ├── test_data/                 # Test datasets and categories
+│   ├── database/                  # Test database management
+│   └── README.md                  # Testing framework documentation
+├── database/                      # 🗄️ Database Management
+│   └── database_utils.py          # Database utilities and operations
+├── load_data/                     # 📊 Data Loading
+│   ├── load_data.py               # Main data loading script
+│   └── load_data_main_tour_singles_open_era.py # Specific data loader
+├── config/                        # ⚙️ Configuration Management
+│   └── constants.py               # Application constants
+├── services/                      # 🔧 Services Layer (Future)
 ├── docs/                         # 📚 Documentation
-│   └── database/                 # Database documentation
+│   ├── 01_System_Architecture.md  # System architecture documentation
+│   ├── 02_Data_Flow.md            # Data flow documentation
+│   ├── 03_Data_Model.md           # Data model documentation
+│   ├── 04_Software_Process_Model.md # Software process documentation
+│   ├── 05_Use_Case_Diagram.md    # Use case documentation
+│   ├── 06_State_Diagram.md       # State diagram documentation
+│   ├── 07_UI_UX_Design.md        # UI/UX design documentation
+│   ├── README_DIAGRAMS.md        # Diagram documentation
+│   ├── SOLUTION_SUMMARY.md       # Solution summary
+│   └── database/                  # Database documentation
 ├── data/                         # 📊 Tennis data files (not in repo)
 │   ├── tennis_atp/              # ATP match data
 │   ├── tennis_wta/              # WTA match data
@@ -264,6 +292,49 @@ The `load_data.py` script will create a comprehensive database with:
 - **Tournament Types**: Complete tournament level coverage
 - **Player Metadata**: Handedness, nationality, height, birth dates
 - **Historical Rankings**: Complete ranking history integration
+
+## 🧪 Automated Testing Framework
+
+AskTennis includes a comprehensive automated testing framework with **100 curated tennis questions** across 8 categories:
+
+### **Testing Features**
+- **100 Test Cases**: Curated questions covering all tennis aspects
+- **8 Categories**: Tournament winners, head-to-head, surface performance, statistics, historical records, rankings, match details, and complex queries
+- **Automated Execution**: Run tests with configurable intervals
+- **SQLite Database**: Store test results and sessions
+- **Performance Metrics**: Track execution times and completion rates
+- **Command-Line Interface**: Easy test execution and management
+
+### **Quick Testing Commands**
+```bash
+# Run all 100 tests
+python run_automated_tests.py --full
+
+# Run specific questions
+python run_automated_tests.py --questions 28
+python run_automated_tests.py --questions 1,5,10,15
+python run_automated_tests.py --questions 80-100
+
+# Run category-specific tests
+python run_automated_tests.py --category tournament_winner
+
+# Run with custom intervals
+python run_automated_tests.py --full --interval 60
+```
+
+### **Test Categories**
+| Category | Count | Description |
+|----------|-------|-------------|
+| **Tournament Winner** | 20 | Questions about tournament champions |
+| **Head-to-Head** | 15 | Player vs player records |
+| **Surface Performance** | 15 | Performance on different surfaces |
+| **Statistical Analysis** | 15 | Numerical and statistical queries |
+| **Historical Records** | 10 | Historical achievements and records |
+| **Player Rankings** | 10 | Ranking positions and history |
+| **Match Details** | 10 | Specific match information |
+| **Complex Queries** | 5 | Multi-part analytical questions |
+
+For detailed testing documentation, see `testing/README.md`.
 
 ## 🎯 Example Queries
 
