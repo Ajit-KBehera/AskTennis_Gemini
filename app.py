@@ -2,19 +2,9 @@ import streamlit as st
 
 # --- Logging Configuration ---
 from tennis_logging.logging_factory import setup_logging
-from tennis_logging.log_cleanup import cleanup_logs_on_startup
 
 # Initialize logging
 logger, log_file = setup_logging()
-
-# --- Automatic Log Cleanup ---
-# Clean up old logs on startup (keeps only 5 sessions)
-try:
-    cleanup_result = cleanup_logs_on_startup()
-    if cleanup_result.get('status') != 'no_cleanup_needed':
-        logger.info(f"Log cleanup completed: {cleanup_result}")
-except Exception as e:
-    logger.error(f"Log cleanup failed: {e}")
 
 # --- Page Configuration ---
 from config.constants import APP_TITLE, APP_SUBTITLE
