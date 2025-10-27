@@ -513,7 +513,8 @@ def load_matches_data():
     matches_df['era'] = matches_df.apply(classify_era, axis=1)
     
     # Add tournament type classification for all matches
-    # Don't fill missing values with default - keep them as NaN for proper classification
+    # Set main tour matches (currently NULL) to "Main Tour"
+    matches_df['tournament_type'] = matches_df['tournament_type'].fillna('Main Tour')
     
     # Add tour classification for all matches
     matches_df['tour'] = matches_df['tour'].fillna('Unknown')  # Default to Unknown for any missing tour data

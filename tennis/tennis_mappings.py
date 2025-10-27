@@ -76,6 +76,7 @@ TOUR_MAPPINGS = {
     # Main tours
     "atp": "ATP", "atp tour": "ATP", "men's tour": "ATP", "men tour": "ATP", "men": "ATP", "male": "ATP",
     "wta": "WTA", "wta tour": "WTA", "women's tour": "WTA", "women tour": "WTA", "women": "WTA", "female": "WTA", "ladies": "WTA",
+    "main tour": "Main Tour", "main": "Main Tour", "professional": "Main Tour", "pro tour": "Main Tour",
     
     # Development tours
     "challenger": "Challenger", "atp challenger": "Challenger", "challenger tour": "Challenger", "development tour": "Challenger",

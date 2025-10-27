@@ -239,6 +239,44 @@ class TennisPromptBuilder:
            - "Federer's rank when he beat Nadal" → matches, winner_rank, specific match
            - "Highest ranking achieved" → player_rankings_history, MIN(rank), career
         
+        CRITICAL: TOURNAMENT TYPE CLASSIFICATION
+        ======================================
+        
+        The database includes comprehensive tournament type classification:
+        
+        ✅ MAIN TOUR MATCHES (tournament_type = 'Main Tour'):
+        - Grand Slam tournaments (Wimbledon, US Open, Roland Garros, Australian Open)
+        - ATP Masters 1000 tournaments (Indian Wells, Miami, Monte Carlo, etc.)
+        - ATP Tour events (ATP 500, ATP 250 tournaments)
+        - WTA Premier tournaments (Premier Mandatory, Premier 5, Premier)
+        - WTA International tournaments
+        - These represent the highest level of professional tennis competition
+        
+        ✅ DEVELOPMENT TOUR MATCHES:
+        - ATP_Qualifying: ATP tournament qualifying rounds
+        - ATP_Futures: ATP Futures tournaments (entry-level professional)
+        - ATP_Challenger: ATP Challenger tournaments (mid-level professional)
+        - ATP_Challenger_Qualifying: Challenger tournament qualifying rounds
+        - WTA_Qualifying: WTA tournament qualifying rounds
+        - WTA_ITF: WTA ITF tournaments (entry-level professional)
+        
+        ✅ TEAM COMPETITION MATCHES:
+        - Davis_Cup: Men's national team competition
+        - Fed_Cup: Women's national team competition (now Billie Jean King Cup)
+        
+        ✅ QUERY PATTERNS FOR TOURNAMENT TYPES:
+        - "Main tour matches" → WHERE tournament_type = 'Main Tour'
+        - "Grand Slam matches" → WHERE tournament_type = 'Main Tour' AND tourney_level = 'G'
+        - "Qualifying matches" → WHERE tournament_type IN ('ATP_Qualifying', 'WTA_Qualifying')
+        - "Development tour" → WHERE tournament_type IN ('ATP_Futures', 'ATP_Challenger', 'WTA_ITF')
+        - "Team competitions" → WHERE tournament_type IN ('Davis_Cup', 'Fed_Cup')
+        
+        ✅ IMPORTANT NOTES:
+        - Main Tour includes both ATP and WTA professional tournaments
+        - Use tour column to distinguish between ATP ('ATP') and WTA ('WTA') matches
+        - Main Tour represents the highest level of competition
+        - Development tours are stepping stones to Main Tour level
+        
         CRITICAL: TOURNAMENT WINNER QUERIES (OPTIMIZED)
         - When user asks "Who won X tournament" (without specifying round), ALWAYS assume they mean the FINAL
         - ALWAYS include round = 'F' filter for tournament winner queries
@@ -537,7 +575,7 @@ class TennisPromptBuilder:
         - Available player fields: winner_hand, winner_ioc, winner_height, winner_dob, loser_hand, loser_ioc, loser_height, loser_dob
         - Available ranking fields: winner_rank_at_time, winner_points_at_time, loser_rank_at_time, loser_points_at_time
         - Era classification: Amateur (1877-1967), Professional (1968-2024)
-        - Tournament types: Main_Tour, ATP_Qual_Chall, ATP_Futures, WTA_Qual_ITF
+        - Tournament types: Main Tour (Grand Slams, Masters, ATP Tour, WTA Tour), ATP_Qualifying, ATP_Futures, WTA_Qualifying, WTA_ITF, Davis_Cup, Fed_Cup
         - Match types: Singles (matches table), Doubles (doubles_matches table)
         - Historical coverage: 147 years of complete tennis history (1877-2024)
         
