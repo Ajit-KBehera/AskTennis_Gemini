@@ -42,10 +42,13 @@ class TennisTestRunner:
     def initialize_agent(self):
         """Initialize the LangGraph agent for testing."""
         try:
+            print("Initializing LangGraph agent...")
             self.agent_graph = setup_langgraph_agent()
             self.test_executor = TestExecutor(self.agent_graph)
+            print("✅ Agent initialized successfully")
             return True
         except Exception as e:
+            print(f"❌ Failed to initialize agent: {e}")
             return False
     
     def run_automated_tests(self, 
@@ -65,6 +68,7 @@ class TennisTestRunner:
         """
         # Ensure minimum interval
         if interval_seconds < MINIMUM_TEST_INTERVAL_SECONDS:
+            print(f"⚠️  Warning: Interval {interval_seconds}s is less than minimum {MINIMUM_TEST_INTERVAL_SECONDS}s. Setting to {MINIMUM_TEST_INTERVAL_SECONDS}s.")
             interval_seconds = MINIMUM_TEST_INTERVAL_SECONDS
         if not self.agent_graph:
             if not self.initialize_agent():
@@ -74,11 +78,16 @@ class TennisTestRunner:
         session_name = f"Automated Test Run {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         self.current_session_id = self.db_manager.create_test_session(session_name)
         
+        print(f"🚀 Starting automated test run (Session ID: {self.current_session_id})")
+        print(f"⏱️  Interval between tests: {interval_seconds} seconds")
+        
         # Select tests to run
         if test_subset:
             test_cases = [tc for tc in TENNIS_QA_DATASET if tc['id'] in test_subset]
+            print(f"📋 Running {len(test_cases)} selected tests")
         else:
             test_cases = TENNIS_QA_DATASET
+            print(f"📋 Running all {len(test_cases)} tests")
         
         # Execute tests
         results = []
@@ -86,6 +95,8 @@ class TennisTestRunner:
         
         for i, test_case in enumerate(test_cases):
             try:
+                print(f"\n🔄 Test {i+1}/{total_tests}: {test_case['question'][:50]}...")
+                
                 # Execute test
                 result = self.test_executor.execute_single_test(test_case)
                 results.append(result)
@@ -93,15 +104,20 @@ class TennisTestRunner:
                 # Store result in database
                 self.db_manager.store_test_result(self.current_session_id, result)
                 
+                # Print result summary
+                print(f"   ✅ Test completed | Time: {result['execution_time']:.2f}s")
+                
                 # Progress callback
                 if progress_callback:
                     progress_callback(i + 1, total_tests, result)
                 
                 # Wait interval (except for last test)
                 if i < total_tests - 1:
+                    print(f"⏳ Waiting {interval_seconds} seconds...")
                     time.sleep(interval_seconds)
                 
             except Exception as e:
+                print(f"❌ Error in test {i+1}: {e}")
                 category = test_case.get('category', '')
                 category_str = category.value if hasattr(category, 'value') else str(category)
                 
@@ -124,6 +140,10 @@ class TennisTestRunner:
         # Generate final report
         final_report = self._generate_final_report(results)
         
+        print(f"\n🎉 Test run completed!")
+        print(f"📊 Results: {final_report['basic_metrics']['total_tests']} tests completed")
+        print(f"⏱️  Average execution time: {final_report['performance_metrics']['average_execution_time']:.2f}s")
+        
         return {
             'session_id': self.current_session_id,
             'results': results,
@@ -141,6 +161,7 @@ class TennisTestRunner:
         Returns:
             Dictionary containing test execution results
         """
+        print(f"🏃‍♂️ Running quick test with {num_tests} tests...")
         
         # Select random subset of tests
         import random
@@ -162,6 +183,7 @@ class TennisTestRunner:
         Returns:
             Dictionary containing test execution results
         """
+        print(f"🎯 Running tests for category: {category}")
         
         # Filter tests by category
         category_tests = [tc for tc in TENNIS_QA_DATASET if tc['category'].value == category]
@@ -245,6 +267,7 @@ class TennisTestRunner:
         Returns:
             Dictionary containing test execution results
         """
+        print(f"🔄 Starting continuous testing (max {max_tests} tests, {interval_seconds}s interval)")
         
         # Select tests to run
         test_cases = TENNIS_QA_DATASET[:max_tests] if max_tests < len(TENNIS_QA_DATASET) else TENNIS_QA_DATASET

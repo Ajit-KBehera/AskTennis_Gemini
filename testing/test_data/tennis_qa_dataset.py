@@ -812,13 +812,15 @@ TENNIS_QA_DATASET: List[Dict[str, Any]] = [
 
 def get_test_categories():
     """
-    Get all unique test categories from the dataset.
+    Get all unique test categories from the dataset with their counts.
     
     Returns:
-        List of unique test categories
+        Dictionary mapping category names to test counts
     """
-    categories = set()
+    categories = {}
     for test_case in TENNIS_QA_DATASET:
         if 'category' in test_case:
-            categories.add(test_case['category'])
-    return list(categories)
+            category = test_case['category']
+            category_name = category.value if hasattr(category, 'value') else str(category)
+            categories[category_name] = categories.get(category_name, 0) + 1
+    return categories
