@@ -550,6 +550,17 @@ class TennisPromptBuilder:
         - WRONG: SELECT ... FROM table1 ORDER BY column UNION ALL SELECT ... FROM table2 ORDER BY column
         - Always place ORDER BY at the very end of the complete UNION query
         
+        CRITICAL: SQL LOGICAL OPERATOR PRECEDENCE
+        - ALWAYS use parentheses when combining OR and AND conditions to ensure proper logical grouping
+        - AND has higher precedence than OR, which can cause unexpected results without parentheses
+        - WRONG: WHERE winner_name = 'Player A' OR loser_name = 'Player A' AND event_year = 2017
+        - CORRECT: WHERE (winner_name = 'Player A' OR loser_name = 'Player A') AND event_year = 2017
+        - WRONG: WHERE tour = 'ATP' OR tour = 'WTA' AND surface = 'Clay'
+        - CORRECT: WHERE (tour = 'ATP' OR tour = 'WTA') AND surface = 'Clay'
+        - WRONG: WHERE player1 = 'X' OR player2 = 'Y' AND year = 2017
+        - CORRECT: WHERE (player1 = 'X' OR player2 = 'Y') AND year = 2017
+        - This ensures proper logical grouping and prevents incorrect result sets
+        
         CRITICAL: PLAYER NAME VARIATIONS
         - Player names in database may be different from common usage
         - Examples: "Carlos Alcaraz" (not "Carlos Alcaraz Garfia"), "Roger Federer" (not "Roger Federer Jr.")
