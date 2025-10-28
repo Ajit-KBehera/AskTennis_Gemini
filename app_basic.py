@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st  # pyright: ignore[reportMissingImports]
 
 # --- Logging Configuration ---
 from tennis_logging.logging_factory import setup_logging
