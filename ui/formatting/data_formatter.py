@@ -242,10 +242,6 @@ class DataFormatter:
                         results.append(f"{i}. {row[0]}")
                 
                 return f"Found {len(filtered_data)} result(s):\n\n" + "\n".join(results)
-    
-    @staticmethod
-    def format_chronological_list(data: List, user_question: str, context: Dict[str, Any]) -> str:
-        """Format chronological list of matches with proper date handling."""
         if not data:
             return "No matches found"
         
