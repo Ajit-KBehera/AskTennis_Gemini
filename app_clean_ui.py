@@ -100,7 +100,6 @@ from ui.formatting.data_formatter import DataFormatter
 from ui.processing.query_processor import QueryProcessor
 from services.database_service import DatabaseService
 from services.analysis_service import AnalysisService
-from services.export_service import ExportService
 
 # Initialize the LangGraph agent
 try:
@@ -110,7 +109,6 @@ try:
     query_processor = QueryProcessor(data_formatter)
     db_service = DatabaseService()
     analysis_service = AnalysisService(db_service)
-    export_service = ExportService()
     
     # --- Main Layout: Left Panel + Remaining Space ---
     col_left, col_remaining = st.columns([1.4, 6.6])
@@ -267,23 +265,11 @@ try:
                 # Display results table
                 st.dataframe(df, width='stretch')
                 
-                # Export buttons
-                col_export, col_clear = st.columns(2)
-                with col_export:
-                    if st.button("📥 Export CSV"):
-                        csv_data = export_service.export_to_csv(df)
-                        if csv_data:
-                            st.download_button(
-                                label="Download CSV",
-                                data=csv_data,
-                                file_name="tennis_analysis.csv",
-                                mime="text/csv"
-                            )
-                with col_clear:
-                    if st.button("🗑️ Clear Results"):
-                        st.session_state.analysis_generated = False
-                        st.session_state.analysis_context = {}
-                        st.rerun()
+                # Clear button
+                if st.button("🗑️ Clear Results"):
+                    st.session_state.analysis_generated = False
+                    st.session_state.analysis_context = {}
+                    st.rerun()
             else:
                 st.warning("No matches found for the selected criteria.")
         else:
