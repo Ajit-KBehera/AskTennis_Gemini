@@ -1,7 +1,9 @@
 """
-Logging Handlers module for AskTennis AI application.
-Now uses simplified base logger system.
+Logging handlers module for AskTennis AI application.
+Contains specialized logging handlers for different types of events.
 """
 
-# All handler classes have been replaced with BaseLogger
-# This module is kept for backward compatibility
+# Note: This directory contains logging handlers
+# Import specific handlers as needed when they are implemented
+
+__all__ = []

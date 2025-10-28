@@ -1,6 +1,6 @@
 """
-Data Formatting module for AskTennis AI application.
-Handles all data formatting and response processing logic.
+Data formatting module for AskTennis AI application.
+Contains data formatting utilities and formatters.
 """
 
 from .data_formatter import DataFormatter
