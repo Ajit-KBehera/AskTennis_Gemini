@@ -196,11 +196,20 @@ try:
         # GENERATE BUTTON
         # =============================================================================
         st.markdown("---")
-        generate_button = st.button(
-            "🔍 Generate Analysis",
-            type="primary",
-            width='stretch'
-        )
+        col_generate, col_clear_cache = st.columns([2, 1])
+        
+        with col_generate:
+            generate_button = st.button(
+                "🔍 Generate Analysis",
+                type="primary",
+                width='stretch'
+            )
+        
+        with col_clear_cache:
+            if st.button("🗑️", help="Clear cached data if results seem stale"):
+                db_service.clear_cache()
+                st.success("Cache cleared!")
+                st.rerun()
         
         # Update session state
         if generate_button:
@@ -213,6 +222,8 @@ try:
             }
             st.session_state.analysis_generated = True
             st.session_state.show_ai_results = False  # Reset AI results to show table
+            # Add cache busting
+            st.session_state.cache_bust = st.session_state.get('cache_bust', 0) + 1
             
             # Generate analysis context
             df = db_service.get_matches_with_filters(
@@ -220,7 +231,8 @@ try:
                 opponent=selected_opponent,
                 tournament=selected_tournament,
                 year=selected_year,
-                surface=selected_surface
+                surface=selected_surface,
+                _cache_bust=st.session_state.get('cache_bust', 0)
             )
             st.session_state.analysis_context = analysis_service.generate_analysis_context(
                 st.session_state.analysis_filters, df
@@ -249,7 +261,8 @@ try:
                 opponent=filters['opponent'],
                 tournament=filters['tournament'],
                 year=filters['year'],
-                surface=filters['surface']
+                surface=filters['surface'],
+                _cache_bust=st.session_state.get('cache_bust', 0)
             )
             
             if not df.empty:

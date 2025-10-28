@@ -16,6 +16,13 @@ class DatabaseService:
         """Initialize database service."""
         self.db_path = db_path
     
+    def clear_cache(self):
+        """Clear all cached data."""
+        try:
+            st.cache_data.clear()
+        except:
+            pass
+    
     @st.cache_data(ttl=300)  # Cache for 5 minutes
     def get_all_players(_self) -> List[str]:
         """Get all unique players from database."""
@@ -91,7 +98,7 @@ class DatabaseService:
     def get_opponents_for_player(_self, player_name: str) -> List[str]:
         """Get opponents for a specific player."""
         if not player_name or player_name == "All Players":
-            return self.get_all_players()
+            return _self.get_all_players()
         
         try:
             conn = sqlite3.connect(_self.db_path)
@@ -111,13 +118,16 @@ class DatabaseService:
             return ["All Opponents"] + df['opponent_name'].tolist()
         except Exception as e:
             st.error(f"Error fetching opponents: {e}")
-            return self.get_all_players()
+            return _self.get_all_players()
     
     def get_matches_with_filters(self, player: str = None, opponent: str = None, 
                                 tournament: str = None, year: str = None, 
-                                surface: str = None) -> pd.DataFrame:
+                                surface: str = None, _cache_bust: int = 0) -> pd.DataFrame:
         """Get matches based on filters."""
         try:
+            # Debug logging
+            st.write(f"🔍 Querying: player='{player}', year='{year}', tournament='{tournament}', surface='{surface}'")
+            
             conn = sqlite3.connect(self.db_path)
             
             # Build WHERE clause
@@ -147,14 +157,14 @@ class DatabaseService:
             where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
             
             query = f"""
-            SELECT 
-                event_date,
+            SELECT
+                event_year,
+                tourney_date,
                 tourney_name,
                 round,
                 winner_name,
                 loser_name,
                 surface,
-                event_year,
                 score,
                 CASE 
                     WHEN winner_name = ? THEN 'W'
@@ -162,7 +172,7 @@ class DatabaseService:
                 END as result
             FROM matches 
             WHERE {where_clause}
-            ORDER BY event_date DESC
+            ORDER BY tourney_date ASC
             LIMIT 100
             """
             
@@ -174,6 +184,12 @@ class DatabaseService:
             
             df = pd.read_sql_query(query, conn, params=params)
             conn.close()
+            
+            # Debug logging
+            st.write(f"📊 Found {len(df)} matches")
+            if len(df) == 0:
+                st.write(f"❌ No matches found. Query: {query}")
+                st.write(f"🔧 Parameters: {params}")
             
             return df
             
