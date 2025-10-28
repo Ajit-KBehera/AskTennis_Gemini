@@ -165,14 +165,10 @@ class DatabaseService:
                 winner_name,
                 loser_name,
                 surface,
-                score,
-                CASE 
-                    WHEN winner_name = ? THEN 'W'
-                    ELSE 'L'
-                END as result
+                score
             FROM matches 
             WHERE {where_clause}
-            ORDER BY tourney_date ASC
+            ORDER BY tourney_date ASC, match_num ASC
             LIMIT 100
             """
             

@@ -186,7 +186,7 @@ try:
         # =============================================================================
         # YEAR AND SURFACE
         # =============================================================================
-        year_options = ["All Years"] + [str(year) for year in range(2024, 2015, -1)]
+        year_options = ["All Years"] + [str(year) for year in range(2024, 1968, -1)]
         selected_year = st.selectbox("Select Year:", year_options, key="year_select")
         
         surface_options = ["All Surfaces", "Hard", "Clay", "Grass", "Carpet"]
