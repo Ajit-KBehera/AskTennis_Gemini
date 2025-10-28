@@ -101,7 +101,6 @@ from ui.processing.query_processor import QueryProcessor
 from services.database_service import DatabaseService
 from services.analysis_service import AnalysisService
 from services.export_service import ExportService
-from services.smart_dropdown_service import SmartDropdownService
 
 # Initialize the LangGraph agent
 try:
@@ -112,7 +111,6 @@ try:
     db_service = DatabaseService()
     analysis_service = AnalysisService(db_service)
     export_service = ExportService()
-    smart_dropdown = SmartDropdownService(db_service)
     
     # --- Main Layout: Left Panel + Remaining Space ---
     col_left, col_remaining = st.columns([1.4, 6.6])
