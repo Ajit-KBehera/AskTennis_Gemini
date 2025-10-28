@@ -10,7 +10,7 @@ logger, log_file = setup_logging()
 
 # --- Page Configuration ---
 from config.constants import APP_TITLE, APP_SUBTITLE
-st.set_page_config(page_title="AskTennis AI - Clean UI", layout="wide")
+st.set_page_config(page_title="AskTennis AI UI", layout="wide")
 
 # Custom CSS for clean layout
 st.markdown("""
