@@ -99,7 +99,6 @@ from ui.display.ui_display import UIDisplay
 from ui.formatting.data_formatter import DataFormatter
 from ui.processing.query_processor import QueryProcessor
 from services.database_service import DatabaseService
-from services.analysis_service import AnalysisService
 
 # Initialize the LangGraph agent
 try:
@@ -108,7 +107,6 @@ try:
     data_formatter = DataFormatter()
     query_processor = QueryProcessor(data_formatter)
     db_service = DatabaseService()
-    analysis_service = AnalysisService(db_service)
     
     # --- Main Layout: Left Panel + Remaining Space ---
     col_left, col_remaining = st.columns([1.4, 6.6])
@@ -229,9 +227,6 @@ try:
                 year=selected_year,
                 surface=selected_surface,
                 _cache_bust=st.session_state.get('cache_bust', 0)
-            )
-            st.session_state.analysis_context = analysis_service.generate_analysis_context(
-                st.session_state.analysis_filters, df
             )
         
     
