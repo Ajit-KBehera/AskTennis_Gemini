@@ -12,7 +12,7 @@ AskTennis AI is a comprehensive tennis analytics platform built with a modular, 
 │                        FRONTEND LAYER                          │
 ├─────────────────────────────────────────────────────────────────┤
 │  Streamlit UI  │  UI Display  │  Data Formatter  │  Query     │
-│                │  Components  │                  │  Processor │
+│  (Basic/Enhanced) │  Components  │                  │  Processor │
 └─────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
@@ -38,6 +38,13 @@ AskTennis AI is a comprehensive tennis analytics platform built with a modular, 
 ├─────────────────────────────────────────────────────────────────┤
 │  SQLite Database  │  Matches  │  Players  │  Rankings  │  Doubles │
 │                   │  Table    │  Table    │  Table     │  Table   │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                       SERVICES LAYER                           │
+├─────────────────────────────────────────────────────────────────┤
+│  Database Service  │  Caching Service  │  Filter Service       │
 └─────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
@@ -98,6 +105,12 @@ graph TB
         DoublesTable[Doubles Table]
     end
     
+    subgraph "Services Layer"
+        DatabaseService[Database Service]
+        CachingService[Caching Service]
+        FilterService[Filter Service]
+    end
+    
     subgraph "Logging Layer"
         LoggingFactory[Logging Factory]
         BaseLogger[Base Logger]
@@ -127,10 +140,18 @@ graph TB
     TennisCore --> Database
     TennisMappings --> Database
     
+    %% Services connections
+    UI --> DatabaseService
+    QueryProcessor --> DatabaseService
+    DatabaseService --> Database
+    DatabaseService --> CachingService
+    DatabaseService --> FilterService
+    
     %% Logging connections
     QueryProcessor --> LoggingFactory
     AgentFactory --> LoggingFactory
     TennisCore --> LoggingFactory
+    DatabaseService --> LoggingFactory
     
     %% Configuration connections
     AgentFactory --> Config
@@ -147,10 +168,11 @@ graph TB
 ## 🧩 Core Components
 
 ### 1. **Frontend Layer**
-- **Streamlit UI**: Main user interface
+- **Streamlit UI**: Two application interfaces (Basic AI and Enhanced UI)
 - **UI Display**: Component rendering and user interaction
 - **Data Formatter**: Response formatting and presentation
 - **Query Processor**: User query handling and processing
+- **Database Service**: Enhanced UI data service for filtering and analysis
 
 ### 2. **AI Agent Layer**
 - **Agent Factory**: Creates and configures the LangGraph agent
@@ -178,12 +200,17 @@ graph TB
 - **Test Database**: SQLite database for storing test results and sessions
 - **Test Data**: 100 curated tennis questions across 8 categories
 
-### 6. **Logging Layer**
+### 6. **Services Layer**
+- **Database Service**: Enhanced UI data service for filtering and analysis
+- **Caching Service**: Data caching and performance optimization
+- **Filter Service**: Advanced filtering capabilities for UI components
+
+### 7. **Logging Layer**
 - **Logging Factory**: Centralized logging management
 - **Base Logger**: Core logging functionality
 - **Specialized Handlers**: Query, response, error, and database logging
 
-### 7. **Configuration Layer**
+### 8. **Configuration Layer**
 - **Unified Config**: Centralized configuration management
 - **Constants**: Application constants and settings
 - **LLM Setup**: Language model configuration

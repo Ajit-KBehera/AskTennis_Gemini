@@ -18,8 +18,33 @@ The AskTennis AI system features a modern, intuitive user interface designed to 
 - **Color Psychology**: Strategic use of colors to enhance user experience
 - **Typography**: Readable and professional typography choices
 
+## 🎯 Application Interface Design
+
+AskTennis AI features two distinct user interfaces designed for different use cases and user needs:
+
+### 🚀 **Basic AI Interface** (`app_basic.py`)
+- **Purpose**: Simple AI-powered tennis querying
+- **Design Philosophy**: Minimalist, focused on AI interaction
+- **Key Features**: 
+  - Clean search interface
+  - Natural language input
+  - AI-powered responses
+  - Example questions display
+- **Target Users**: Casual tennis fans, quick queries
+
+### 🎨 **Enhanced UI Interface** (`app_ui.py`)
+- **Purpose**: Comprehensive tennis data analysis with AI integration
+- **Design Philosophy**: Feature-rich, data-focused interface
+- **Key Features**:
+  - Advanced filtering system
+  - Interactive data tables
+  - AI query integration
+  - Real-time data analysis
+  - Database service integration
+- **Target Users**: Data analysts, researchers, detailed analysis
+
 ## 🎨 UI/UX Design Diagram
-### **Visual UI Layout**
+### **Visual UI Layout - Basic Interface**
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        HEADER                                  │
@@ -32,7 +57,26 @@ The AskTennis AI system features a modern, intuitive user interface designed to 
 │                    MAIN CONTENT AREA                           │
 ├─────────────────────────────────────────────────────────────────┤
 │  Search Interface  │  Query Input  │  Example Questions       │
+│  Results Display   │  AI Response   │  Natural Language        │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### **Visual UI Layout - Enhanced Interface**
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        HEADER                                  │
+├─────────────────────────────────────────────────────────────────┤
+│  Logo & Title  │  Navigation Menu  │  User Profile            │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    MAIN CONTENT AREA                           │
+├─────────────────────────────────────────────────────────────────┤
+│  Search Interface  │  Query Input  │  AI Query Integration    │
 │  Results Display   │  Data Tables  │  Charts & Graphs         │
+│  Filter Panel      │  Database      │  Export Options          │
+│                   │  Service       │                          │
 └─────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
@@ -40,19 +84,12 @@ The AskTennis AI system features a modern, intuitive user interface designed to 
 │                        SIDEBAR                                 │
 ├─────────────────────────────────────────────────────────────────┤
 │  Quick Stats  │  Recent Queries  │  Help & Tips              │
+│  Filter Panel │  Data Analysis   │  Advanced Options         │
 └─────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                        FOOTER                                  │
-├─────────────────────────────────────────────────────────────────┤
-│  System Status  │  Version Info  │  Contact Info             │
-└─────────────────────────────────────────────────────────────────┘
-```
 
-### **Component Hierarchy**
+### **Component Hierarchy - Basic Interface**
 ```
-UI Application
+Basic UI Application (app_basic.py)
 ├── Header Component
 │   ├── Logo
 │   ├── Title
@@ -61,7 +98,26 @@ UI Application
 │   ├── Search Interface
 │   ├── Query Input
 │   └── Results Display
+└── Footer
+    ├── System Status
+    └── Version Info
+```
+
+### **Component Hierarchy - Enhanced Interface**
+```
+Enhanced UI Application (app_ui.py)
+├── Header Component
+│   ├── Logo
+│   ├── Title
+│   └── User Menu
+├── Main Content
+│   ├── Search Interface
+│   ├── Query Input
+│   ├── Results Display
+│   ├── Data Tables
+│   └── Database Service
 ├── Sidebar
+│   ├── Filter Panel
 │   ├── Quick Stats
 │   ├── Recent Queries
 │   └── Help & Tips

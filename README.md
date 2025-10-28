@@ -37,9 +37,9 @@
 - **Head-to-Head**: Complete player matchup analysis
 
 ### 🏗️ **Modern Architecture**
-- **Modular Design**: Clean separation of concerns across 5 core modules
+- **Modular Design**: Clean separation of concerns across 9 core modules
 - **Performance Optimized**: Cached mappings and monitoring systems
-- **Clean Code**: 58-line main app vs 571-line monolith
+- **Clean Code**: Two focused applications (44-line basic, 287-line enhanced UI) vs 571-line monolith
 - **Testable Components**: Individual module testing capabilities
 - **Team Collaboration**: Parallel development on different modules
 - **Code Reusability**: Components can be reused across projects
@@ -60,13 +60,15 @@
 AskTennis features a clean, modular architecture designed for maintainability, testability, and scalability:
 
 ### 🧩 **Core Modules**
-- **`app.py`** (58 lines) - Main orchestration and entry point
+- **`app_basic.py`** (44 lines) - Basic AI query interface
+- **`app_ui.py`** (287 lines) - Enhanced UI with filters and database service
 - **`agent/`** - AI agent configuration and factory patterns
 - **`llm/`** - LLM setup and configuration management
 - **`tennis/`** - Tennis-specific tools, mappings, and performance optimizations
 - **`tennis_logging/`** - Comprehensive logging system with handlers
 - **`ui/`** - User interface components
 - **`graph/`** - LangGraph builder and state management
+- **`services/`** - Database service layer for enhanced UI
 - **`testing/`** - Automated testing framework with 100 curated tennis questions
 
 ### 🎯 **Benefits of Modular Design**
@@ -75,75 +77,104 @@ AskTennis features a clean, modular architecture designed for maintainability, t
 - **Code Reusability**: Components can be reused across projects
 - **Maintainability**: Changes are isolated to specific modules
 - **Collaboration**: Multiple developers can work on different modules
-- **Readability**: Main app is now just 58 lines vs 571 lines
+- **Readability**: Two focused applications (44-line basic, 287-line enhanced UI) vs 571 lines
 
 ## 📁 Project Structure
 
 ```
 AskTennis_Streamlit/
-├── app.py                          # 🚀 Main Streamlit application (58 lines)
-├── run_automated_tests.py          # 🧪 Automated testing framework CLI
-├── requirements.txt               # 📦 Unified dependencies
-├── tennis_data.db                 # 🗃️ SQLite database (created after setup)
-├── agent/                         # 🤖 AI Agent Configuration
-│   ├── agent_factory.py           # Agent factory with performance optimizations
-│   ├── agent_state.py             # Agent state management
-│   └── unified_config.py          # Unified configuration management
-├── llm/                          # 🧠 LLM Setup and Configuration
-│   └── llm_setup.py               # LLM factory and configuration
-├── tennis/                        # 🎾 Tennis-Specific Tools
-│   ├── tennis_core.py             # Core tennis functionality
-│   ├── tennis_mappings.py         # Tennis terminology mappings
-│   ├── tennis_prompts.py          # Tennis-specific prompts
-│   ├── tennis_utils.py            # Tennis utility functions
-│   ├── ranking_analysis.py        # Ranking analysis tools
-│   └── ranking_validator.py       # Ranking validation tools
-├── tennis_logging/                # 📝 Comprehensive Logging System
-│   ├── base_logger.py             # Base logging functionality
-│   ├── logging_factory.py         # Logging factory
-│   ├── simplified_factory.py      # Simplified logging setup
-│   ├── handlers/                  # Specialized logging handlers
-│   └── setup/                     # Logging configuration
-├── ui/                           # 🎨 User Interface Components
-│   ├── consolidated_formatter.py  # Consolidated data formatting
-│   ├── display/                  # UI display components
-│   ├── formatting/               # Data formatting utilities
-│   └── processing/               # Query processing
-├── graph/                        # 🔗 LangGraph Builder
-│   └── langgraph_builder.py      # Graph construction and management
-├── testing/                       # 🧪 Automated Testing Framework
-│   ├── test_runner.py             # Main test orchestrator
-│   ├── test_executor.py           # Individual test execution
-│   ├── result_analyzer.py         # Result analysis and reporting
-│   ├── test_data/                 # Test datasets and categories
-│   ├── database/                  # Test database management
-│   └── README.md                  # Testing framework documentation
-├── database/                      # 🗄️ Database Management
-│   └── database_utils.py          # Database utilities and operations
-├── load_data/                     # 📊 Data Loading
-│   ├── load_data.py               # Main data loading script
+├── app_basic.py                       # 🚀 Basic AI query interface (44 lines)
+├── app_ui.py                          # 🎨 Enhanced UI with filters (287 lines)
+├── run_automated_tests.py             # 🧪 Automated testing framework CLI
+├── requirements.txt                   # 📦 Unified dependencies
+├── tennis_data.db                     # 🗃️ SQLite database (created after setup)
+├── agent/                             # 🤖 AI Agent Configuration
+│   ├── agent_factory.py              # Agent factory with performance optimizations
+│   ├── agent_state.py                # Agent state management
+│   └── unified_config.py             # Unified configuration management
+├── llm/                              # 🧠 LLM Setup and Configuration
+│   └── llm_setup.py                  # LLM factory and configuration
+├── tennis/                           # 🎾 Tennis-Specific Tools
+│   ├── tennis_core.py                # Core tennis functionality
+│   ├── tennis_mappings.py            # Tennis terminology mappings
+│   ├── tennis_prompts.py             # Tennis-specific prompts
+│   ├── tennis_utils.py               # Tennis utility functions
+│   ├── ranking_analysis.py           # Ranking analysis tools
+│   └── ranking_validator.py          # Ranking validation tools
+├── tennis_logging/                   # 📝 Comprehensive Logging System
+│   ├── base_logger.py                # Base logging functionality
+│   ├── logging_factory.py            # Logging factory
+│   ├── simplified_factory.py         # Simplified logging setup
+│   ├── handlers/                     # Specialized logging handlers
+│   └── setup/                        # Logging configuration
+├── ui/                              # 🎨 User Interface Components
+│   ├── consolidated_formatter.py     # Consolidated data formatting
+│   ├── display/                     # UI display components
+│   ├── formatting/                  # Data formatting utilities
+│   └── processing/                  # Query processing
+├── graph/                           # 🔗 LangGraph Builder
+│   └── langgraph_builder.py         # Graph construction and management
+├── services/                        # 🔧 Services Layer
+│   └── database_service.py          # Database service for enhanced UI
+├── testing/                        # 🧪 Automated Testing Framework
+│   ├── test_runner.py               # Main test orchestrator
+│   ├── test_executor.py             # Individual test execution
+│   ├── result_analyzer.py           # Result analysis and reporting
+│   ├── test_data/                   # Test datasets and categories
+│   ├── database/                    # Test database management
+│   └── README.md                    # Testing framework documentation
+├── database/                       # 🗄️ Database Management
+│   └── database_utils.py           # Database utilities and operations
+├── load_data/                      # 📊 Data Loading
+│   ├── load_data.py                # Main data loading script
 │   └── load_data_main_tour_singles_open_era.py # Specific data loader
-├── config/                        # ⚙️ Configuration Management
-│   └── constants.py               # Application constants
-├── services/                      # 🔧 Services Layer (Future)
-├── docs/                         # 📚 Documentation
-│   ├── 01_System_Architecture.md  # System architecture documentation
-│   ├── 02_Data_Flow.md            # Data flow documentation
-│   ├── 03_Data_Model.md           # Data model documentation
+├── config/                         # ⚙️ Configuration Management
+│   └── constants.py                # Application constants
+├── docs/                          # 📚 Documentation
+│   ├── 01_System_Architecture.md   # System architecture documentation
+│   ├── 02_Data_Flow.md             # Data flow documentation
+│   ├── 03_Data_Model.md            # Data model documentation
 │   ├── 04_Software_Process_Model.md # Software process documentation
-│   ├── 05_Use_Case_Diagram.md    # Use case documentation
-│   ├── 06_State_Diagram.md       # State diagram documentation
-│   ├── 07_UI_UX_Design.md        # UI/UX design documentation
-│   ├── README_DIAGRAMS.md        # Diagram documentation
-│   ├── SOLUTION_SUMMARY.md       # Solution summary
-│   └── database/                  # Database documentation
-├── data/                         # 📊 Tennis data files (not in repo)
-│   ├── tennis_atp/              # ATP match data
-│   ├── tennis_wta/              # WTA match data
+│   ├── 05_Use_Case_Diagram.md     # Use case documentation
+│   ├── 06_State_Diagram.md         # State diagram documentation
+│   ├── 07_UI_UX_Design.md          # UI/UX design documentation
+│   ├── README_DIAGRAMS.md          # Diagram documentation
+│   ├── SOLUTION_SUMMARY.md         # Solution summary
+│   └── database/                   # Database documentation
+├── data/                          # 📊 Tennis data files (not in repo)
+│   ├── tennis_atp/               # ATP match data
+│   ├── tennis_wta/               # WTA match data
 │   ├── tennis_MatchChartingProject/ # Detailed match data
 │   └── tennis_slam_pointbypoint/ # Grand Slam data
-└── README.md                     # This file
+└── README.md                      # This file
 ```
+
+## 🎯 Application Interfaces
+
+AskTennis provides two different user interfaces to suit different needs:
+
+### 🚀 **Basic AI Interface** (`app_basic.py`)
+- **Purpose**: Simple AI-powered tennis querying
+- **Features**: 
+  - Natural language queries
+  - AI-powered responses with context
+  - Clean, minimal interface
+  - Perfect for quick tennis questions
+- **Best for**: Casual users, quick queries, AI-focused interactions
+
+### 🎨 **Enhanced UI Interface** (`app_ui.py`)
+- **Purpose**: Comprehensive tennis data analysis with AI integration
+- **Features**:
+  - Advanced filtering system (player, opponent, tournament, year, surface)
+  - Interactive data tables
+  - AI query integration
+  - Database service integration
+  - Real-time data analysis
+- **Best for**: Data analysts, researchers, detailed tennis analysis
+
+### 🔄 **Choosing Your Interface**
+- **Use `app_basic.py`** if you want simple AI-powered tennis queries
+- **Use `app_ui.py`** if you need advanced filtering and data analysis capabilities
 
 ## 🚀 Quick Start Guide
 
@@ -191,8 +222,8 @@ AskTennis_Streamlit/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/AskTennis_Gemini.git
-   cd AskTennis_Gemini
+   git clone https://github.com/Ajit-KBehera/AskTennis_Streamlit.git
+   cd AskTennis_Streamlit
    ```
 
 2. **Create and activate virtual environment**
@@ -228,7 +259,11 @@ AskTennis_Streamlit/
 
 6. **Run the application**
    ```bash
-   streamlit run app.py
+   # Basic AI query interface
+   streamlit run app_basic.py
+   
+   # Enhanced UI with filters and database service
+   streamlit run app_ui.py
    ```
 
 7. **Open your browser** to `http://localhost:8501`
@@ -237,8 +272,8 @@ AskTennis_Streamlit/
 
 ```bash
 # Clone and navigate
-git clone https://github.com/your-username/AskTennis_Gemini.git
-cd AskTennis_Gemini
+git clone https://github.com/Ajit-KBehera/AskTennis_Streamlit.git
+cd AskTennis_Streamlit
 
 # Install dependencies
 pip install -r requirements.txt
@@ -248,7 +283,11 @@ pip install -r requirements.txt
 python load_data.py
 
 # Run application
-streamlit run app.py
+# Basic AI query interface
+streamlit run app_basic.py
+
+# Enhanced UI with filters and database service
+streamlit run app_ui.py
 ```
 
 ## 🔧 Configuration
@@ -398,12 +437,6 @@ For detailed testing documentation, see `testing/README.md`.
 - **Memory Usage**: Close unnecessary applications during setup
 - **Query Speed**: Use the provided views for faster queries
 
-## 📚 Documentation
-
-- **Database Analysis**: `docs/database/Database-Analysis.md`
-- **Enhancement History**: `docs/database/Data-Enhancement.md`
-- **Validation Requirements**: `docs/database/Data-Validation_REQUIRED.md`
-
 ## 🤝 Contributing
 
 This project represents the most comprehensive tennis database in existence. Contributions are welcome for:
@@ -443,7 +476,7 @@ For issues or questions:
 - **Stable Architecture**: No infinite loops or recursion errors
 
 ### 🏗️ Architectural Enhancements
-- **Modular Design**: Clean separation across 8 core modules
+- **Modular Design**: Clean separation across 9 core modules
 - **Performance Optimizations**: Cached mappings and monitoring systems
 - **Production Ready**: Stable system with comprehensive error handling
 - **Team Collaboration**: Parallel development on different modules
@@ -453,7 +486,7 @@ For issues or questions:
 
 **Status**: ✅ Production Ready - Complete Tennis Database with AI Integration
 
-**Architecture**: 🏗️ Modular Design - 8 focused modules with performance optimizations
+**Architecture**: 🏗️ Modular Design - 9 focused modules with performance optimizations
 
 **Database Coverage**: 147 years (1877-2024) | 1.7M+ matches | 136K+ players | 5.3M+ rankings
 

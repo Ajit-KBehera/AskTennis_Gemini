@@ -107,20 +107,23 @@ graph TD
     end
     
     subgraph "UI Modules"
-        I[UI Display] --> J[Data Formatter]
-        I --> K[Query Processor]
-        I --> L[Response Handler]
+        I[UI Display] --> J[Basic Interface]
+        I --> K[Enhanced Interface]
+        J --> L[Data Formatter]
+        K --> M[Database Service]
+        K --> N[Query Processor]
+        K --> O[Response Handler]
     end
     
     subgraph "Infrastructure Modules"
-        M[Logging Factory] --> N[Database Utils]
-        M --> O[Configuration]
-        M --> P[Performance Monitor]
+        P[Logging Factory] --> Q[Database Utils]
+        P --> R[Configuration]
+        P --> S[Performance Monitor]
     end
     
     A --> E
     E --> I
-    I --> M
+    I --> P
 ```
 
 ## 🔄 Development Workflow

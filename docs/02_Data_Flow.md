@@ -12,6 +12,8 @@ The AskTennis AI system processes natural language tennis queries through a soph
 │                    USER INTERFACE LAYER                        │
 ├─────────────────────────────────────────────────────────────────┤
 │  User Input  →  Streamlit UI  →  UI Display  →  Query Processor │
+│  (Basic/Enhanced) │  Components  │  Processing  │  & Database    │
+│                   │              │              │  Service      │
 └─────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
@@ -35,6 +37,13 @@ The AskTennis AI system processes natural language tennis queries through a soph
 ├─────────────────────────────────────────────────────────────────┤
 │  SQLite Database  │  Matches  │  Players  │  Rankings  │  Doubles │
 │                   │  Table    │  Table    │  Table     │  Table   │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                       SERVICES LAYER                            │
+├─────────────────────────────────────────────────────────────────┤
+│  Database Service  │  Caching Service  │  Filter Service       │
 └─────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
@@ -90,25 +99,28 @@ The AskTennis AI system processes natural language tennis queries through a soph
 12. SQLITE DATABASE
     │
     ▼
-13. DATA RETRIEVAL
+13. SERVICES LAYER
     │
     ▼
-14. DATA VALIDATION
+14. DATA RETRIEVAL
     │
     ▼
-15. DATA FORMATTER
+15. DATA VALIDATION
     │
     ▼
-16. RESPONSE ENHANCEMENT
+16. DATA FORMATTER
     │
     ▼
-17. FORMATTED RESPONSE
+17. RESPONSE ENHANCEMENT
     │
     ▼
-18. UI DISPLAY
+18. FORMATTED RESPONSE
     │
     ▼
-19. USER OUTPUT
+19. UI DISPLAY
+    │
+    ▼
+20. USER OUTPUT
 ```
 
 ### **Mermaid Diagram (for supported viewers)**
@@ -143,11 +155,17 @@ flowchart TD
         N --> R[Doubles Table]
     end
     
+    subgraph "Services Layer"
+        O --> S1[Database Service]
+        P --> S1
+        Q --> S1
+        R --> S1
+        S1 --> S2[Caching Service]
+        S1 --> S3[Filter Service]
+    end
+    
     subgraph "Response Processing Layer"
-        O --> S[Data Retrieval]
-        P --> S
-        Q --> S
-        R --> S
+        S1 --> S[Data Retrieval]
         S --> T[Data Validation]
         T --> U[Data Formatter]
         U --> V[Response Enhancement]
