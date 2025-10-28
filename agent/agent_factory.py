@@ -42,7 +42,7 @@ def setup_langgraph_agent():
     # Get base tools from toolkit
     base_tools = toolkit.get_tools()
     
-    # Add cached tennis mapping and visualization tools for better performance
+    # Add cached tennis mapping tools for better performance
     tennis_tools = TennisMappingTools.create_all_mapping_tools()
     all_tools = base_tools + tennis_tools
     
