@@ -172,12 +172,6 @@ class DatabaseService:
             LIMIT 100
             """
             
-            # Add player parameter for result calculation
-            if player and player != "All Players":
-                params.insert(0, player)
-            else:
-                params.insert(0, "")
-            
             df = pd.read_sql_query(query, conn, params=params)
             conn.close()
             
