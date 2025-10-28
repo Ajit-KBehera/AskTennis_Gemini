@@ -5,7 +5,7 @@ Provides intelligent dropdown options with search, filtering, and smart defaults
 
 import pandas as pd
 from typing import List, Dict, Any, Optional
-import streamlit as st
+import streamlit as st  # pyright: ignore[reportMissingImports]
 from functools import lru_cache
 
 class SmartDropdownService:

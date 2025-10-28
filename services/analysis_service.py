@@ -5,7 +5,7 @@ Provides intelligent analysis and context for chat integration
 
 import pandas as pd
 from typing import List, Dict, Any, Optional
-import streamlit as st
+import streamlit as st  # pyright: ignore[reportMissingImports]
 
 class AnalysisService:
     """Service for analysis and context generation."""

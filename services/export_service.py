@@ -7,7 +7,7 @@ import pandas as pd
 import io
 import base64
 from typing import Dict, Any, Optional
-import streamlit as st
+import streamlit as st  # pyright: ignore[reportMissingImports]
 
 class ExportService:
     """Service for data export and visualization."""
