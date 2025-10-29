@@ -191,3 +191,51 @@ class UIDisplay:
             return True
         
         return False
+    
+    @staticmethod
+    def render_results_panel(query_processor, agent_graph, logger, db_service):
+        """
+        Render the results panel displaying either AI query results or table/filter results.
+        Handles conditional rendering based on session state flags.
+        
+        Args:
+            query_processor: QueryProcessor instance for handling AI queries
+            agent_graph: LangGraph agent instance
+            logger: Logger instance for logging
+            db_service: DatabaseService instance for querying data
+        """
+        # Handle AI Query Results
+        if st.session_state.get('show_ai_results', False) and st.session_state.get('ai_query'):
+            try:
+                with st.spinner("AI is analyzing your question..."):
+                    query_processor.handle_user_query(st.session_state.ai_query, agent_graph, logger)
+            except Exception as e:
+                st.error(f"Error processing query: {e}")
+        
+        # Handle Table Results
+        elif st.session_state.get('analysis_generated', False):
+            filters = st.session_state.analysis_filters
+            
+            # Get data from database
+            df = db_service.get_matches_with_filters(
+                player=filters['player'],
+                opponent=filters['opponent'],
+                tournament=filters['tournament'],
+                year=filters['year'],
+                surfaces=filters['surfaces'],
+                _cache_bust=st.session_state.get('cache_bust', 0)
+            )
+            
+            if not df.empty:
+                # Display results table
+                st.dataframe(df, width='stretch')
+                
+                # Clear button
+                if st.button("🗑️ Clear Results"):
+                    st.session_state.analysis_generated = False
+                    st.session_state.analysis_context = {}
+                    st.rerun()
+            else:
+                st.warning("No matches found for the selected criteria.")
+        else:
+            pass
