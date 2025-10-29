@@ -74,7 +74,7 @@ class UIDisplay:
         Returns:
             Boolean indicating if Generate button was clicked
         """
-        st.markdown("Search and analyze tennis data:")
+        st.markdown("Analyze Tennis data:")
         
         # Initialize session state for filters
         if 'analysis_filters' not in st.session_state:
