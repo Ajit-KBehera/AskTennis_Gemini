@@ -17,36 +17,13 @@ st.set_page_config(page_title="AskTennis AI - Clean UI", layout="wide")
 st.markdown(load_css(), unsafe_allow_html=True)
 
 # --- Top Panel: AskTennis Search ---
-col_search, col_send, col_clear = st.columns([10, 1, 1])
+from ui.display.ui_display import UIDisplay
 
-with col_search:
-    ai_query = st.text_input(
-        "AskTennis Search:",
-        placeholder="Ask any tennis question (e.g., Who won Wimbledon 2022?)",
-        key="ai_search_input",
-        width='stretch'
-    )
-
-with col_send:
-    st.markdown("<br>", unsafe_allow_html=True)  # Add some spacing
-    if st.button("Send", type="primary", width='stretch'):
-        if ai_query:
-            st.session_state.ai_query = ai_query
-            st.session_state.show_ai_results = True
-            st.session_state.analysis_generated = False  # Hide table results
-
-with col_clear:
-    st.markdown("<br>", unsafe_allow_html=True)  # Add some spacing
-    if st.button("Clear", width='stretch'):
-        st.session_state.ai_search_input = ""
-        st.session_state.ai_query_results = None
-        st.session_state.show_ai_results = False
-        st.session_state.analysis_generated = False
-        st.rerun()
+ui_display = UIDisplay()
+ui_display.render_search_panel()
 
 # --- Agent Setup ---
 from agent.agent_factory import setup_langgraph_agent
-from ui.display.ui_display import UIDisplay
 from ui.formatting.consolidated_formatter import ConsolidatedFormatter
 from ui.processing.query_processor import QueryProcessor
 from services.database_service import DatabaseService
@@ -54,7 +31,6 @@ from services.database_service import DatabaseService
 # Initialize the LangGraph agent
 try:
     agent_graph = setup_langgraph_agent()
-    ui_display = UIDisplay()
     data_formatter = ConsolidatedFormatter()
     query_processor = QueryProcessor(data_formatter)
     db_service = DatabaseService()

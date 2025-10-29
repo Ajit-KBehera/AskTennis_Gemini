@@ -31,8 +31,8 @@ try:
     data_formatter = ConsolidatedFormatter()
     query_processor = QueryProcessor(data_formatter)
     
-    # Run the main application
-    user_question = ui_display.get_user_input()
+    # Render search panel with Send/Clear buttons (matching app_ui.py functionality)
+    user_question = ui_display.render_search_panel()
     
     if user_question:
         query_processor.handle_user_query(user_question, agent_graph, logger)
