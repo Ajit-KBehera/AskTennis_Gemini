@@ -17,7 +17,7 @@ from agent.agent_factory import setup_langgraph_agent
 
 # --- UI Components ---
 from ui.display.ui_display import UIDisplay
-from ui.consolidated_formatter import ConsolidatedFormatter
+from ui.formatting.consolidated_formatter import ConsolidatedFormatter
 from ui.processing.query_processor import QueryProcessor
 
 

@@ -96,7 +96,7 @@ with col_clear:
 # --- Agent Setup ---
 from agent.agent_factory import setup_langgraph_agent
 from ui.display.ui_display import UIDisplay
-from ui.formatting.data_formatter import DataFormatter
+from ui.formatting.consolidated_formatter import ConsolidatedFormatter
 from ui.processing.query_processor import QueryProcessor
 from services.database_service import DatabaseService
 
@@ -104,7 +104,7 @@ from services.database_service import DatabaseService
 try:
     agent_graph = setup_langgraph_agent()
     ui_display = UIDisplay()
-    data_formatter = DataFormatter()
+    data_formatter = ConsolidatedFormatter()
     query_processor = QueryProcessor(data_formatter)
     db_service = DatabaseService()
     

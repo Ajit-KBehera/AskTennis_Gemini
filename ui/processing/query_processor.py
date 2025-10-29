@@ -9,7 +9,7 @@ import ast
 from datetime import datetime
 from langchain_core.messages import HumanMessage, AIMessage
 from tennis_logging.logging_factory import log_user_query, log_llm_interaction, log_final_response, log_error
-from ui.consolidated_formatter import ConsolidatedFormatter
+from ui.formatting.consolidated_formatter import ConsolidatedFormatter
 
 
 class QueryProcessor:

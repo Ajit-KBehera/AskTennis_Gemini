@@ -182,3 +182,4 @@ class ConsolidatedFormatter:
             Formatted result string
         """
         return self.format_result(data, user_question, context=None)
+
