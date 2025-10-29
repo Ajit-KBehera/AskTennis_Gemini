@@ -60,40 +60,6 @@ class DatabaseService:
             st.error(f"Error fetching tournaments: {e}")
             return ["All Tournaments", "Wimbledon", "French Open", "US Open", "Australian Open"]
     
-    @st.cache_data(ttl=300)
-    def get_available_years(_self) -> List[str]:
-        """Get all available years from database."""
-        try:
-            conn = sqlite3.connect(_self.db_path)
-            query = """
-            SELECT DISTINCT event_year FROM matches 
-            WHERE event_year IS NOT NULL
-            ORDER BY event_year DESC
-            """
-            df = pd.read_sql_query(query, conn)
-            conn.close()
-            return ["All Years"] + [str(year) for year in df['event_year'].tolist()]
-        except Exception as e:
-            st.error(f"Error fetching years: {e}")
-            return ["All Years"] + [str(year) for year in range(2024, 2010, -1)]
-    
-    @st.cache_data(ttl=300)
-    def get_available_surfaces(_self) -> List[str]:
-        """Get all available surfaces from database."""
-        try:
-            conn = sqlite3.connect(_self.db_path)
-            query = """
-            SELECT DISTINCT surface FROM matches 
-            WHERE surface IS NOT NULL AND surface != ''
-            ORDER BY surface
-            """
-            df = pd.read_sql_query(query, conn)
-            conn.close()
-            return ["All Surfaces"] + df['surface'].tolist()
-        except Exception as e:
-            st.error(f"Error fetching surfaces: {e}")
-            return ["All Surfaces", "Hard", "Clay", "Grass", "Carpet"]
-    
     @st.cache_data(ttl=60)  # Cache for 1 minute
     def get_opponents_for_player(_self, player_name: str) -> List[str]:
         """Get opponents for a specific player."""
@@ -188,60 +154,3 @@ class DatabaseService:
         except Exception as e:
             st.error(f"Error fetching matches: {e}")
             return pd.DataFrame()
-    
-    
-    def get_player_statistics(self, player: str) -> Dict[str, Any]:
-        """Get comprehensive statistics for a player."""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            
-            # Total matches
-            total_query = """
-            SELECT COUNT(*) as total_matches
-            FROM matches 
-            WHERE winner_name = ? OR loser_name = ?
-            """
-            total_df = pd.read_sql_query(total_query, conn, params=[player, player])
-            total_matches = total_df['total_matches'].iloc[0]
-            
-            # Wins
-            wins_query = """
-            SELECT COUNT(*) as wins
-            FROM matches 
-            WHERE winner_name = ?
-            """
-            wins_df = pd.read_sql_query(wins_query, conn, params=[player])
-            wins = wins_df['wins'].iloc[0]
-            
-            # Win rate
-            win_rate = (wins / total_matches * 100) if total_matches > 0 else 0
-            
-            # Surface breakdown
-            surface_query = """
-            SELECT surface, COUNT(*) as matches,
-                   SUM(CASE WHEN winner_name = ? THEN 1 ELSE 0 END) as wins
-            FROM matches 
-            WHERE winner_name = ? OR loser_name = ?
-            GROUP BY surface
-            """
-            surface_df = pd.read_sql_query(surface_query, conn, params=[player, player, player])
-            
-            conn.close()
-            
-            return {
-                'total_matches': total_matches,
-                'wins': wins,
-                'losses': total_matches - wins,
-                'win_rate': round(win_rate, 1),
-                'surface_breakdown': surface_df.to_dict('records')
-            }
-            
-        except Exception as e:
-            st.error(f"Error fetching player statistics: {e}")
-            return {
-                'total_matches': 0,
-                'wins': 0,
-                'losses': 0,
-                'win_rate': 0,
-                'surface_breakdown': []
-            }

@@ -50,7 +50,4 @@ class UnifiedAgentConfig:
     def validate_config(self) -> bool:
         """Validate that all required configuration is present."""
         return self.api_key is not None and self.api_key.strip() != ""
-    
-    def set_api_key(self, api_key: str):
-        """Set the API key for the LLM."""
-        self.api_key = api_key
+
