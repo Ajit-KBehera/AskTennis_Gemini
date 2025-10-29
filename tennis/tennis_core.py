@@ -7,6 +7,7 @@ This module serves as a clean interface to all tennis-related components.
 # Import all functionality from compartmentalized modules
 from .tennis_mappings import (
     TennisMappingTools,
+    standardize_tourney_level,
     ROUND_MAPPINGS,
     SURFACE_MAPPINGS, 
     TOUR_MAPPINGS,
@@ -18,11 +19,6 @@ from .tennis_mappings import (
 
 from .tennis_prompts import TennisPromptBuilder
 
-from .tennis_utils import (
-    standardize_tourney_level,
-    PerformanceMonitor
-)
-
 # =============================================================================
 # MAIN EXPORTS
 # =============================================================================
@@ -31,7 +27,6 @@ from .tennis_utils import (
 __all__ = [
     'TennisMappingTools',
     'TennisPromptBuilder', 
-    'PerformanceMonitor',
     'standardize_tourney_level',
     'ROUND_MAPPINGS',
     'SURFACE_MAPPINGS', 
