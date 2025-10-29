@@ -9,18 +9,15 @@ from tennis_logging.logging_factory import setup_logging
 logger, log_file = setup_logging()
 
 # --- Page Configuration ---
-from config.constants import APP_TITLE, APP_SUBTITLE
 from ui.utils.style_loader import load_css
 
 st.set_page_config(page_title="AskTennis AI - Clean UI", layout="wide")
-st.title(APP_TITLE)
-st.markdown(APP_SUBTITLE)
 
 # Load custom CSS from external file
 st.markdown(load_css(), unsafe_allow_html=True)
 
 # --- Top Panel: AskTennis Search ---
-col_search, col_send, col_clear = st.columns([6, 1, 1])
+col_search, col_send, col_clear = st.columns([10, 1, 1])
 
 with col_search:
     ai_query = st.text_input(
