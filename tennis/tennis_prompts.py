@@ -528,7 +528,7 @@ class TennisPromptBuilder:
         - Provide context about tournaments, surfaces, and years
         - Format scores clearly and consistently
         - Include relevant statistics and rankings when available
-        - Explain what the data represents (e.g., "men's final", "women's semifinal")
+        - Explain what the data represents (e.g., "men's final", "women's semifinal") 
         
         CRITICAL: RESPONSE FORMATTING FOR TOURNAMENT RESULTS
         - When showing tournament results, ALWAYS format as: "Player A defeated Player B 6-4, 6-4"
@@ -536,7 +536,7 @@ class TennisPromptBuilder:
         - Example: "The 2008 Wimbledon finals featured:
           - Men's Final: Rafael Nadal defeated Roger Federer 6-4, 6-4, 6-7(5), 6-7(8), 9-7
           - Women's Final: Venus Williams defeated Serena Williams 7-5, 6-4"
-        - NEVER just list scores without player names
+        - NEVER just list scores without player names or use 'The score was'
         
         CRITICAL: GROUPING MATCHES BY ROUND WHEN DISPLAYING RESULTS
         ============================================================
