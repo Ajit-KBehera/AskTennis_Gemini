@@ -124,8 +124,9 @@ try:
                 'opponent': None,
                 'tournament': None,
                 'year': None,
-                'surface': None
+                'surfaces': []
             }
+        
         
         # =============================================================================
         # PLAYER SEARCH
@@ -183,8 +184,15 @@ try:
         year_options = ["All Years"] + [str(year) for year in range(2024, 1968, -1)]
         selected_year = st.selectbox("Select Year:", year_options, key="year_select")
         
-        surface_options = ["All Surfaces", "Hard", "Clay", "Grass", "Carpet"]
-        selected_surface = st.selectbox("Select Surface:", surface_options, key="surface_select")
+        # Multi-select surface options
+        surface_options = ["Hard", "Clay", "Grass", "Carpet"]
+        selected_surfaces = st.multiselect(
+            "Select Surfaces:",
+            surface_options,
+            default=surface_options,  # All surfaces selected by default
+            key="surface_multiselect",
+            help="Select one or more surfaces to filter matches"
+        )
         
         # =============================================================================
         # GENERATE BUTTON
@@ -194,7 +202,7 @@ try:
         
         with col_generate:
             generate_button = st.button(
-                "🔍 Generate Analysis",
+                "🔍 Generate",
                 type="primary",
                 width='stretch'
             )
@@ -212,22 +220,12 @@ try:
                 'opponent': selected_opponent,
                 'tournament': selected_tournament,
                 'year': selected_year,
-                'surface': selected_surface
+                'surfaces': selected_surfaces
             }
             st.session_state.analysis_generated = True
             st.session_state.show_ai_results = False  # Reset AI results to show table
             # Add cache busting
             st.session_state.cache_bust = st.session_state.get('cache_bust', 0) + 1
-            
-            # Generate analysis context
-            df = db_service.get_matches_with_filters(
-                player=selected_player,
-                opponent=selected_opponent,
-                tournament=selected_tournament,
-                year=selected_year,
-                surface=selected_surface,
-                _cache_bust=st.session_state.get('cache_bust', 0)
-            )
         
     
     # =============================================================================
@@ -246,13 +244,13 @@ try:
         elif st.session_state.get('analysis_generated', False):
             filters = st.session_state.analysis_filters
             
-            # Get real data from database
+            # Get data from database
             df = db_service.get_matches_with_filters(
                 player=filters['player'],
                 opponent=filters['opponent'],
                 tournament=filters['tournament'],
                 year=filters['year'],
-                surface=filters['surface'],
+                surfaces=filters['surfaces'],
                 _cache_bust=st.session_state.get('cache_bust', 0)
             )
             

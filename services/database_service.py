@@ -122,11 +122,11 @@ class DatabaseService:
     
     def get_matches_with_filters(self, player: str = None, opponent: str = None, 
                                 tournament: str = None, year: str = None, 
-                                surface: str = None, _cache_bust: int = 0) -> pd.DataFrame:
+                                surfaces: List[str] = None, _cache_bust: int = 0) -> pd.DataFrame:
         """Get matches based on filters."""
         try:
             # Debug logging
-            st.write(f"🔍 Querying: player='{player}', year='{year}', tournament='{tournament}', surface='{surface}'")
+            st.write(f"🔍 Querying: player='{player}', year='{year}', tournament='{tournament}', surfaces='{surfaces}'")
             
             conn = sqlite3.connect(self.db_path)
             
@@ -150,9 +150,11 @@ class DatabaseService:
                 where_conditions.append("event_year = ?")
                 params.append(int(year))
             
-            if surface and surface != "All Surfaces":
-                where_conditions.append("surface = ?")
-                params.append(surface)
+            if surfaces and len(surfaces) > 0:
+                # Handle multiple surface filtering
+                placeholders = ','.join(['?' for _ in surfaces])
+                where_conditions.append(f"surface IN ({placeholders})")
+                params.extend(surfaces)
             
             where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
             
@@ -169,7 +171,7 @@ class DatabaseService:
             FROM matches 
             WHERE {where_clause}
             ORDER BY tourney_date ASC, match_num ASC
-            LIMIT 100
+            LIMIT 5000
             """
             
             df = pd.read_sql_query(query, conn, params=params)
@@ -186,6 +188,7 @@ class DatabaseService:
         except Exception as e:
             st.error(f"Error fetching matches: {e}")
             return pd.DataFrame()
+    
     
     def get_player_statistics(self, player: str) -> Dict[str, Any]:
         """Get comprehensive statistics for a player."""
