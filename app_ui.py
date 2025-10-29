@@ -1,7 +1,6 @@
 import streamlit as st 
 import pandas as pd
 from datetime import datetime
-from pathlib import Path
 
 # --- Logging Configuration ---
 from tennis_logging.logging_factory import setup_logging
@@ -11,17 +10,13 @@ logger, log_file = setup_logging()
 
 # --- Page Configuration ---
 from config.constants import APP_TITLE, APP_SUBTITLE
+from ui.utils.style_loader import load_css
+
 st.set_page_config(page_title="AskTennis AI - Clean UI", layout="wide")
 st.title(APP_TITLE)
 st.markdown(APP_SUBTITLE)
 
 # Load custom CSS from external file
-def load_css():
-    css_path = Path(__file__).parent / "ui" / "styles" / "styles.css"
-    with open(css_path, "r") as f:
-        css = f.read()
-    return f"<style>{css}</style>"
-
 st.markdown(load_css(), unsafe_allow_html=True)
 
 # --- Top Panel: AskTennis Search ---
