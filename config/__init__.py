@@ -9,7 +9,6 @@ from .constants import (
     DEFAULT_TEMPERATURE,
     APP_TITLE,
     APP_SUBTITLE,
-    EXAMPLE_QUESTIONS
 )
 
 __all__ = [
@@ -17,6 +16,5 @@ __all__ = [
     'DEFAULT_MODEL', 
     'DEFAULT_TEMPERATURE',
     'APP_TITLE',
-    'APP_SUBTITLE',
-    'EXAMPLE_QUESTIONS'
+    'APP_SUBTITLE'
 ]

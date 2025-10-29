@@ -1,4 +1,4 @@
-import streamlit as st  # pyright: ignore[reportMissingImports]
+import streamlit as st 
 import pandas as pd
 from datetime import datetime
 
@@ -11,6 +11,8 @@ logger, log_file = setup_logging()
 # --- Page Configuration ---
 from config.constants import APP_TITLE, APP_SUBTITLE
 st.set_page_config(page_title="AskTennis AI - Clean UI", layout="wide")
+st.title(APP_TITLE)
+st.markdown(APP_SUBTITLE)
 
 # Custom CSS for clean layout
 st.markdown("""

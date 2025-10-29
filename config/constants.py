@@ -14,12 +14,6 @@ DEFAULT_TEMPERATURE = 0
 APP_TITLE = "🎾 AskTennis: The Advanced AI Engine"
 APP_SUBTITLE = "#### Powered by Gemini & LangGraph (Stateful Agent)"
 
-# Example Questions
-EXAMPLE_QUESTIONS = """
-- *How many matches did Roger Federer win in 2006?*
-- *Who won the most matches on clay in 2010?*
-- *What was the score of the Wimbledon final in 2008?*
-"""
 
 # Logging Configuration
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"

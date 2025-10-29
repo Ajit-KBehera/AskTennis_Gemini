@@ -8,7 +8,8 @@ logger, log_file = setup_logging()
 
 # --- Page Configuration ---
 from config.constants import APP_TITLE, APP_SUBTITLE
-st.set_page_config(page_title="AskTennis AI", layout="wide")
+
+st.set_page_config(page_title="AskTennis AI-Basic", layout="wide")
 st.title(APP_TITLE)
 st.markdown(APP_SUBTITLE)
 
@@ -31,7 +32,6 @@ try:
     query_processor = QueryProcessor(data_formatter)
     
     # Run the main application
-    ui_display.display_example_questions()
     user_question = ui_display.get_user_input()
     
     if user_question:
