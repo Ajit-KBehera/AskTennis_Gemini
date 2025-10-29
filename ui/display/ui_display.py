@@ -61,3 +61,133 @@ class UIDisplay:
             return st.session_state.get('ai_query')
         
         return None
+    
+    @staticmethod
+    def render_filter_panel(db_service):
+        """
+        Render the filter panel with player, opponent, tournament, year, and surface filters.
+        Includes Generate and Clear Cache buttons.
+        
+        Args:
+            db_service: DatabaseService instance for querying data
+        
+        Returns:
+            Boolean indicating if Generate button was clicked
+        """
+        st.markdown("Search and analyze tennis data:")
+        
+        # Initialize session state for filters
+        if 'analysis_filters' not in st.session_state:
+            st.session_state.analysis_filters = {
+                'player': None,
+                'opponent': None,
+                'tournament': None,
+                'year': None,
+                'surfaces': []
+            }
+        
+        
+        # =============================================================================
+        # PLAYER SEARCH
+        # =============================================================================
+        
+        # Get all players for search
+        all_players = db_service.get_all_players()
+        all_players = [p for p in all_players if p != "All Players"]
+        
+        # Use selectbox with search functionality
+        selected_player = st.selectbox(
+            "Search Player:",
+            ["All Players"] + all_players,
+            key="player_select",
+            help="Type to search players (e.g., Federer, Nadal)"
+        )
+        
+        # =============================================================================
+        # OPPONENT SEARCH
+        # =============================================================================
+        
+        # Get opponent options based on selected player
+        if selected_player and selected_player != "All Players":
+            opponent_options = db_service.get_opponents_for_player(selected_player)
+        else:
+            opponent_options = all_players  # Show all players if no player selected
+        
+        # Use selectbox with search functionality
+        selected_opponent = st.selectbox(
+            "Search Opponent:",
+            ["All Opponents"] + opponent_options,
+            key="opponent_select",
+            help="Type to search opponents"
+        )
+        
+        # =============================================================================
+        # TOURNAMENT SEARCH
+        # =============================================================================
+        
+        # Get all tournaments for search
+        all_tournaments = db_service.get_all_tournaments()
+        all_tournaments = [t for t in all_tournaments if t != "All Tournaments"]
+        
+        # Use selectbox with search functionality
+        selected_tournament = st.selectbox(
+            "Search Tournament:",
+            ["All Tournaments"] + all_tournaments,
+            key="tournament_select",
+            help="Type to search tournaments (e.g., Wimbledon, French Open)"
+        )
+        
+        # =============================================================================
+        # YEAR SELECTION
+        # =============================================================================
+        year_options = ["All Years"] + [str(year) for year in range(2024, 1968, -1)]
+        selected_year = st.selectbox("Select Year:", year_options, key="year_select")
+        
+        # =============================================================================
+        # SURFACE SELECTION
+        # =============================================================================
+        # Multi-select surface options
+        surface_options = ["Hard", "Clay", "Grass", "Carpet"]
+        selected_surfaces = st.multiselect(
+            "Select Surfaces:",
+            surface_options,
+            default=surface_options,  # All surfaces selected by default
+            key="surface_multiselect",
+            help="Select one or more surfaces to filter matches"
+        )
+        
+        # =============================================================================
+        # GENERATE BUTTON
+        # =============================================================================
+        st.markdown("---")
+        col_generate, col_clear_cache = st.columns([2, 1])
+        
+        with col_generate:
+            generate_button = st.button(
+                "🔍 Generate",
+                type="primary",
+                width='stretch'
+            )
+        
+        with col_clear_cache:
+            if st.button("🗑️", help="Clear cached data if results seem stale"):
+                db_service.clear_cache()
+                st.success("Cache cleared!")
+                st.rerun()
+        
+        # Update session state
+        if generate_button:
+            st.session_state.analysis_filters = {
+                'player': selected_player,
+                'opponent': selected_opponent,
+                'tournament': selected_tournament,
+                'year': selected_year,
+                'surfaces': selected_surfaces
+            }
+            st.session_state.analysis_generated = True
+            st.session_state.show_ai_results = False  # Reset AI results to show table
+            # Add cache busting
+            st.session_state.cache_bust = st.session_state.get('cache_bust', 0) + 1
+            return True
+        
+        return False
