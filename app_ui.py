@@ -1,6 +1,7 @@
 import streamlit as st 
 import pandas as pd
 from datetime import datetime
+from pathlib import Path
 
 # --- Logging Configuration ---
 from tennis_logging.logging_factory import setup_logging
@@ -14,58 +15,14 @@ st.set_page_config(page_title="AskTennis AI - Clean UI", layout="wide")
 st.title(APP_TITLE)
 st.markdown(APP_SUBTITLE)
 
-# Custom CSS for clean layout
-st.markdown("""
-<style>
-    .main-header {
-        text-align: center;
-        padding: 1rem 0;
-        border-bottom: 2px solid #e0e0e0;
-        margin-bottom: 2rem;
-    }
-    .filter-panel {
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 10px;
-        border: 1px solid #e0e0e0;
-    }
-    .results-panel {
-        background-color: #ffffff;
-        padding: 1rem;
-        border-radius: 10px;
-        border: 1px solid #e0e0e0;
-    }
-    .chat-panel {
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 10px;
-        border: 1px solid #e0e0e0;
-    }
-    .search-box {
-        background-color: #ffffff;
-        border: 2px solid #007bff;
-        border-radius: 5px;
-        padding: 0.5rem;
-    }
-    
-    /* Remove margins and make full width */
-    .main .block-container {
-        padding-left: 0rem;
-        padding-right: 0rem;
-        max-width: 100%;
-    }
-    
-    /* Remove column gaps */
-    div[data-testid="column"] {
-        gap: 0rem;
-    }
-    
-    /* Full width layout */
-    .stApp {
-        max-width: 100%;
-    }
-</style>
-""", unsafe_allow_html=True)
+# Load custom CSS from external file
+def load_css():
+    css_path = Path(__file__).parent / "ui" / "styles" / "styles.css"
+    with open(css_path, "r") as f:
+        css = f.read()
+    return f"<style>{css}</style>"
+
+st.markdown(load_css(), unsafe_allow_html=True)
 
 # --- Top Panel: AskTennis Search ---
 col_search, col_send, col_clear = st.columns([6, 1, 1])
@@ -275,7 +232,7 @@ try:
     # Footer
     st.markdown("---")
     st.markdown("""
-    <div style="text-align: center; color: #666; padding: 1rem;">
+    <div class="footer">
         🎾 AskTennis AI - Clean Player Analyzer | 
         <a href="https://github.com/Ajit-KBehera/AskTennis_Streamlit" target="_blank">GitHub</a>
     </div>

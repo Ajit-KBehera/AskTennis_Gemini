@@ -1,0 +1,59 @@
+.main-header {
+    text-align: center;
+    padding: 1rem 0;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 2rem;
+}
+
+.filter-panel {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+}
+
+.results-panel {
+    background-color: #ffffff;
+    padding: 1rem;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+}
+
+.chat-panel {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+}
+
+.search-box {
+    background-color: #ffffff;
+    border: 2px solid #007bff;
+    border-radius: 5px;
+    padding: 0.5rem;
+}
+
+/* Remove margins and make full width */
+.main .block-container {
+    padding-left: 0rem;
+    padding-right: 0rem;
+    max-width: 100%;
+}
+
+/* Remove column gaps */
+div[data-testid="column"] {
+    gap: 0rem;
+}
+
+/* Full width layout */
+.stApp {
+    max-width: 100%;
+}
+
+/* Footer styling */
+.footer {
+    text-align: center;
+    color: #666;
+    padding: 1rem;
+}
+
