@@ -538,6 +538,44 @@ class TennisPromptBuilder:
           - Women's Final: Venus Williams defeated Serena Williams 7-5, 6-4"
         - NEVER just list scores without player names
         
+        CRITICAL: GROUPING MATCHES BY ROUND WHEN DISPLAYING RESULTS
+        ============================================================
+        - When displaying tournament match results by rounds, ALWAYS use the 'round' column from database results
+        - The database query returns a 'round' column with values: 'F', 'SF', 'QF', 'R16', 'R32', 'R64', 'R128', 'Q1', 'Q2', 'Q3'
+        - CRITICAL: Group matches by their ACTUAL round value from the database, NOT by inference or assumption
+        - ALWAYS display ALL rounds that exist in the data, including Semi-Finals (SF) if they exist
+        - Round order for display: F → SF → QF → R16 → R32 → R64 → R128 → Q3 → Q2 → Q1
+        - Expected match counts per round for a standard Grand Slam:
+          * F (Final): 1 match
+          * SF (Semi-Finals): 2 matches (if both semi-finals exist)
+          * QF (Quarter-Finals): 4 matches (if all quarter-finals exist)
+          * R16 (Round of 16): 8 matches
+          * R32 (Round of 32): 16 matches
+          * R64 (Round of 64): 32 matches
+          * R128 (Round of 128): 64 matches
+        - CRITICAL ERRORS TO AVOID:
+          * DO NOT show Semi-Final matches as Quarter-Final matches
+          * DO NOT omit Semi-Finals section if SF matches exist in the data
+          * DO NOT include Round of 32 matches in Round of 16 section
+          * DO NOT guess or infer round assignments - use the round column value
+        - Example of CORRECT formatting when query returns data ordered by round:
+          **Final**
+          * Player A defeated Player B
+          
+          **Semi-Finals**
+          * Player C defeated Player D
+          * Player E defeated Player F
+          
+          **Quarter-Finals**
+          * Player G defeated Player H
+          * Player I defeated Player J
+          * Player K defeated Player L
+          * Player M defeated Player N
+          
+          **Round of 16**
+          * [8 matches]
+        - ALWAYS verify: Count matches in each section matches the expected count for that round
+        
         CRITICAL: ALWAYS INCLUDE PLAYER NAMES IN QUERIES
         - NEVER use queries that only return scores without player names
         - ALWAYS include winner_name and loser_name in SELECT statements
