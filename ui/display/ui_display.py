@@ -239,3 +239,33 @@ class UIDisplay:
                 st.warning("No matches found for the selected criteria.")
         else:
             pass
+    
+    @staticmethod
+    def render_main_content(db_service, query_processor, agent_graph, logger, column_layout=None):
+        """
+        Render the main content area with filter panel on left and results panel on right.
+        
+        Args:
+            db_service: DatabaseService instance for querying data
+            query_processor: QueryProcessor instance for handling AI queries
+            agent_graph: LangGraph agent instance
+            logger: Logger instance for logging
+            column_layout: List of column widths [left_width, right_width].
+                         Defaults to [1.2, 6.8].
+        """
+        if column_layout is None:
+            column_layout = [1.2, 6.8]
+        
+        col_left, col_remaining = st.columns(column_layout)
+        
+        # =============================================================================
+        # COLUMN 1: CLEAN FILTER PANEL (Left Side)
+        # =============================================================================
+        with col_left:
+            UIDisplay.render_filter_panel(db_service)
+        
+        # =============================================================================
+        # REMAINING SPACE: RESULTS OR AI QUERY
+        # =============================================================================
+        with col_remaining:
+            UIDisplay.render_results_panel(query_processor, agent_graph, logger, db_service)
