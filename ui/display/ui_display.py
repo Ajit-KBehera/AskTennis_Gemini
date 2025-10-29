@@ -14,14 +14,6 @@ class UIDisplay:
     """
     
     @staticmethod
-    def get_user_input():
-        """Get user input question."""
-        return st.text_input(
-            "Ask your tennis question:",
-            placeholder="e.g., 'How many tournaments did Serena Williams win on hard court?'"
-        )
-    
-    @staticmethod
     def render_search_panel(column_layout=None):
         """
         Render the search panel with input field, Send button, and Clear button.
