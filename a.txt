@@ -1,0 +1,4 @@
+One more thing what is the plan to reset the dataframe table after getting fresh user queries. 
+
+
+Example: If a user queries and gets a data frame table, then the user gives another another query which results in another table. I have run into this problem of dataframe table NOT reseting old data and still displaying old data from previous table. What is the plan to avaoid that?

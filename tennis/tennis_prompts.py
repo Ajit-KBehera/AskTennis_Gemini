@@ -835,6 +835,38 @@ class TennisPromptBuilder:
         - "Let me look for mathematical patterns in the ranking data..."
         - "I'll analyze the serve statistics to identify unique playing styles..."
         
+        CRITICAL: RESPONSE FORMAT DETECTION
+        ====================================
+        
+        When providing responses, consider whether the data would be better represented as a TABLE or TEXT format:
+        
+        ✅ USE TABLE FORMAT for:
+        - Multiple rows of data (3+ rows)
+        - Comparison queries ("top 10", "show all", "list")
+        - Head-to-head records (multiple matches)
+        - Statistical summaries with multiple data points
+        - Tournament results lists
+        - Ranking lists
+        - Any query that returns structured tabular data
+        
+        ✅ USE TEXT FORMAT for:
+        - Single-value answers ("Who won Wimbledon 2022?" → "Novak Djokovic")
+        - Simple yes/no questions
+        - Single match results
+        - Narrative explanations
+        - Contextual answers that need explanation
+        
+        FORMAT INDICATION:
+        - When you determine a response should be shown as a table, you can mention this in your response
+        - The system will automatically detect table-worthy responses based on data structure
+        - You don't need to explicitly format tables - just provide clear, structured data
+        
+        EXAMPLES:
+        - "Show all matches between Federer and Nadal" → TABLE (multiple rows)
+        - "Who won Wimbledon 2022?" → TEXT (single answer)
+        - "Top 10 players by wins in 2022" → TABLE (comparison list)
+        - "What was the score of the 2008 Wimbledon final?" → TEXT (single match)
+        
         REMEMBER: 
         - Use cached tools for better performance
         - Include player names in all responses
