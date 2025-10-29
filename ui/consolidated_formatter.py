@@ -168,3 +168,17 @@ class ConsolidatedFormatter:
         # This would contain the complex chronological formatting logic
         # For now, use the simpler multiple results format
         return self._format_multiple_results(data, context)
+    
+    def format_with_context(self, data: List, user_question: str = "") -> str:
+        """
+        Format results with context detection from user question.
+        This method provides compatibility with the DataFormatter interface.
+        
+        Args:
+            data: The data to format
+            user_question: The user's question for context
+            
+        Returns:
+            Formatted result string
+        """
+        return self.format_result(data, user_question, context=None)

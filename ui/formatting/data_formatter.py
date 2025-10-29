@@ -242,3 +242,41 @@ class DataFormatter:
                         results.append(f"{i}. {row[0]}")
                 
                 return f"Found {len(filtered_data)} result(s):\n\n" + "\n".join(results)
+    
+    @staticmethod
+    def format_chronological_list(data: List, user_question: str = "", context: Dict[str, Any] = None) -> str:
+        """Format list results with chronological ordering."""
+        if not data or len(data) == 0:
+            return "No results found"
+        
+        # Filter out None values
+        filtered_data = []
+        for row in data:
+            filtered_row = [str(item) for item in row if item is not None]
+            filtered_data.append(filtered_row)
+        
+        # Format as chronological list
+        results = []
+        for i, row in enumerate(filtered_data, 1):
+            if len(row) >= 3:
+                winner, loser = row[0], row[1]
+                score = " ".join(row[2:]) if len(row) > 2 else "Score not available"
+                results.append(f"{i}. {winner} defeated {loser} {score}")
+            elif len(row) == 2:
+                results.append(f"{i}. {row[0]} - {row[1]}")
+            else:
+                results.append(f"{i}. {row[0]}")
+        
+        # Add context information if available
+        context_parts = []
+        if context:
+            if 'tournament' in context:
+                context_parts.append(f"in {context['tournament']}")
+            if 'year' in context:
+                context_parts.append(f"in {context['year']}")
+            if 'round' in context:
+                context_parts.append(f"in the {context['round']}")
+        
+        context_str = f" ({' '.join(context_parts)})" if context_parts else ""
+        
+        return f"Found {len(filtered_data)} result(s){context_str}:\n\n" + "\n".join(results)
