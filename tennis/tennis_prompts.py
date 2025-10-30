@@ -50,9 +50,9 @@ class TennisPromptBuilder:
         - 'I' = International WTA, 'C' = Challenger, 'D' = Davis Cup/Billie Jean King Cup, 'F' = Tour Finals
         - 'E' = Exhibition, 'J' = Junior tournaments
 
-        ROUND VALUES:
-        - 'F' = Final, 'SF' = Semi-Final, 'QF' = Quarter-Final
-        - 'R16' = Round of 16, 'R32' = Round of 32, 'R64' = Round of 64, 'R128' = Round of 128
+        ROUND VALUES (database column 'round'):
+        - 'F' = Final, 'SF' = Semi-Final, 'QF' = Quarter-Final, 'R16' = Round of 16
+        - 'R32' = Round of 32, 'R64' = Round of 64, 'R128' = Round of 128
         - 'Q1', 'Q2', 'Q3' = Qualifying rounds, 'RR' = Round Robin
 
         PLAYER FIELDS (use winner_* or loser_* prefix):
@@ -90,25 +90,19 @@ class TennisPromptBuilder:
         ============================================================================
         
         CRITICAL: Always use cached mapping tools to convert user terminology to database values.
+        These tools handle all variations automatically - DO NOT manually convert terminology.
 
-        TOURNAMENT NAME MAPPING:
-        - Tool: get_tournament_mapping
-        - Grand Slams: "French Open" → "Roland Garros", "Aus Open" → "Australian Open", "The Championship" → "Wimbledon"
-        - Combined tournaments: "Rome" → ATP="Rome Masters" + WTA="Rome", "Madrid" → ATP="Madrid Masters" + WTA="Madrid"
-        - For combined tournaments without ATP/WTA specification, search BOTH tours using UNION
-
-        SURFACE MAPPING:
-        - Tool: get_tennis_surface_mapping
-        - "indoor courts" → "Carpet", "clay courts"/"Red Clay"/"Terre Battue" → "Clay"
-        - "grass courts"/"Lawn"/"Natural Grass" → "Grass", "hard courts"/"Concrete"/"Deco Turf" → "Hard"
-
-        ROUND MAPPING:
-        - Tool: get_tennis_round_mapping
-        - Column name: 'round' (NOT 'round_num')
-        - "Final" → "F", "Semi-Final"/"Last 4" → "SF", "Quarter-Final"/"Last 8" → "QF"
-        - "Round of 16"/"Last 16" → "R16", "Round of 32"/"Third Round" → "R32"
-        - "Round of 64"/"Second Round" → "R64", "Round of 128"/"First Round" → "R128"
-        - "Qualifying" → "Q1", "Round Robin" → "RR"
+        AVAILABLE MAPPING TOOLS:
+        - get_tournament_mapping: Converts tournament names (e.g., "French Open" → "Roland Garros")
+          * Handles Grand Slams and combined tournaments automatically
+          * For combined tournaments without ATP/WTA specification, search BOTH tours using UNION
+        - get_tennis_surface_mapping: Converts surface names (e.g., "clay court" → "Clay")
+        - get_tennis_round_mapping: Converts round names (e.g., "Final" → "F", "Semi-Final" → "SF")
+          * Column name: 'round' (NOT 'round_num')
+          * Handles variations like "Last 4", "Quarter-Final", "Round of 16", etc.
+        - get_tennis_tour_mapping: Converts tour names (e.g., "atp" → "ATP", "wta" → "WTA")
+        - get_tennis_hand_mapping: Converts hand names (e.g., "right-handed" → "R")
+        - get_grand_slam_tournament_names: Returns all Grand Slam tournament names for queries
 
         COLLATE NOCASE REQUIREMENT (CRITICAL):
         - MUST be used for ALL player name and tournament name comparisons
