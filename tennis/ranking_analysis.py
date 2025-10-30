@@ -10,6 +10,7 @@ import re
 from enum import Enum
 from functools import lru_cache
 from typing import Dict, List, Optional, Any
+from .tennis_analysis import determine_tour_context
 
 
 class RankingQuestionType(Enum):
@@ -19,13 +20,6 @@ class RankingQuestionType(Enum):
     CAREER_HIGH_RANKINGS = "career_high"         # Best ranking achieved
     RANKING_PROGRESSION = "ranking_progression"  # Ranking changes over time
     RANKING_COMPARISON = "ranking_comparison"    # Compare rankings between players
-
-
-class TourType(Enum):
-    """Tennis tour types."""
-    ATP = "ATP"  # Men's tennis
-    WTA = "WTA"  # Women's tennis
-    BOTH = "BOTH"  # Both tours
 
 
 # Ranking question patterns for classification
@@ -209,35 +203,6 @@ def classify_ranking_question(question: str) -> RankingQuestionType:
     return RankingQuestionType.OFFICIAL_RANKINGS
 
 
-@lru_cache(maxsize=128)
-def determine_tour_context(question: str) -> TourType:
-    """
-    Determine if question is about men's (ATP) or women's (WTA) tennis.
-    
-    Args:
-        question: The question to analyze
-        
-    Returns:
-        TourType enum value
-    """
-    men_keywords = ["men", "male", "atp", "men's", "masculine"]
-    women_keywords = ["women", "female", "wta", "women's", "feminine"]
-    
-    question_lower = question.lower()
-    
-    # Check for explicit tour mentions
-    if any(keyword in question_lower for keyword in men_keywords):
-        return TourType.ATP
-    elif any(keyword in question_lower for keyword in women_keywords):
-        return TourType.WTA
-    
-    # Check for player names that might indicate tour
-    # (This could be expanded with known player lists)
-    
-    # Default to ATP for ambiguous questions
-    return TourType.ATP
-
-
 @lru_cache(maxsize=256)
 def get_ranking_context(question: str, year: Optional[int] = None, tour: Optional[str] = None) -> str:
     """
@@ -256,8 +221,7 @@ def get_ranking_context(question: str, year: Optional[int] = None, tour: Optiona
     
     # Determine tour if not specified
     if not tour:
-        tour_enum = determine_tour_context(question)
-        tour = tour_enum.value
+        tour = determine_tour_context(question)
     
     # Get appropriate data source
     data_source = RANKING_DATA_SOURCES.get(question_type)
@@ -358,9 +322,7 @@ def extract_ranking_parameters(question: str) -> Dict[str, Any]:
 # Export key functions
 __all__ = [
     'RankingQuestionType',
-    'TourType', 
     'classify_ranking_question',
-    'determine_tour_context',
     'get_ranking_context',
     'get_ranking_sql_approach',
     'extract_ranking_parameters',

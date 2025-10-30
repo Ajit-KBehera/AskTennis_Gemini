@@ -9,11 +9,11 @@ from functools import lru_cache
 import json
 from .ranking_analysis import (
     get_ranking_context, 
-    determine_tour_context, 
     get_ranking_sql_approach,
     extract_ranking_parameters,
     classify_ranking_question
 )
+from .tennis_analysis import determine_tour_context
 
 # =============================================================================
 # TENNIS MAPPING DICTIONARIES
@@ -119,7 +119,6 @@ GRAND_SLAM_MAPPINGS = {
     "US Open": "US Open", "US": "US Open"
 }
 
-# Case-sensitive tournament name variations
 TOURNAMENT_CASE_VARIATIONS = {
     # US Open case variations
     "US Open": ["US Open", "Us Open"],
@@ -179,6 +178,29 @@ TOURNEY_LEVEL_MAPPINGS = {
     '75': 'ITF_75K', '80': 'ITF_80K', '100': 'ITF_100K', '200': 'ITF_200K'
 }
 
+COMBINED_TOURNAMENT_MAPPINGS = {
+    "rome": {"atp": "Rome Masters", "wta": "Rome"},
+    "basel": {"atp": "Basel", "wta": "Basel"},
+    "madrid": {"atp": "Madrid Masters", "wta": "Madrid"},
+    "indian wells": {"atp": "Indian Wells Masters", "wta": "Indian Wells"},
+    "miami": {"atp": "Miami Masters", "wta": "Miami"},
+    "monte carlo": {"atp": "Monte Carlo Masters", "wta": "Monte Carlo"},
+    "hamburg": {"atp": "Hamburg", "wta": "Hamburg"},
+    "stuttgart": {"atp": "Stuttgart", "wta": "Stuttgart"},
+    "eastbourne": {"atp": "Eastbourne", "wta": "Eastbourne"},
+    "newport": {"atp": "Newport", "wta": "Newport"},
+    "atlanta": {"atp": "Atlanta", "wta": "Atlanta"},
+    "washington": {"atp": "Washington", "wta": "Washington"},
+    "toronto": {"atp": "Toronto Masters", "wta": "Toronto"},
+    "montreal": {"atp": "Montreal Masters", "wta": "Montreal"},
+    "cincinnati": {"atp": "Cincinnati Masters", "wta": "Cincinnati"},
+    "winston salem": {"atp": "Winston Salem", "wta": "Winston Salem"},
+    "stockholm": {"atp": "Stockholm", "wta": "Stockholm"},
+    "antwerp": {"atp": "Antwerp", "wta": "Antwerp"},
+    "vienna": {"atp": "Vienna", "wta": "Vienna"},
+    "paris": {"atp": "Paris Masters", "wta": "Paris"}
+}
+
 # =============================================================================
 # TOURNAMENT LEVEL STANDARDIZATION FUNCTION
 # =============================================================================
@@ -223,29 +245,6 @@ def standardize_tourney_level(level, tour=None, era=None):
     # Handle unknown levels
     print(f"Warning: Unknown tourney_level '{level_str}' for tour '{tour}'")
     return level_str  # Keep as-is if unknown
-
-COMBINED_TOURNAMENT_MAPPINGS = {
-    "rome": {"atp": "Rome Masters", "wta": "Rome"},
-    "basel": {"atp": "Basel", "wta": "Basel"},
-    "madrid": {"atp": "Madrid Masters", "wta": "Madrid"},
-    "indian wells": {"atp": "Indian Wells Masters", "wta": "Indian Wells"},
-    "miami": {"atp": "Miami Masters", "wta": "Miami"},
-    "monte carlo": {"atp": "Monte Carlo Masters", "wta": "Monte Carlo"},
-    "hamburg": {"atp": "Hamburg", "wta": "Hamburg"},
-    "stuttgart": {"atp": "Stuttgart", "wta": "Stuttgart"},
-    "eastbourne": {"atp": "Eastbourne", "wta": "Eastbourne"},
-    "newport": {"atp": "Newport", "wta": "Newport"},
-    "atlanta": {"atp": "Atlanta", "wta": "Atlanta"},
-    "washington": {"atp": "Washington", "wta": "Washington"},
-    "toronto": {"atp": "Toronto Masters", "wta": "Toronto"},
-    "montreal": {"atp": "Montreal Masters", "wta": "Montreal"},
-    "cincinnati": {"atp": "Cincinnati Masters", "wta": "Cincinnati"},
-    "winston salem": {"atp": "Winston Salem", "wta": "Winston Salem"},
-    "stockholm": {"atp": "Stockholm", "wta": "Stockholm"},
-    "antwerp": {"atp": "Antwerp", "wta": "Antwerp"},
-    "vienna": {"atp": "Vienna", "wta": "Vienna"},
-    "paris": {"atp": "Paris Masters", "wta": "Paris"}
-}
 
 # =============================================================================
 # CACHED MAPPING FUNCTIONS
@@ -471,10 +470,19 @@ class TennisMappingTools:
             Returns:
                 JSON string with tour detection results
             """
-            tour_enum = determine_tour_context(question)
+            tour = determine_tour_context(question)
+            
+            # Map tour to human-readable name
+            if tour == "ATP":
+                tour_name = "Men's Tennis (ATP)"
+            elif tour == "WTA":
+                tour_name = "Women's Tennis (WTA)"
+            else:  # BOTH
+                tour_name = "Both Tours (ATP & WTA)"
+            
             return json.dumps({
-                "tour": tour_enum.value,
-                "tour_name": "Men's Tennis (ATP)" if tour_enum.value == "ATP" else "Women's Tennis (WTA)",
+                "tour": tour,
+                "tour_name": tour_name,
                 "confidence": "high" if any(keyword in question.lower() for keyword in ["men", "women", "atp", "wta"]) else "medium"
             })
         

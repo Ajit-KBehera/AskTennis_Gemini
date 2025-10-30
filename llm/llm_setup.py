@@ -18,6 +18,34 @@ class LLMFactory:
     """
     
     @staticmethod
+    def setup_llm_components(config: Dict[str, Any]) -> tuple[ChatGoogleGenerativeAI, SQLDatabase, SQLDatabaseToolkit]:
+        """
+        Setup all LLM components in one call.
+        
+        Args:
+            config: Configuration dictionary with 'api_key', 'model', 'temperature', 'db_path'
+            
+        Returns:
+            Tuple of (llm, db, toolkit)
+        """
+        # Create LLM
+        llm = LLMFactory.create_llm(
+            api_key=config['api_key'],
+            model=config.get('model', DEFAULT_MODEL),
+            temperature=config.get('temperature', DEFAULT_TEMPERATURE)
+        )
+        
+        # Create database connection
+        db = LLMFactory.create_database_connection(
+            db_path=config.get('db_path', DEFAULT_DB_PATH)
+        )
+        
+        # Create toolkit
+        toolkit = LLMFactory.create_toolkit(db, llm)
+        
+        return llm, db, toolkit
+    
+    @staticmethod
     def create_llm(api_key: str, model: str = DEFAULT_MODEL, temperature: float = DEFAULT_TEMPERATURE) -> ChatGoogleGenerativeAI:
         """
         Create a ChatGoogleGenerativeAI instance.
@@ -63,31 +91,3 @@ class LLMFactory:
             SQLDatabaseToolkit instance
         """
         return SQLDatabaseToolkit(db=db, llm=llm)
-    
-    @staticmethod
-    def setup_llm_components(config: Dict[str, Any]) -> tuple[ChatGoogleGenerativeAI, SQLDatabase, SQLDatabaseToolkit]:
-        """
-        Setup all LLM components in one call.
-        
-        Args:
-            config: Configuration dictionary with 'api_key', 'model', 'temperature', 'db_path'
-            
-        Returns:
-            Tuple of (llm, db, toolkit)
-        """
-        # Create LLM
-        llm = LLMFactory.create_llm(
-            api_key=config['api_key'],
-            model=config.get('model', DEFAULT_MODEL),
-            temperature=config.get('temperature', DEFAULT_TEMPERATURE)
-        )
-        
-        # Create database connection
-        db = LLMFactory.create_database_connection(
-            db_path=config.get('db_path', DEFAULT_DB_PATH)
-        )
-        
-        # Create toolkit
-        toolkit = LLMFactory.create_toolkit(db, llm)
-        
-        return llm, db, toolkit
