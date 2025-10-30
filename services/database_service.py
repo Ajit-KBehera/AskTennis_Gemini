@@ -6,7 +6,7 @@ Provides dynamic data for dropdowns and analysis
 import sqlite3
 import pandas as pd
 from typing import List, Dict, Any
-import streamlit as st  # pyright: ignore[reportMissingImports]
+import streamlit as st  
 from functools import lru_cache
 
 class DatabaseService:

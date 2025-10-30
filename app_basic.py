@@ -21,21 +21,23 @@ from ui.display.ui_display import UIDisplay
 from ui.formatting.consolidated_formatter import ConsolidatedFormatter
 from ui.processing.query_processor import QueryProcessor
 
+# Services
+from services.database_service import DatabaseService
+
 
 # Initialize the LangGraph agent
 try:
     agent_graph = setup_langgraph_agent()
-    
-    # Initialize UI components directly
-    ui_display = UIDisplay()
     data_formatter = ConsolidatedFormatter()
     query_processor = QueryProcessor(data_formatter)
+    db_service = DatabaseService()
+    ui_display = UIDisplay()
     
-    # Render search panel with Send/Clear buttons (matching app_ui.py functionality)
-    user_question = ui_display.render_search_panel()
+    # --- Top Panel: AskTennis Search ---
+    ui_display.render_search_panel()
     
-    if user_question:
-        query_processor.handle_user_query(user_question, agent_graph, logger)
+    # --- Results Panel: Process and Display Query Results ---
+    ui_display.render_results_panel(query_processor, agent_graph, logger, db_service)
         
 except Exception as e:
     st.error(f"Failed to initialize the AI agent: {e}")
