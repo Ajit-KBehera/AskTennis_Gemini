@@ -11,11 +11,34 @@ class ConsolidatedFormatter:
     """
     Consolidated data formatter that handles all formatting needs.
     Replaces multiple formatting methods with a single, configurable system.
+    
+    Method execution order:
+    1. __init__() - Initialize the formatter
+    2. format_with_context() - Public entry point, called by QueryProcessor
+    3. format_result() - Main formatting logic (called by format_with_context)
+    4. _filter_none_values() - Helper: filters None values (called by format_result)
+    5. _detect_context() - Helper: detects context from question (called by format_result)
+    6. _format_single_result() - Helper: formats single-row results (called by format_result)
+    7. _format_multiple_results() - Helper: formats multi-row results (called by format_result)
     """
     
     def __init__(self):
         """Initialize the consolidated formatter."""
         pass
+    
+    def format_with_context(self, data: List, user_question: str = "") -> str:
+        """
+        Format results with context detection from user question.
+        This method provides compatibility with the DataFormatter interface.
+        
+        Args:
+            data: The data to format
+            user_question: The user's question for context
+            
+        Returns:
+            Formatted result string
+        """
+        return self.format_result(data, user_question, context=None)
     
     def format_result(self, data: List, user_question: str = "", context: Dict[str, Any] = None) -> str:
         """
@@ -121,18 +144,4 @@ class ConsolidatedFormatter:
                 results.append(f"{i}. {row[0]}")
         
         return f"Found {len(data)} result(s):\n\n" + "\n".join(results)
-    
-    def format_with_context(self, data: List, user_question: str = "") -> str:
-        """
-        Format results with context detection from user question.
-        This method provides compatibility with the DataFormatter interface.
-        
-        Args:
-            data: The data to format
-            user_question: The user's question for context
-            
-        Returns:
-            Formatted result string
-        """
-        return self.format_result(data, user_question, context=None)
 

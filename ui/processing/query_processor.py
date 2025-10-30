@@ -16,6 +16,11 @@ class QueryProcessor:
     """
     Centralized query processing class for tennis queries.
     Handles agent interaction, response processing, and error handling.
+    
+    Method execution order:
+    1. __init__() - Initialize the processor
+    2. handle_user_query() - Main entry point, handles user query
+    3. process_agent_response() - Processes agent response (called by handle_user_query)
     """
     
     def __init__(self, data_formatter: ConsolidatedFormatter):
@@ -26,6 +31,57 @@ class QueryProcessor:
             data_formatter: ConsolidatedFormatter instance for formatting responses
         """
         self.data_formatter = data_formatter
+    
+    def handle_user_query(self, user_question: str, agent_graph, logger):
+        """Handle user query processing and response display."""
+        # Log the user query
+        log_user_query(user_question, "user_session")
+        
+        with st.spinner("The AI is analyzing your question and querying the database..."):
+            try:
+                start_time = datetime.now()
+                
+                # The config dictionary ensures each user gets their own conversation history.
+                config = {"configurable": {"thread_id": "user_session"}}
+                
+                # Log the initial LLM interaction
+                log_llm_interaction([HumanMessage(content=user_question)], "INITIAL_USER_QUERY")
+                
+                # Only pass the new message - LangGraph's checkpointer automatically loads
+                # conversation history from memory based on the thread_id in config
+                response = agent_graph.invoke(
+                    {"messages": [HumanMessage(content=user_question)]},
+                    config=config
+                )
+                
+                # Log the complete conversation flow
+                log_llm_interaction(response["messages"], "COMPLETE_CONVERSATION_FLOW")
+                
+                # Process the response
+                final_answer = self.process_agent_response(response, logger, user_question)
+                
+                # Calculate total processing time
+                end_time = datetime.now()
+                processing_time = (end_time - start_time).total_seconds()
+                
+                if final_answer and final_answer.strip():
+                    # Log successful response
+                    log_final_response(final_answer, processing_time)
+                    st.success("Here's what I found:")
+                    st.markdown(final_answer)
+                else:
+                    # Log warning case
+                    log_final_response("No clear response generated", processing_time)
+                    st.warning("I processed your request but couldn't generate a clear response. Please check the conversation flow below for details.")
+                    
+                    # Check if this might be a misspelling issue
+                    if "no results" in str(final_answer).lower() or "not found" in str(final_answer).lower():
+                        st.info("💡 **Tip**: If you didn't find what you're looking for, try checking the spelling of player or tournament names. The system is case-sensitive and requires exact matches.")
+
+            except Exception as e:
+                # Log error
+                log_error(e, f"Processing user query: {user_question}")
+                st.error(f"An error occurred while processing your request: {e}")
     
     def process_agent_response(self, response: dict, logger, user_question: str = "") -> str:
         """Process and format the agent's response."""
@@ -114,55 +170,3 @@ class QueryProcessor:
                             continue
         
         return final_answer
-    
-    
-    def handle_user_query(self, user_question: str, agent_graph, logger):
-        """Handle user query processing and response display."""
-        # Log the user query
-        log_user_query(user_question, "user_session")
-        
-        with st.spinner("The AI is analyzing your question and querying the database..."):
-            try:
-                start_time = datetime.now()
-                
-                # The config dictionary ensures each user gets their own conversation history.
-                config = {"configurable": {"thread_id": "user_session"}}
-                
-                # Log the initial LLM interaction
-                log_llm_interaction([HumanMessage(content=user_question)], "INITIAL_USER_QUERY")
-                
-                # --- REFINEMENT 3: The stateful graph only needs the new human message. ---
-                # It loads the history from memory automatically via the checkpointer.
-                response = agent_graph.invoke(
-                    {"messages": [HumanMessage(content=user_question)]},
-                    config=config
-                )
-                
-                # Log the complete conversation flow
-                log_llm_interaction(response["messages"], "COMPLETE_CONVERSATION_FLOW")
-                
-                # Process the response
-                final_answer = self.process_agent_response(response, logger, user_question)
-                
-                # Calculate total processing time
-                end_time = datetime.now()
-                processing_time = (end_time - start_time).total_seconds()
-                
-                if final_answer and final_answer.strip():
-                    # Log successful response
-                    log_final_response(final_answer, processing_time)
-                    st.success("Here's what I found:")
-                    st.markdown(final_answer)
-                else:
-                    # Log warning case
-                    log_final_response("No clear response generated", processing_time)
-                    st.warning("I processed your request but couldn't generate a clear response. Please check the conversation flow below for details.")
-                    
-                    # Check if this might be a misspelling issue
-                    if "no results" in str(final_answer).lower() or "not found" in str(final_answer).lower():
-                        st.info("💡 **Tip**: If you didn't find what you're looking for, try checking the spelling of player or tournament names. The system is case-sensitive and requires exact matches.")
-
-            except Exception as e:
-                # Log error
-                log_error(e, f"Processing user query: {user_question}")
-                st.error(f"An error occurred while processing your request: {e}")

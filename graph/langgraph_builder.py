@@ -16,6 +16,13 @@ class LangGraphBuilder:
     """
     Builder class for constructing the LangGraph agent.
     Centralizes all graph construction logic.
+    
+    Method execution order:
+    1. __init__() - Initialize the graph builder
+    2. build_graph() - Main entry point, builds and compiles the graph
+    3. create_agent_node() - Creates agent node (called by build_graph)
+    4. create_tool_node() - Creates tool node (called by build_graph)
+    5. create_conditional_edges() - Creates routing logic (called by build_graph)
     """
     
     def __init__(self, tools: List[Any], llm_with_tools, prompt):
@@ -30,6 +37,39 @@ class LangGraphBuilder:
         self.tools = tools
         self.llm_with_tools = llm_with_tools
         self.prompt = prompt
+    
+    def build_graph(self):
+        """
+        Build the complete LangGraph.
+        
+        Returns:
+            Compiled LangGraph instance
+        """
+        # Create the graph
+        graph = StateGraph(AgentState)
+        
+        # Add nodes
+        graph.add_node("agent", self.create_agent_node())
+        graph.add_node("tools", self.create_tool_node())
+        
+        # Set entry point
+        graph.set_entry_point("agent")
+        
+        # Add conditional edges
+        graph.add_conditional_edges(
+            "agent", 
+            self.create_conditional_edges(), 
+            {"tools": "tools", "end": END}
+        )
+        
+        # Add edge from tools back to agent
+        graph.add_edge("tools", "agent")
+        
+        # Compile with memory
+        memory = MemorySaver()
+        runnable_graph = graph.compile(checkpointer=memory)
+        
+        return runnable_graph
     
     def create_agent_node(self):
         """
@@ -121,36 +161,3 @@ class LangGraphBuilder:
             return "end"
         
         return should_continue
-    
-    def build_graph(self):
-        """
-        Build the complete LangGraph.
-        
-        Returns:
-            Compiled LangGraph instance
-        """
-        # Create the graph
-        graph = StateGraph(AgentState)
-        
-        # Add nodes
-        graph.add_node("agent", self.create_agent_node())
-        graph.add_node("tools", self.create_tool_node())
-        
-        # Set entry point
-        graph.set_entry_point("agent")
-        
-        # Add conditional edges
-        graph.add_conditional_edges(
-            "agent", 
-            self.create_conditional_edges(), 
-            {"tools": "tools", "end": END}
-        )
-        
-        # Add edge from tools back to agent
-        graph.add_edge("tools", "agent")
-        
-        # Compile with memory
-        memory = MemorySaver()
-        runnable_graph = graph.compile(checkpointer=memory)
-        
-        return runnable_graph
