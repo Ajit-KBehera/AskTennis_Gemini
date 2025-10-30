@@ -95,15 +95,16 @@ graph LR
 ```mermaid
 graph TD
     subgraph "Core Modules"
-        A[Tennis Core] --> B[Tennis Mappings]
-        A --> C[Tennis Prompts]
-        A --> D[Ranking Analysis]
+        A[Tennis Core] --> B[Mapping Dictionaries]
+        A --> C[Tennis Mapping Tools]
+        A --> D[Tennis Prompts]
+        A --> E[Ranking Analysis]
     end
     
     subgraph "AI Modules"
-        E[Agent Factory] --> F[LLM Setup]
-        E --> G[LangGraph Builder]
-        E --> H[Prompt Builder]
+        F[Agent Factory] --> G[LLM Setup]
+        F --> H[LangGraph Builder]
+        F --> I[Prompt Builder]
     end
     
     subgraph "UI Modules"
@@ -121,8 +122,8 @@ graph TD
         P --> S[Performance Monitor]
     end
     
-    A --> E
-    E --> I
+    A --> F
+    F --> I
     I --> P
 ```
 

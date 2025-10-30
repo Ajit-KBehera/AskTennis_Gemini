@@ -28,8 +28,8 @@ AskTennis AI is a comprehensive tennis analytics platform built with a modular, 
 ┌─────────────────────────────────────────────────────────────────┐
 │                       TENNIS CORE LAYER                        │
 ├─────────────────────────────────────────────────────────────────┤
-│  Tennis Core  │  Tennis      │  Tennis       │  Ranking      │
-│               │  Mappings    │  Prompts      │  Analysis     │
+│  Tennis Core  │  Mapping      │  Mapping      │  Tennis       │  Ranking      │
+│               │  Dicts        │  Tools        │  Prompts      │  Analysis     │
 └─────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
@@ -58,8 +58,8 @@ AskTennis AI is a comprehensive tennis analytics platform built with a modular, 
 ┌─────────────────────────────────────────────────────────────────┐
 │                    CONFIGURATION LAYER                         │
 ├─────────────────────────────────────────────────────────────────┤
-│  Agent Config  │  Database Config  │  Config  │  Constants      │
-│                │                   │          │  (root level)   │
+│  Config (Unified)  │  Constants      │  LLM Setup                │
+│                    │  (root level)   │                            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -93,7 +93,8 @@ graph TB
     
     subgraph "Tennis Core Layer"
         TennisCore[Tennis Core]
-        TennisMappings[Tennis Mappings]
+        MappingDicts[Mapping Dictionaries]
+        TennisMappings[Tennis Mapping Tools]
         TennisPrompts[Tennis Prompts]
         RankingAnalysis[Ranking Analysis]
     end
@@ -119,9 +120,7 @@ graph TB
     end
     
     subgraph "Configuration Layer"
-        AgentConfig[Agent Config]
-        DatabaseConfig[Database Config]
-        Config[Config]
+        Config[Config - Unified]
         Constants[Constants]
         LLMSetup[LLM Setup]
     end
@@ -134,6 +133,7 @@ graph TB
     AgentFactory --> TennisCore
     AgentFactory --> TennisMappings
     AgentFactory --> TennisPrompts
+    TennisMappings --> MappingDicts
     
     %% AI Agent to Data
     LangGraph --> Database
@@ -158,12 +158,9 @@ graph TB
     
     %% Configuration connections
     AgentFactory --> Config
-    Config --> AgentConfig
-    Config --> DatabaseConfig
     LLM --> LLMSetup
     UI --> Constants
-    AgentConfig --> Constants
-    DatabaseConfig --> Constants
+    Config --> Constants
     
     %% Database structure
     Database --> MatchesTable
@@ -189,8 +186,9 @@ graph TB
 
 ### 3. **Tennis Core Layer**
 - **Tennis Core**: Main tennis functionality orchestrator
-- **Tennis Mappings**: Terminology and mapping tools
-- **Tennis Prompts**: Specialized tennis query prompts
+- **Mapping Dictionaries**: Tennis terminology mapping dictionaries (separated for better organization)
+- **Tennis Mapping Tools**: LangChain tools for terminology conversion with caching
+- **Tennis Prompts**: Optimized tennis-specific prompts (44.6% reduction, references tools instead of duplicating mappings)
 - **Ranking Analysis**: Ranking analysis and validation tools
 
 ### 4. **Data Layer**
@@ -218,9 +216,10 @@ graph TB
 - **Specialized Handlers**: Query, response, error, and database logging
 
 ### 8. **Configuration Layer**
-- **Agent Config**: Agent and LLM configuration management
-- **Database Config**: Database connection configuration
-- **Config**: Main unified configuration class combining AgentConfig and DatabaseConfig
+- **Config**: Unified configuration class (consolidated from AgentConfig and DatabaseConfig)
+  - Handles LLM settings (model, temperature, API key)
+  - Manages database configuration (db_path)
+  - Single source for all configuration needs
 - **Constants**: Application-wide constants (root level)
 - **LLM Setup**: Language model configuration
 
@@ -285,30 +284,41 @@ sequenceDiagram
 
 ### 3. **AI Optimization**
 - **Tool Binding**: Pre-bound tools to LLM for faster execution
-- **Prompt Optimization**: Specialized prompts for tennis queries
+- **Prompt Optimization**: Optimized tennis-specific prompts (44.6% reduction from 617 to 342 lines)
+  - Removed duplicate mapping documentation
+  - References mapping tools instead of listing all mappings
+  - Single source of truth: mappings live in dictionaries, prompts reference tools
 - **Response Caching**: Cached responses for repeated queries
+- **Cached Mapping Tools**: LRU caching for mapping functions (4x speedup)
 
 ## 🔧 Configuration Management
 
-### 1. **Modular Configuration**
+### 1. **Unified Configuration**
 ```python
-# Agent Configuration
-class AgentConfig:
-    def __init__(self):
-        self.api_key = st.secrets["GOOGLE_API_KEY"]
-        self.model_name = DEFAULT_MODEL
-        self.temperature = DEFAULT_TEMPERATURE
-
-# Database Configuration
-class DatabaseConfig:
-    def __init__(self):
-        self.db_path = DEFAULT_DB_PATH
-
-# Unified Configuration
+# Unified Configuration Class (consolidated from AgentConfig and DatabaseConfig)
 class Config:
     def __init__(self):
-        self.agent_config = AgentConfig()
-        self.database_config = DatabaseConfig()
+        # LLM configuration
+        self.model_name = DEFAULT_MODEL
+        self.temperature = DEFAULT_TEMPERATURE
+        self.api_key = self._get_api_key()
+        
+        # Database configuration
+        self.db_path = DEFAULT_DB_PATH
+    
+    def get_llm_config(self) -> Dict[str, Any]:
+        """Get LLM configuration parameters."""
+        return {
+            "model": self.model_name,
+            "temperature": self.temperature,
+            "api_key": self.api_key
+        }
+    
+    def get_database_config(self) -> Dict[str, Any]:
+        """Get database configuration parameters."""
+        return {
+            "db_path": self.db_path
+        }
 ```
 
 ### 2. **Environment Variables**
@@ -388,6 +398,41 @@ class Config:
 - **User Satisfaction**: Track user feedback and satisfaction
 - **Query Success Rate**: Monitor successful query completion
 - **Feature Usage**: Track which features are most used
+
+---
+
+## 🚀 Recent Architectural Improvements
+
+### 1. **Configuration Consolidation**
+- **Unified Config Class**: Consolidated `AgentConfig` and `DatabaseConfig` into a single `Config` class
+- **Benefits**: 
+  - Eliminated code duplication
+  - Single source of truth for configuration
+  - Simplified configuration management
+  - Easier to maintain and extend
+
+### 2. **Mapping Dictionaries Separation**
+- **New File**: `tennis_mapping_dicts.py` - Contains all mapping dictionaries
+- **Separation of Concerns**: 
+  - Mapping dictionaries (data) separated from mapping tools (logic)
+  - Better code organization and maintainability
+  - Single source of truth for mappings
+
+### 3. **Prompt Optimization**
+- **44.6% Reduction**: System prompt reduced from 617 to 342 lines
+- **Architecture Improvements**:
+  - Removed duplicate mapping documentation from prompts
+  - Prompts now reference mapping tools instead of listing all mappings
+  - Single source of truth: mappings live in dictionaries, prompts reference tools
+- **Benefits**:
+  - Reduced prompt size and complexity
+  - Easier to maintain mapping dictionaries
+  - Faster prompt processing
+
+### 4. **Performance Enhancements**
+- **Cached Mapping Tools**: LRU caching for mapping functions (4x speedup)
+- **Optimized Database Queries**: Using `COLLATE NOCASE` for case-insensitive searches
+- **Reduced Redundancy**: Eliminated duplicate code and documentation
 
 ---
 
