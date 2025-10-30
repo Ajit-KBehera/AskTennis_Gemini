@@ -15,7 +15,7 @@ sys.path.append(str(Path(__file__).parent))
 
 from testing.test_runner import TennisTestRunner
 from testing.test_data.tennis_qa_dataset import TENNIS_QA_DATASET, get_test_categories
-from config.constants import MINIMUM_TEST_INTERVAL_SECONDS, DEFAULT_TEST_INTERVAL_SECONDS
+from constants import MINIMUM_TEST_INTERVAL_SECONDS, DEFAULT_TEST_INTERVAL_SECONDS
 
 
 def print_banner():

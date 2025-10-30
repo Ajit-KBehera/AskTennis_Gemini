@@ -1,20 +1,14 @@
 """
 Configuration package for AskTennis application.
-Contains all configuration constants and settings.
+Contains configuration classes and settings.
 """
 
-from .constants import (
-    DEFAULT_DB_PATH,
-    DEFAULT_MODEL,
-    DEFAULT_TEMPERATURE,
-    APP_TITLE,
-    APP_SUBTITLE,
-)
+from .agent_config import AgentConfig
+from .database_config import DatabaseConfig
+from .config import Config
 
 __all__ = [
-    'DEFAULT_DB_PATH',
-    'DEFAULT_MODEL', 
-    'DEFAULT_TEMPERATURE',
-    'APP_TITLE',
-    'APP_SUBTITLE'
+    'AgentConfig',
+    'DatabaseConfig',
+    'Config'
 ]

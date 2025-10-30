@@ -1,24 +1,23 @@
 """
-Unified configuration management for AskTennis AI application.
-Consolidates AgentConfigManager and AgentConfig into a single class.
+Agent configuration management for AskTennis AI application.
+Handles LLM and agent-specific configuration.
 """
 
 import streamlit as st
-from typing import Optional, Dict, Any
-from config.constants import DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_DB_PATH
+from typing import Dict, Any
+from constants import DEFAULT_MODEL, DEFAULT_TEMPERATURE
 
 
-class UnifiedAgentConfig:
+class AgentConfig:
     """
-    Unified configuration class for the tennis AI agent.
-    Consolidates all configuration management into a single class.
+    Configuration class for the tennis AI agent.
+    Handles LLM model configuration and API key management.
     """
     
     def __init__(self):
         """Initialize with default configuration."""
         self.model_name = DEFAULT_MODEL
         self.temperature = DEFAULT_TEMPERATURE
-        self.db_path = DEFAULT_DB_PATH
         self.api_key = self._get_api_key()
     
     def _get_api_key(self) -> str:
@@ -40,14 +39,7 @@ class UnifiedAgentConfig:
             "api_key": self.api_key
         }
     
-    def get_database_config(self) -> Dict[str, Any]:
-        """Get database configuration parameters."""
-        return {
-            "path": self.db_path,
-            "engine_kwargs": {}
-        }
-    
     def validate_config(self) -> bool:
-        """Validate that all required configuration is present."""
+        """Validate that all required agent configuration is present."""
         return self.api_key is not None and self.api_key.strip() != ""
 

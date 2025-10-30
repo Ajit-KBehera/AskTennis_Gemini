@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from agent.agent_factory import setup_langgraph_agent
-from config.constants import MINIMUM_TEST_INTERVAL_SECONDS, DEFAULT_TEST_INTERVAL_SECONDS
+from constants import MINIMUM_TEST_INTERVAL_SECONDS, DEFAULT_TEST_INTERVAL_SECONDS
 from .test_executor import TestExecutor
 from .result_analyzer import ResultAnalyzer
 from .database.test_db_manager import TestDatabaseManager

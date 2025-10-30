@@ -8,7 +8,7 @@ from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from sqlalchemy import create_engine
 from typing import Dict, Any
-from config.constants import DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_DB_PATH
+from constants import DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_DB_PATH
 
 
 class LLMFactory:
