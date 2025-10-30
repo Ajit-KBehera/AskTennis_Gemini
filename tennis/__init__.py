@@ -6,7 +6,6 @@ Consolidated tennis tools, mappings, and prompts.
 from .tennis_core import (
     TennisMappingTools,
     TennisPromptBuilder,
-    standardize_tourney_level,
     ROUND_MAPPINGS,
     SURFACE_MAPPINGS,
     TOUR_MAPPINGS,
@@ -19,7 +18,6 @@ from .tennis_core import (
 __all__ = [
     'TennisMappingTools',
     'TennisPromptBuilder', 
-    'standardize_tourney_level',
     'ROUND_MAPPINGS',
     'SURFACE_MAPPINGS', 
     'TOUR_MAPPINGS',

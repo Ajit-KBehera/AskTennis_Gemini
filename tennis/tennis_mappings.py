@@ -202,51 +202,6 @@ COMBINED_TOURNAMENT_MAPPINGS = {
 }
 
 # =============================================================================
-# TOURNAMENT LEVEL STANDARDIZATION FUNCTION
-# =============================================================================
-
-def standardize_tourney_level(level, tour=None, era=None):
-    """
-    Replace old tourney levels with new standardized levels.
-    Uses TOURNEY_LEVEL_MAPPINGS to convert historical and variant level codes
-    to standardized values.
-    
-    Args:
-        level: The original tourney_level value
-        tour: The tour (ATP or WTA) for context
-        era: The era for historical context (optional)
-    
-    Returns:
-        Standardized tourney_level value
-    
-    Examples:
-        >>> standardize_tourney_level('T1', tour='WTA')
-        'PM'
-        >>> standardize_tourney_level('G', tour='ATP')
-        'G'
-        >>> standardize_tourney_level('D', tour='WTA')
-        'BJK_Cup'
-    """
-    import pandas as pd
-    
-    if pd.isna(level) or level == '':
-        return level
-    
-    level_str = str(level).strip()
-    
-    # Special case: WTA D level → BJK_Cup
-    if level_str == 'D' and tour == 'WTA':
-        return 'BJK_Cup'
-    
-    # Direct mapping using TOURNEY_LEVEL_MAPPINGS
-    if level_str in TOURNEY_LEVEL_MAPPINGS:
-        return TOURNEY_LEVEL_MAPPINGS[level_str]
-    
-    # Handle unknown levels
-    print(f"Warning: Unknown tourney_level '{level_str}' for tour '{tour}'")
-    return level_str  # Keep as-is if unknown
-
-# =============================================================================
 # CACHED MAPPING FUNCTIONS
 # =============================================================================
 
@@ -580,7 +535,6 @@ class TennisMappingTools:
 
 __all__ = [
     'TennisMappingTools',
-    'standardize_tourney_level',
     'ROUND_MAPPINGS',
     'SURFACE_MAPPINGS', 
     'TOUR_MAPPINGS',
