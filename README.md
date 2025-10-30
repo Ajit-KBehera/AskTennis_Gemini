@@ -65,9 +65,9 @@ AskTennis features a clean, modular architecture designed for maintainability, t
 - **`ui/display/ui_display.py`** (276 lines) - UI display components and layout
 - **`agent/`** - AI agent configuration and factory patterns
 - **`llm/`** - LLM setup and configuration management
-- **`config/`** - Modular configuration (AgentConfig, DatabaseConfig, Config)
+- **`config/`** - Unified configuration management (single Config class)
 - **`constants.py`** - Application-wide constants (root level)
-- **`tennis/`** - Tennis-specific tools, mappings, and performance optimizations
+- **`tennis/`** - Tennis-specific tools, mappings (separated dictionaries), and performance optimizations
 - **`tennis_logging/`** - Comprehensive logging system with handlers
 - **`ui/`** - User interface components
 - **`graph/`** - LangGraph builder and state management
@@ -98,8 +98,9 @@ AskTennis_Streamlit/
 │   └── llm_setup.py                  # LLM factory and configuration
 ├── tennis/                           # 🎾 Tennis-Specific Tools
 │   ├── tennis_core.py                # Core tennis functionality
-│   ├── tennis_mappings.py            # Tennis terminology mappings
-│   ├── tennis_prompts.py             # Tennis-specific prompts
+│   ├── tennis_mapping_dicts.py       # Tennis terminology mapping dictionaries
+│   ├── tennis_mappings.py            # Tennis mapping tools and LangChain integration
+│   ├── tennis_prompts.py             # Optimized tennis-specific prompts (44.6% reduction)
 │   └── ranking_analysis.py           # Ranking analysis tools
 ├── tennis_logging/                   # 📝 Comprehensive Logging System
 │   ├── base_logger.py                # Base logging functionality
@@ -132,9 +133,7 @@ AskTennis_Streamlit/
 ├── load_data/                      # 📊 Data Loading
 │   └── load_data.py                # Main data loading script
 ├── config/                         # ⚙️ Configuration Management
-│   ├── agent_config.py             # Agent/LLM configuration
-│   ├── database_config.py          # Database configuration
-│   └── config.py                   # Main unified configuration class
+│   └── config.py                   # Unified configuration class (consolidated from AgentConfig/DatabaseConfig)
 ├── constants.py                    # 📋 Application-wide constants (root level)
 ├── docs/                          # 📚 Documentation
 │   ├── 01_System_Architecture.md   # System architecture documentation
@@ -477,16 +476,20 @@ For issues or questions:
 - **Enhanced Response Quality**: Player names and context in all responses
 - **Eliminated Duplicate Calls**: No more redundant tool executions
 - **Stable Architecture**: No infinite loops or recursion errors
+- **Optimized System Prompt**: 44.6% reduction (617 → 342 lines) while maintaining functionality
 
 ### 🏗️ Architectural Enhancements
-- **Modular Design**: Clean separation across 9 core modules
-- **Configuration Refactoring**: Split into modular AgentConfig, DatabaseConfig, and unified Config classes
+- **Unified Configuration**: Consolidated AgentConfig and DatabaseConfig into single Config class
+- **Mapping Dictionaries Separation**: Extracted mapping dictionaries to `tennis_mapping_dicts.py` for better organization
+- **Prompt Optimization**: Removed duplicate mapping documentation from prompts, references tools instead
+- **Single Source of Truth**: Mappings live in dictionaries only, prompts reference tools
 - **Code Organization**: Methods organized chronologically by execution flow
 - **Constants Management**: Moved constants to root level for easier access
 - **Performance Optimizations**: Cached mappings and monitoring systems
 - **Production Ready**: Stable system with comprehensive error handling
 - **Team Collaboration**: Parallel development on different modules
 - **Code Reusability**: Components can be reused across projects
+- **Reduced Redundancy**: Eliminated duplicate code and documentation
 
 ---
 
