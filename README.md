@@ -39,7 +39,7 @@
 ### 🏗️ **Modern Architecture**
 - **Modular Design**: Clean separation of concerns across 9 core modules
 - **Performance Optimized**: Cached mappings and monitoring systems
-- **Clean Code**: Two focused applications (44-line basic, 287-line enhanced UI) vs 571-line monolith
+- **Clean Code**: Two focused applications (45-line basic, 45-line enhanced UI) with modular components
 - **Testable Components**: Individual module testing capabilities
 - **Team Collaboration**: Parallel development on different modules
 - **Code Reusability**: Components can be reused across projects
@@ -60,10 +60,13 @@
 AskTennis features a clean, modular architecture designed for maintainability, testability, and scalability:
 
 ### 🧩 **Core Modules**
-- **`app_basic.py`** (44 lines) - Basic AI query interface
-- **`app_ui.py`** (287 lines) - Enhanced UI with filters and database service
+- **`app_basic.py`** (45 lines) - Basic AI query interface
+- **`app_ui.py`** (45 lines) - Enhanced UI with filters and database service
+- **`ui/display/ui_display.py`** (276 lines) - UI display components and layout
 - **`agent/`** - AI agent configuration and factory patterns
 - **`llm/`** - LLM setup and configuration management
+- **`config/`** - Modular configuration (AgentConfig, DatabaseConfig, Config)
+- **`constants.py`** - Application-wide constants (root level)
 - **`tennis/`** - Tennis-specific tools, mappings, and performance optimizations
 - **`tennis_logging/`** - Comprehensive logging system with handlers
 - **`ui/`** - User interface components
@@ -77,30 +80,27 @@ AskTennis features a clean, modular architecture designed for maintainability, t
 - **Code Reusability**: Components can be reused across projects
 - **Maintainability**: Changes are isolated to specific modules
 - **Collaboration**: Multiple developers can work on different modules
-- **Readability**: Two focused applications (44-line basic, 287-line enhanced UI) vs 571 lines
+- **Readability**: Two focused applications (45-line basic, 45-line enhanced UI) with modular components
 
 ## 📁 Project Structure
 
 ```
 AskTennis_Streamlit/
-├── app_basic.py                       # 🚀 Basic AI query interface (44 lines)
-├── app_ui.py                          # 🎨 Enhanced UI with filters (287 lines)
+├── app_basic.py                       # 🚀 Basic AI query interface (45 lines)
+├── app_ui.py                          # 🎨 Enhanced UI with filters (45 lines)
 ├── run_automated_tests.py             # 🧪 Automated testing framework CLI
 ├── requirements.txt                   # 📦 Unified dependencies
 ├── tennis_data.db                     # 🗃️ SQLite database (created after setup)
 ├── agent/                             # 🤖 AI Agent Configuration
 │   ├── agent_factory.py              # Agent factory with performance optimizations
-│   ├── agent_state.py                # Agent state management
-│   └── unified_config.py             # Unified configuration management
+│   └── agent_state.py                # Agent state management
 ├── llm/                              # 🧠 LLM Setup and Configuration
 │   └── llm_setup.py                  # LLM factory and configuration
 ├── tennis/                           # 🎾 Tennis-Specific Tools
 │   ├── tennis_core.py                # Core tennis functionality
 │   ├── tennis_mappings.py            # Tennis terminology mappings
 │   ├── tennis_prompts.py             # Tennis-specific prompts
-│   ├── tennis_utils.py               # Tennis utility functions
-│   ├── ranking_analysis.py           # Ranking analysis tools
-│   └── ranking_validator.py          # Ranking validation tools
+│   └── ranking_analysis.py           # Ranking analysis tools
 ├── tennis_logging/                   # 📝 Comprehensive Logging System
 │   ├── base_logger.py                # Base logging functionality
 │   ├── logging_factory.py            # Logging factory
@@ -108,10 +108,16 @@ AskTennis_Streamlit/
 │   ├── handlers/                     # Specialized logging handlers
 │   └── setup/                        # Logging configuration
 ├── ui/                              # 🎨 User Interface Components
-│   ├── consolidated_formatter.py     # Consolidated data formatting
 │   ├── display/                     # UI display components
+│   │   └── ui_display.py           # Main UI display class (276 lines)
 │   ├── formatting/                  # Data formatting utilities
-│   └── processing/                  # Query processing
+│   │   └── consolidated_formatter.py # Consolidated formatter
+│   ├── processing/                  # Query processing
+│   │   └── query_processor.py      # Query processing logic
+│   ├── styles/                     # UI styles
+│   │   └── styles.css              # Custom CSS
+│   └── utils/                      # UI utilities
+│       └── style_loader.py         # Style loader utilities
 ├── graph/                           # 🔗 LangGraph Builder
 │   └── langgraph_builder.py         # Graph construction and management
 ├── services/                        # 🔧 Services Layer
@@ -123,13 +129,13 @@ AskTennis_Streamlit/
 │   ├── test_data/                   # Test datasets and categories
 │   ├── database/                    # Test database management
 │   └── README.md                    # Testing framework documentation
-├── database/                       # 🗄️ Database Management
-│   └── database_utils.py           # Database utilities and operations
 ├── load_data/                      # 📊 Data Loading
-│   ├── load_data.py                # Main data loading script
-│   └── load_data_main_tour_singles_open_era.py # Specific data loader
+│   └── load_data.py                # Main data loading script
 ├── config/                         # ⚙️ Configuration Management
-│   └── constants.py                # Application constants
+│   ├── agent_config.py             # Agent/LLM configuration
+│   ├── database_config.py          # Database configuration
+│   └── config.py                   # Main unified configuration class
+├── constants.py                    # 📋 Application-wide constants (root level)
 ├── docs/                          # 📚 Documentation
 │   ├── 01_System_Architecture.md   # System architecture documentation
 │   ├── 02_Data_Flow.md             # Data flow documentation
@@ -137,10 +143,7 @@ AskTennis_Streamlit/
 │   ├── 04_Software_Process_Model.md # Software process documentation
 │   ├── 05_Use_Case_Diagram.md     # Use case documentation
 │   ├── 06_State_Diagram.md         # State diagram documentation
-│   ├── 07_UI_UX_Design.md          # UI/UX design documentation
-│   ├── README_DIAGRAMS.md          # Diagram documentation
-│   ├── SOLUTION_SUMMARY.md         # Solution summary
-│   └── database/                   # Database documentation
+│   └── 07_UI_UX_Design.md          # UI/UX design documentation
 ├── data/                          # 📊 Tennis data files (not in repo)
 │   ├── tennis_atp/               # ATP match data
 │   ├── tennis_wta/               # WTA match data
@@ -339,7 +342,7 @@ AskTennis includes a comprehensive automated testing framework with **100 curate
 ### **Testing Features**
 - **100 Test Cases**: Curated questions covering all tennis aspects
 - **8 Categories**: Tournament winners, head-to-head, surface performance, statistics, historical records, rankings, match details, and complex queries
-- **Automated Execution**: Run tests with configurable intervals (minimum 75 seconds, configurable in `config/constants.py`)
+- **Automated Execution**: Run tests with configurable intervals (minimum 75 seconds, configurable in `constants.py`)
 - **SQLite Database**: Store test results and sessions
 - **Performance Metrics**: Track execution times and completion rates
 - **Command-Line Interface**: Easy test execution and management
@@ -459,7 +462,7 @@ This project represents the most comprehensive tennis database in existence. Con
 ## 📞 Support
 
 For issues or questions:
-1. Check the documentation in `docs/database/`
+1. Check the documentation in `docs/`
 2. Review the troubleshooting section above
 3. Create an issue in the repository
 
@@ -477,6 +480,9 @@ For issues or questions:
 
 ### 🏗️ Architectural Enhancements
 - **Modular Design**: Clean separation across 9 core modules
+- **Configuration Refactoring**: Split into modular AgentConfig, DatabaseConfig, and unified Config classes
+- **Code Organization**: Methods organized chronologically by execution flow
+- **Constants Management**: Moved constants to root level for easier access
 - **Performance Optimizations**: Cached mappings and monitoring systems
 - **Production Ready**: Stable system with comprehensive error handling
 - **Team Collaboration**: Parallel development on different modules

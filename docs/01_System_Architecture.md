@@ -28,8 +28,8 @@ AskTennis AI is a comprehensive tennis analytics platform built with a modular, 
 ┌─────────────────────────────────────────────────────────────────┐
 │                       TENNIS CORE LAYER                        │
 ├─────────────────────────────────────────────────────────────────┤
-│  Tennis Core  │  Tennis      │  Tennis       │  Tennis Utils │
-│               │  Mappings    │  Prompts      │               │
+│  Tennis Core  │  Tennis      │  Tennis       │  Ranking      │
+│               │  Mappings    │  Prompts      │  Analysis     │
 └─────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
@@ -58,7 +58,8 @@ AskTennis AI is a comprehensive tennis analytics platform built with a modular, 
 ┌─────────────────────────────────────────────────────────────────┐
 │                    CONFIGURATION LAYER                         │
 ├─────────────────────────────────────────────────────────────────┤
-│  Unified Config  │  Constants  │  LLM Setup                     │
+│  Agent Config  │  Database Config  │  Config  │  Constants      │
+│                │                   │          │  (root level)   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -94,7 +95,7 @@ graph TB
         TennisCore[Tennis Core]
         TennisMappings[Tennis Mappings]
         TennisPrompts[Tennis Prompts]
-        TennisUtils[Tennis Utils]
+        RankingAnalysis[Ranking Analysis]
     end
     
     subgraph "Data Layer"
@@ -118,7 +119,9 @@ graph TB
     end
     
     subgraph "Configuration Layer"
-        Config[Unified Config]
+        AgentConfig[Agent Config]
+        DatabaseConfig[Database Config]
+        Config[Config]
         Constants[Constants]
         LLMSetup[LLM Setup]
     end
@@ -155,8 +158,12 @@ graph TB
     
     %% Configuration connections
     AgentFactory --> Config
+    Config --> AgentConfig
+    Config --> DatabaseConfig
     LLM --> LLMSetup
     UI --> Constants
+    AgentConfig --> Constants
+    DatabaseConfig --> Constants
     
     %% Database structure
     Database --> MatchesTable
@@ -184,7 +191,7 @@ graph TB
 - **Tennis Core**: Main tennis functionality orchestrator
 - **Tennis Mappings**: Terminology and mapping tools
 - **Tennis Prompts**: Specialized tennis query prompts
-- **Tennis Utils**: Utility functions and performance monitoring
+- **Ranking Analysis**: Ranking analysis and validation tools
 
 ### 4. **Data Layer**
 - **SQLite Database**: Primary data storage
@@ -211,8 +218,10 @@ graph TB
 - **Specialized Handlers**: Query, response, error, and database logging
 
 ### 8. **Configuration Layer**
-- **Unified Config**: Centralized configuration management
-- **Constants**: Application constants and settings
+- **Agent Config**: Agent and LLM configuration management
+- **Database Config**: Database connection configuration
+- **Config**: Main unified configuration class combining AgentConfig and DatabaseConfig
+- **Constants**: Application-wide constants (root level)
 - **LLM Setup**: Language model configuration
 
 ## 🔄 Data Flow Architecture
@@ -281,13 +290,25 @@ sequenceDiagram
 
 ## 🔧 Configuration Management
 
-### 1. **Unified Configuration**
+### 1. **Modular Configuration**
 ```python
-class UnifiedAgentConfig:
+# Agent Configuration
+class AgentConfig:
     def __init__(self):
-        self.api_key = os.getenv('GEMINI_API_KEY')
-        self.database_path = 'tennis_data.db'
-        self.model_name = 'gemini-2.5-flash-lite'
+        self.api_key = st.secrets["GOOGLE_API_KEY"]
+        self.model_name = DEFAULT_MODEL
+        self.temperature = DEFAULT_TEMPERATURE
+
+# Database Configuration
+class DatabaseConfig:
+    def __init__(self):
+        self.db_path = DEFAULT_DB_PATH
+
+# Unified Configuration
+class Config:
+    def __init__(self):
+        self.agent_config = AgentConfig()
+        self.database_config = DatabaseConfig()
 ```
 
 ### 2. **Environment Variables**

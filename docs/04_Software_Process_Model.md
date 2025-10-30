@@ -97,7 +97,7 @@ graph TD
     subgraph "Core Modules"
         A[Tennis Core] --> B[Tennis Mappings]
         A --> C[Tennis Prompts]
-        A --> D[Tennis Utils]
+        A --> D[Ranking Analysis]
     end
     
     subgraph "AI Modules"
