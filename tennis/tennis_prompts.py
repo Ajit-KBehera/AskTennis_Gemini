@@ -197,7 +197,6 @@ class TennisPromptBuilder:
            - Official Rankings: "top 10 in 2019", "ranked number 1", "year-end rankings"
              → USE: analyze_ranking_question tool FIRST
              → DATA SOURCE: player_rankings_history table
-             → TOUR: Use detect_tour_context tool to determine ATP/WTA
              → DATE: Use specific ranking dates (year-end: YYYY-12-30)
            
            - Match-time Rankings: "rank when he beat", "winner's rank", "loser's rank"
@@ -208,13 +207,10 @@ class TennisPromptBuilder:
            - Career High Rankings: "highest rank", "best ranking", "peak rank"
              → USE: player_rankings_history table
              → AGGREGATE: MIN(rank) for career high
-             → TOUR: Separate ATP/WTA using detect_tour_context
         
         2. TOUR DETERMINATION:
-           - ALWAYS use detect_tour_context tool for tour detection
            - Explicit mentions: "men's", "women's", "ATP", "WTA" → Use specified tour
-           - Ambiguous: Default to ATP (men's tennis)
-           - Mixed context: Ask for clarification
+           - If user doesn't specify ATP/WTA, search both tours using UNION
         
         3. TEMPORAL CONTEXT:
            - Year-specific: Use year-end rankings (YYYY-12-30)
@@ -494,6 +490,7 @@ class TennisPromptBuilder:
           * "WTA French Open 2022" → Add tour = 'WTA' to WHERE clause
         - If user doesn't specify ATP/WTA, search both tours using UNION
         - ALWAYS check user query for ATP/WTA specification and filter accordingly
+        - FOR Tour terminology normalization, use get_tennis_tour_mapping tool if needed
         
         CRITICAL: TENNIS SURFACE TERMINOLOGY (CACHED)
         - Tennis fans use various surface names that don't match database values

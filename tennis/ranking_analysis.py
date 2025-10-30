@@ -10,7 +10,6 @@ import re
 from enum import Enum
 from functools import lru_cache
 from typing import Dict, List, Optional, Any
-from .tennis_analysis import determine_tour_context
 
 
 class RankingQuestionType(Enum):
@@ -219,9 +218,9 @@ def get_ranking_context(question: str, year: Optional[int] = None, tour: Optiona
     # Classify question type
     question_type = classify_ranking_question(question)
     
-    # Determine tour if not specified
-    if not tour:
-        tour = determine_tour_context(question)
+    # Tour detection is handled by LLM via prompt instructions
+    # If tour is not provided, LLM will determine it from the question context
+    # or use UNION queries for ambiguous cases
     
     # Get appropriate data source
     data_source = RANKING_DATA_SOURCES.get(question_type)
