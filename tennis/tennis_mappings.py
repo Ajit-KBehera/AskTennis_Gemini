@@ -118,33 +118,6 @@ GRAND_SLAM_MAPPINGS = {
     "US Open": "US Open", "US": "US Open"
 }
 
-TOURNAMENT_CASE_VARIATIONS = {
-    # US Open case variations
-    "US Open": ["US Open", "Us Open"],
-    "us open": ["US Open", "Us Open"],
-    "Us Open": ["US Open", "Us Open"],
-    "US": ["US Open", "Us Open"],
-    "us": ["US Open", "Us Open"],
-    
-    # Australian Open case variations (if any exist)
-    "Australian Open": ["Australian Open"],
-    "australian open": ["Australian Open"],
-    "Aus Open": ["Australian Open"],
-    "aus open": ["Australian Open"],
-    
-    # French Open case variations (if any exist)
-    "French Open": ["Roland Garros"],
-    "french open": ["Roland Garros"],
-    "Roland Garros": ["Roland Garros"],
-    "roland garros": ["Roland Garros"],
-    
-    # Wimbledon case variations (if any exist)
-    "Wimbledon": ["Wimbledon"],
-    "wimbledon": ["Wimbledon"],
-    "The Championship": ["Wimbledon"],
-    "the championship": ["Wimbledon"]
-}
-
 TOURNEY_LEVEL_MAPPINGS = {
     # ATP Levels
     'G': 'G',  # Grand Slam
@@ -259,17 +232,6 @@ def _get_tournament_mapping(tournament: str) -> str:
     
     return json.dumps({"database_name": tournament, "type": "unknown"})
 
-@lru_cache(maxsize=128)
-def _get_tournament_case_variations(tournament: str) -> str:
-    """Cached tournament case variations function."""
-    tournament_clean = tournament.strip()
-    
-    # Check for case variations
-    if tournament_clean in TOURNAMENT_CASE_VARIATIONS:
-        return json.dumps({"variations": TOURNAMENT_CASE_VARIATIONS[tournament_clean], "type": "case_variations"})
-    
-    return json.dumps({"variations": [tournament_clean], "type": "single"})
-
 # =============================================================================
 # TENNIS MAPPING TOOLS
 # =============================================================================
@@ -373,25 +335,6 @@ class TennisMappingTools:
         return get_tournament_mapping
     
     @staticmethod
-    def create_tournament_case_variations_tool():
-        """Create the tennis tournament case variations tool."""
-        @tool
-        def get_tournament_case_variations(tournament: str) -> str:
-            """
-            Get case variations for tournament names to handle database inconsistencies.
-            Handles cases like 'US Open' vs 'Us Open' with caching.
-            
-            Args:
-                tournament: The tournament name to get variations for (e.g., 'US Open', 'us open')
-                
-            Returns:
-                JSON string with tournament name variations
-            """
-            return _get_tournament_case_variations(tournament)
-        
-        return get_tournament_case_variations
-    
-    @staticmethod
     def create_ranking_analysis_tool():
         """Create the tennis ranking analysis tool."""
         @tool
@@ -465,11 +408,10 @@ class TennisMappingTools:
                     "Australian Open",
                     "Roland Garros", 
                     "Wimbledon",
-                    "US Open",
-                    "Us Open"  # Case variation
+                    "US Open"
                 ],
-                "sql_pattern": "WHERE tourney_name IN ('Australian Open', 'Roland Garros', 'Wimbledon', 'US Open', 'Us Open')",
-                "usage": "For Grand Slam questions, use these exact tournament names in SQL queries"
+                "sql_pattern": "WHERE tourney_name COLLATE NOCASE IN ('Australian Open', 'Roland Garros', 'Wimbledon', 'US Open')",
+                "usage": "For Grand Slam questions, use COLLATE NOCASE to handle case variations in SQL queries"
             })
         
         return get_grand_slam_tournament_names
@@ -488,7 +430,6 @@ class TennisMappingTools:
             TennisMappingTools.create_tour_mapping_tool(),
             TennisMappingTools.create_hand_mapping_tool(),
             TennisMappingTools.create_tournament_mapping_tool(),
-            TennisMappingTools.create_tournament_case_variations_tool(),
             TennisMappingTools.create_grand_slam_mapping_tool(),
             TennisMappingTools.create_ranking_analysis_tool(),
             TennisMappingTools.create_ranking_sql_tool(),
@@ -506,7 +447,6 @@ __all__ = [
     'TOUR_MAPPINGS',
     'HAND_MAPPINGS',
     'GRAND_SLAM_MAPPINGS',
-    'TOURNAMENT_CASE_VARIATIONS',
     'TOURNEY_LEVEL_MAPPINGS',
     'COMBINED_TOURNAMENT_MAPPINGS'
 ]

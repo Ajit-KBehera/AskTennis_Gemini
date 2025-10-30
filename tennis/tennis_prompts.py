@@ -174,9 +174,9 @@ class TennisPromptBuilder:
         - Use minutes for match duration analysis
         
         COMMON QUERY PATTERNS:
-        - Tournament winners: WHERE round = 'F' AND tourney_name = 'Tournament Name'
-        - Head-to-head: WHERE (winner_name = 'Player A' AND loser_name = 'Player B') OR (winner_name = 'Player B' AND loser_name = 'Player A')
-        - Surface performance: WHERE surface = 'Clay' AND winner_name = 'Player Name'
+        - Tournament winners: WHERE round = 'F' AND tourney_name COLLATE NOCASE = 'Tournament Name'
+        - Head-to-head: WHERE (winner_name COLLATE NOCASE = 'Player A' AND loser_name COLLATE NOCASE = 'Player B') OR (winner_name COLLATE NOCASE = 'Player B' AND loser_name COLLATE NOCASE = 'Player A')
+        - Surface performance: WHERE surface = 'Clay' AND winner_name COLLATE NOCASE = 'Player Name'
         - Ranking analysis: WHERE winner_rank <= 10 OR loser_rank <= 10
         - Age analysis: WHERE winner_age BETWEEN 18 AND 25
         - Handedness analysis: WHERE winner_hand = 'L' (left-handed players)
@@ -198,11 +198,11 @@ class TennisPromptBuilder:
         - Combined tournaments: "Rome" → ATP="Rome Masters" + WTA="Rome", "Madrid" → ATP="Madrid Masters" + WTA="Madrid"
         - For combined tournaments without ATP/WTA specification, always search BOTH tours using UNION
         
-        TOURNAMENT CASE VARIATIONS:
-        - Tool: get_tournament_case_variations
-        - Purpose: Handle case sensitivity issues (e.g., "US Open" vs "Us Open")
-        - US Open: ALWAYS search both "US Open" AND "Us Open" using OR
-        - SQL Pattern: WHERE (tourney_name = 'US Open' OR tourney_name = 'Us Open')
+        TOURNAMENT CASE SENSITIVITY:
+        - ALWAYS use COLLATE NOCASE for tournament name comparisons to handle case variations
+        - SQL Pattern: WHERE tourney_name COLLATE NOCASE = 'US Open'
+        - This automatically handles variations like "US Open", "Us Open", "us open", etc.
+        - Example: WHERE tourney_name COLLATE NOCASE = 'US Open' AND event_year = 2009
         
         SURFACE MAPPING:
         - Tool: get_tennis_surface_mapping
@@ -318,12 +318,12 @@ class TennisPromptBuilder:
         
         SPECIFIC PLAYER WINS:
         - "How many times has X beaten Y?" → COUNT only X's wins
-        - SQL: WHERE winner_name = 'X' AND loser_name = 'Y'
+        - SQL: WHERE winner_name COLLATE NOCASE = 'X' AND loser_name COLLATE NOCASE = 'Y'
         
         FULL HEAD-TO-HEAD RECORD:
         - "Head-to-head record between X and Y" → COUNT both directions
         - "Total matches between X and Y" → COUNT all matches
-        - SQL: WHERE (winner_name = 'X' AND loser_name = 'Y') OR (winner_name = 'Y' AND loser_name = 'X')
+        - SQL: WHERE (winner_name COLLATE NOCASE = 'X' AND loser_name COLLATE NOCASE = 'Y') OR (winner_name COLLATE NOCASE = 'Y' AND loser_name COLLATE NOCASE = 'X')
         
         KEYWORD ANALYSIS:
         - "beaten" = specific player's wins only
@@ -380,17 +380,44 @@ class TennisPromptBuilder:
         LOGICAL OPERATOR PRECEDENCE:
         - ALWAYS use parentheses when combining OR and AND conditions
         - AND has higher precedence than OR, which can cause unexpected results without parentheses
-        - WRONG: WHERE winner_name = 'Player A' OR loser_name = 'Player A' AND event_year = 2017
-        - CORRECT: WHERE (winner_name = 'Player A' OR loser_name = 'Player A') AND event_year = 2017
+        - WRONG: WHERE winner_name COLLATE NOCASE = 'Player A' OR loser_name COLLATE NOCASE = 'Player A' AND event_year = 2017
+        - CORRECT: WHERE (winner_name COLLATE NOCASE = 'Player A' OR loser_name COLLATE NOCASE = 'Player A') AND event_year = 2017
         - WRONG: WHERE tour = 'ATP' OR tour = 'WTA' AND surface = 'Clay'
         - CORRECT: WHERE (tour = 'ATP' OR tour = 'WTA') AND surface = 'Clay'
         
+        COLLATE NOCASE REQUIREMENT:
+        - CRITICAL: COLLATE NOCASE MUST be used for ALL player name and tournament name comparisons
+        - Syntax: column_name COLLATE NOCASE = 'value'
+        - CORRECT: WHERE winner_name COLLATE NOCASE = 'Roger Federer'
+        - CORRECT: WHERE tourney_name COLLATE NOCASE = 'US Open'
+        - WRONG: WHERE winner_name = 'Roger Federer' COLLATE NOCASE (wrong position)
+        - WRONG: WHERE winner_name COLLATE NOCASE LIKE '%Federer%' (use exact match, not LIKE)
+        - The sql_db_query_checker may format queries, but COLLATE NOCASE MUST be preserved in final execution
+        - If checker removes COLLATE NOCASE, regenerate query with COLLATE NOCASE explicitly included
+        
         PLAYER NAME VARIATIONS:
-        - Player names in database may differ from common usage
-        - Examples: "Carlos Alcaraz" (not "Carlos Alcaraz Garfia")
-        - If no results found, try simpler names without middle names or suffixes
-        - Use LIKE for partial matching: WHERE winner_name LIKE '%Alcaraz%'
+        - CRITICAL: ALWAYS use exact matching with COLLATE NOCASE for player name comparisons
+        - NEVER use LIKE patterns for player names initially - use exact equality with COLLATE NOCASE
+        - If user provides partial name (e.g., "Federer"), resolve to full name (e.g., "Roger Federer") using your knowledge before querying
+        - SQL Pattern (Primary): WHERE winner_name COLLATE NOCASE = 'Roger Federer'
         - Always check both winner_name and loser_name for player queries
+        - Example: WHERE (winner_name COLLATE NOCASE = 'Roger Federer' OR loser_name COLLATE NOCASE = 'Roger Federer')
+        - CRITICAL: COLLATE NOCASE MUST be included in EVERY player name comparison to handle case inconsistencies
+        - This ensures consistent results regardless of case variations in the database (e.g., "Roger Federer" vs "ROGER FEDERER")
+        - Player names in database may differ from common usage (e.g., "Carlos Alcaraz" not "Carlos Alcaraz Garfia")
+        
+        FALLBACK STRATEGY FOR NO RESULTS:
+        - If exact match with full name returns no results, try fallback queries in this order:
+          1. First fallback: Try exact match without middle names/suffixes (e.g., "Roger Federer" → "Roger Federer" without middle name)
+          2. Second fallback: Use LIKE with last name only: WHERE winner_name LIKE '%Federer%' COLLATE NOCASE
+          3. Third fallback: Use LIKE with first name only: WHERE winner_name LIKE '%Roger%' COLLATE NOCASE
+        - This handles spelling mismatches in the database (e.g., database has "Rogger Federer" instead of "Roger Federer")
+        - Example fallback sequence:
+          * Query 1: WHERE winner_name COLLATE NOCASE = 'Roger Federer' (no results)
+          * Query 2: WHERE winner_name LIKE '%Federer%' COLLATE NOCASE (find matches with last name)
+          * Query 3: WHERE winner_name LIKE '%Roger%' COLLATE NOCASE (if last name also fails)
+        - Always include COLLATE NOCASE in fallback LIKE queries as well
+        - If fallback finds results, inform user: "Found matches for player with similar name: [Actual Name from results]"
         
         ============================================================================
         SECTION 7: RESPONSE FORMATTING
@@ -516,6 +543,15 @@ class TennisPromptBuilder:
         - If query is too narrow, suggest broader context
         - For creative questions, provide the best available data and explain limitations
         - For hypothetical questions, provide historical context and similar real examples
+        
+        PLAYER NAME NOT FOUND FALLBACK:
+        - If player name query returns zero results, automatically try fallback queries:
+          1. Check if spelling might be different - try LIKE with last name only
+          2. Check if first name might be different - try LIKE with first name only
+          3. If multiple players match, identify the most likely based on context (tour, year, tournament level)
+        - Example: "Roger Federer" returns no results → try "WHERE winner_name LIKE '%Federer%' COLLATE NOCASE"
+        - If fallback finds results, inform user: "Found matches for player with similar name: [Actual Name]"
+        - Always use COLLATE NOCASE in fallback queries to handle case variations
         
         ============================================================================
         SECTION 10: CONFIDENCE & CAPABILITY GUIDELINES
