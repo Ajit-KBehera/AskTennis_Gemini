@@ -4,7 +4,7 @@ Reduces multiple formatting methods into a single, configurable formatter.
 """
 
 import re
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 
 class ConsolidatedFormatter:

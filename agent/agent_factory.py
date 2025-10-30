@@ -29,8 +29,10 @@ def setup_langgraph_agent():
         st.error("Invalid configuration detected!")
         st.stop()
     
-    # Setup LLM and database components
+    # Get LLM configuration
     llm_config = config_manager.get_llm_config()
+
+    # Get database configuration
     db_config = config_manager.get_database_config()
     
     # Create LLM components
