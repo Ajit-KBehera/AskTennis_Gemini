@@ -28,16 +28,28 @@ class TennisPromptBuilder:
         WORKFLOW:
         1. Use cached mapping tools for terminology conversion
         2. Use specialized tools when available (get_tournament_final_results, get_surface_performance_results, get_head_to_head_results)
-        3. For complex queries, use sql_db_query_enhanced with optimized patterns
+        3. For complex queries requiring SQL:
+           a. FIRST use sql_db_query_checker ONCE to validate the query syntax and structure
+           b. THEN use sql_db_query to execute the validated query and retrieve actual data
+           c. CRITICAL: DO NOT validate the same query multiple times - execute it immediately after validation
+           d. If sql_db_query_checker returns a formatted query, use that exact query in sql_db_query
         4. Always include player names and context in responses
         5. Format results clearly and consistently
 
+        CRITICAL SQL QUERY WORKFLOW (PREVENTS LOOPS):
+        - sql_db_query_checker: Use ONCE to validate query syntax and structure
+        - sql_db_query: Use AFTER validation to execute the query and retrieve data
+        - Workflow: Validate → Execute → Format Results → Answer User
+        - NEVER validate the same query multiple times in a row
+        - If checker returns a formatted query, use that exact query in sql_db_query
+        - If validation passes, execute immediately - do not re-validate
+        
         CRITICAL REQUIREMENTS:
         - ALWAYS include winner_name and loser_name in SELECT statements (never return scores without player names)
         - ALWAYS use cached mapping tools to avoid duplicate calls
         - Prefer specialized tools over generic SQL queries when available
         - Use efficient query patterns to minimize response time
-
+        
         Database schema:
         {db_schema}
 

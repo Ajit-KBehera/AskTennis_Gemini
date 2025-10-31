@@ -70,6 +70,14 @@ class UIDisplay:
             col_search, col_buttons = st.columns(column_layout)
             
             with col_search:
+                # Handle clearing search input if flag is set
+                # Must clear before widget is created to avoid Streamlit error
+                if st.session_state.get('clear_search_input', False):
+                    # Clear the flag and reset the input value
+                    del st.session_state.clear_search_input
+                    if 'ai_search_input' in st.session_state:
+                        del st.session_state.ai_search_input
+                
                 ai_query = st.text_input(
                     "AskTennis Search:",
                     placeholder="Ask any tennis question (e.g., Who won Wimbledon 2022?)",
@@ -95,10 +103,12 @@ class UIDisplay:
                     # Always render the Clear button to ensure it's visible
                     clear_clicked = st.button("Clear", key="search_clear_button", use_container_width=True)
                     if clear_clicked:
-                        st.session_state.ai_search_input = ""
+                        # Clear all related session state
                         st.session_state.ai_query_results = None
                         st.session_state.show_ai_results = False
                         st.session_state.analysis_generated = False
+                        # Use flag-based approach to clear search input (must clear before widget creation)
+                        st.session_state.clear_search_input = True
                         st.rerun()
         
         # Return query from session state if it exists and show_ai_results is True
@@ -255,6 +265,26 @@ class UIDisplay:
             try:
                 with st.spinner("AI is analyzing your question..."):
                     query_processor.handle_user_query(st.session_state.ai_query, agent_graph, logger)
+                
+                # Display summary and response if available
+                summary = st.session_state.get('ai_query_summary')
+                response = st.session_state.get('ai_query_response')
+                
+                if response:
+                    # Show summary if available (only generated for responses > 5 lines)
+                    if summary:
+                        st.markdown("### Summary")
+                        st.info(summary)
+                    
+                    # Show full response
+                    st.markdown(response)
+                else:
+                    st.warning("I processed your request but couldn't generate a clear response. Please check the conversation flow below for details.")
+                    
+                    # Check if this might be a misspelling issue
+                    if "no results" in str(response).lower() or "not found" in str(response).lower():
+                        st.info("💡 **Tip**: If you didn't find what you're looking for, try checking the spelling of player or tournament names. The system is case-sensitive and requires exact matches.")
+                
             except Exception as e:
                 st.error(f"Error processing query: {e}")
         

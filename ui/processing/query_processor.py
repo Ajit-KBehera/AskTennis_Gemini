@@ -7,6 +7,7 @@ Extracted from ui_components.py for better modularity.
 import streamlit as st
 import ast
 from datetime import datetime
+from typing import Optional
 from langchain_core.messages import HumanMessage, AIMessage
 from tennis_logging.logging_factory import log_user_query, log_llm_interaction, log_final_response, log_error
 from ui.formatting.consolidated_formatter import ConsolidatedFormatter
@@ -32,8 +33,49 @@ class QueryProcessor:
         """
         self.data_formatter = data_formatter
     
+    def _generate_summary(self, response_text: str) -> Optional[str]:
+        """
+        Generate a 1-line summary of the response if it's longer than 4-5 lines.
+        
+        Args:
+            response_text: The full AI response text
+            
+        Returns:
+            Summary string if response is long enough, None otherwise
+        """
+        if not response_text or not response_text.strip():
+            return None
+        
+        # Split response into lines (excluding empty lines)
+        lines = [line.strip() for line in response_text.split('\n') if line.strip()]
+        
+        # Only generate summary if response is longer than 5 lines
+        if len(lines) <= 5:
+            return None
+        
+        # Generate summary from first 2-3 sentences or first paragraph
+        # Try to extract first meaningful sentence(s)
+        sentences = response_text.split('. ')
+        
+        if len(sentences) >= 2:
+            # Take first 1-2 sentences as summary
+            summary = '. '.join(sentences[:2])
+            if not summary.endswith('.'):
+                summary += '.'
+            return summary.strip()
+        elif len(sentences) == 1:
+            # Single sentence - take first part if too long
+            first_sentence = sentences[0]
+            if len(first_sentence) > 150:
+                # Take first 150 chars and add ellipsis
+                return first_sentence[:150].rsplit(' ', 1)[0] + "..."
+            return first_sentence
+        
+        # Fallback: take first line
+        return lines[0] if lines else None
+    
     def handle_user_query(self, user_question: str, agent_graph, logger):
-        """Handle user query processing and response display."""
+        """Handle user query processing and store results in session state."""
         # Log the user query
         log_user_query(user_question, "user_session")
         
@@ -64,19 +106,19 @@ class QueryProcessor:
                 end_time = datetime.now()
                 processing_time = (end_time - start_time).total_seconds()
                 
+                # Generate summary if response is long enough
+                summary = self._generate_summary(final_answer) if final_answer else None
+                
+                # Store response and summary in session state for display
+                st.session_state.ai_query_response = final_answer
+                st.session_state.ai_query_summary = summary
+                
                 if final_answer and final_answer.strip():
                     # Log successful response
                     log_final_response(final_answer, processing_time)
-                    st.success("Here's what I found:")
-                    st.markdown(final_answer)
                 else:
                     # Log warning case
                     log_final_response("No clear response generated", processing_time)
-                    st.warning("I processed your request but couldn't generate a clear response. Please check the conversation flow below for details.")
-                    
-                    # Check if this might be a misspelling issue
-                    if "no results" in str(final_answer).lower() or "not found" in str(final_answer).lower():
-                        st.info("💡 **Tip**: If you didn't find what you're looking for, try checking the spelling of player or tournament names. The system is case-sensitive and requires exact matches.")
 
             except Exception as e:
                 # Log error
