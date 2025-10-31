@@ -7,6 +7,7 @@ Extracted from ui_components.py for better modularity.
 import streamlit as st
 import ast
 import pandas as pd
+import re
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple
 from langchain_core.messages import HumanMessage, AIMessage
@@ -231,11 +232,14 @@ class QueryProcessor:
         # Determine if table should be shown
         is_table_candidate = self._should_show_table(structured_data, summary, user_question)
         
+        # Extract SQL query for column name inference
+        sql_query = self._extract_sql_query_from_messages(current_query_messages, logger)
+        
         # Convert structured data to DataFrame if applicable
         dataframe = None
         if structured_data and is_table_candidate:
             try:
-                dataframe = self._convert_to_dataframe(structured_data, user_question)
+                dataframe = self._convert_to_dataframe(structured_data, user_question, sql_query, current_query_messages)
             except Exception as e:
                 if logger is not None:
                     logger.info(f"Failed to convert to DataFrame: {e}")
@@ -310,10 +314,17 @@ class QueryProcessor:
         # Multiple rows
         return f"Found {num_rows} result(s) matching your query."
     
-    def _convert_to_dataframe(self, structured_data: List[List], user_question: str) -> pd.DataFrame:
+    def _convert_to_dataframe(self, structured_data: List[List], user_question: str, 
+                             sql_query: Optional[str] = None, messages: Optional[List] = None) -> pd.DataFrame:
         """
         Convert structured data (list of lists) to pandas DataFrame.
-        Attempts to infer column names from query context or use generic names.
+        Uses adaptive column name inference from SQL query, data patterns, and query context.
+        
+        Args:
+            structured_data: List of lists representing rows
+            user_question: User's question for context
+            sql_query: SQL query string (if available)
+            messages: Message list for additional context
         """
         if not structured_data:
             return pd.DataFrame()
@@ -322,22 +333,357 @@ class QueryProcessor:
         if num_cols == 0:
             return pd.DataFrame()
         
-        # Try to infer column names based on common patterns
-        column_names = self._infer_column_names(structured_data, num_cols, user_question)
+        # Try to infer column names using adaptive multi-layer approach
+        column_names = self._infer_column_names(structured_data, num_cols, user_question, sql_query, messages)
         
         # Create DataFrame
         df = pd.DataFrame(structured_data, columns=column_names)
         
         return df
     
-    def _infer_column_names(self, structured_data: List[List], num_cols: int, user_question: str) -> List[str]:
+    def _extract_sql_query_from_messages(self, messages: List, logger) -> Optional[str]:
         """
-        Infer column names from data patterns or query context.
-        Returns list of column names.
+        Extract SQL query from agent response messages.
+        Looks for SQL queries in tool calls and message content.
+        
+        Args:
+            messages: List of messages from current query
+            logger: Logger instance
+            
+        Returns:
+            SQL query string or None if not found
         """
-        # Common column name patterns based on data structure
+        
+        for message in reversed(messages):
+            # Check tool calls
+            if hasattr(message, 'tool_calls') and message.tool_calls:
+                for tool_call in message.tool_calls:
+                    if tool_call.get('name') in ['sql_db_query', 'sql_db_query_checker']:
+                        args = tool_call.get('args', {})
+                        query = args.get('query', '')
+                        if query:
+                            return query
+            
+            # Check message content for SQL code blocks
+            if hasattr(message, 'content') and message.content:
+                content_str = str(message.content)
+                
+                # Look for SQL code blocks
+                sql_pattern = r'```sqlite?\s*\n?(.*?)```'
+                matches = re.findall(sql_pattern, content_str, re.DOTALL | re.IGNORECASE)
+                if matches:
+                    return matches[0].strip()
+                
+                # Look for SELECT statements in content
+                if 'SELECT' in content_str.upper():
+                    # Try to extract SQL query
+                    lines = content_str.split('\n')
+                    sql_lines = []
+                    in_sql = False
+                    for line in lines:
+                        if 'SELECT' in line.upper():
+                            in_sql = True
+                            sql_lines.append(line)
+                        elif in_sql:
+                            sql_lines.append(line)
+                            # Stop at common SQL terminators
+                            if any(term in line.upper() for term in ['```', 'UNION', 'WHERE', 'FROM', 'ORDER', 'GROUP', 'LIMIT']):
+                                break
+                    if sql_lines:
+                        return ' '.join(sql_lines).strip()
+        
+        return None
+    
+    def _parse_sql_column_names(self, sql_query: str, num_cols: int) -> Optional[List[str]]:
+        """
+        Parse column names from SQL SELECT statement.
+        
+        Args:
+            sql_query: SQL query string
+            num_cols: Expected number of columns
+            
+        Returns:
+            List of column names or None if parsing fails
+        """
+        
+        if not sql_query:
+            return None
+        
+        try:
+            # Normalize SQL query
+            sql_query = sql_query.strip()
+            
+            # Handle UNION queries - take first SELECT clause
+            if 'UNION' in sql_query.upper():
+                sql_query = sql_query.split('UNION')[0]
+            
+            # Extract SELECT clause
+            select_match = re.search(r'SELECT\s+(.*?)\s+FROM', sql_query, re.IGNORECASE | re.DOTALL)
+            if not select_match:
+                return None
+            
+            select_clause = select_match.group(1).strip()
+            
+            # Split by comma, handling nested functions and subqueries
+            columns = []
+            current_col = ""
+            paren_depth = 0
+            
+            for char in select_clause:
+                if char == '(':
+                    paren_depth += 1
+                    current_col += char
+                elif char == ')':
+                    paren_depth -= 1
+                    current_col += char
+                elif char == ',' and paren_depth == 0:
+                    if current_col.strip():
+                        columns.append(current_col.strip())
+                    current_col = ""
+                else:
+                    current_col += char
+            
+            # Add last column
+            if current_col.strip():
+                columns.append(current_col.strip())
+            
+            # Clean and extract column names
+            column_names = []
+            for col in columns:
+                col = col.strip()
+                
+                # Handle AS aliases
+                if ' AS ' in col.upper():
+                    alias = col.split(' AS ')[-1].strip()
+                    column_names.append(self._clean_column_name(alias))
+                # Handle aliases with quotes
+                elif re.search(r'\s+["\']?(\w+)["\']?\s*$', col):
+                    match = re.search(r'\s+["\']?(\w+)["\']?\s*$', col)
+                    column_names.append(self._clean_column_name(match.group(1)))
+                # Handle aggregate functions
+                elif re.match(r'\w+\(.*?\)', col, re.IGNORECASE):
+                    func_match = re.match(r'(\w+)\(.*?\)', col, re.IGNORECASE)
+                    func_name = func_match.group(1).lower()
+                    if func_name in ['count', 'sum', 'avg', 'min', 'max']:
+                        # Try to extract column name from function
+                        inner_match = re.search(r'\(["\']?(\w+)["\']?\)', col, re.IGNORECASE)
+                        if inner_match:
+                            column_names.append(f"{func_name.title()}({self._clean_column_name(inner_match.group(1))})")
+                        else:
+                            column_names.append(f"{func_name.title()}")
+                    else:
+                        column_names.append(self._clean_column_name(col))
+                # Handle simple column names
+                else:
+                    # Remove quotes and get column name
+                    clean_name = re.sub(r'["\']', '', col)
+                    # Handle table.column format
+                    if '.' in clean_name:
+                        clean_name = clean_name.split('.')[-1]
+                    column_names.append(self._clean_column_name(clean_name))
+            
+            # Ensure we have the right number of columns
+            if len(column_names) == num_cols:
+                return column_names
+            elif len(column_names) > num_cols:
+                return column_names[:num_cols]
+            else:
+                # Pad with generic names if needed
+                while len(column_names) < num_cols:
+                    column_names.append(f"Column_{len(column_names) + 1}")
+                return column_names
+                
+        except Exception as e:
+            return None
+    
+    def _clean_column_name(self, name: str) -> str:
+        """Clean and format column name for display."""
+        
+        # Remove quotes and whitespace
+        name = re.sub(r'["\']', '', name).strip()
+        
+        # Handle snake_case to Title Case
+        if '_' in name:
+            parts = name.split('_')
+            name = ' '.join(word.capitalize() for word in parts)
+        else:
+            # Capitalize first letter
+            name = name.capitalize()
+        
+        return name
+    
+    def _analyze_data_patterns(self, structured_data: List[List], num_cols: int) -> Optional[List[str]]:
+        """
+        Analyze data patterns to infer column names from actual data values.
+        
+        Args:
+            structured_data: List of lists representing rows
+            num_cols: Number of columns
+            
+        Returns:
+            List of inferred column names or None
+        """
+        if not structured_data or len(structured_data) == 0:
+            return None
+        
+        column_names = []
+        
+        for col_idx in range(num_cols):
+            # Collect all values in this column
+            column_values = [str(row[col_idx]).strip() for row in structured_data if len(row) > col_idx]
+            
+            if not column_values:
+                column_names.append(f"Column_{col_idx + 1}")
+                continue
+            
+            # Analyze patterns
+            first_value = column_values[0] if column_values else ""
+            
+            # Check for player names (common tennis data)
+            if self._looks_like_player_name(first_value):
+                if any('winner' in str(v).lower() for v in column_values[:3]):
+                    column_names.append('Winner')
+                elif any('loser' in str(v).lower() for v in column_values[:3]):
+                    column_names.append('Loser')
+                else:
+                    column_names.append('Player')
+            
+            # Check for years
+            elif self._looks_like_year(first_value):
+                column_names.append('Year')
+            
+            # Check for scores
+            elif self._looks_like_score(first_value):
+                column_names.append('Score')
+            
+            # Check for numeric data
+            elif self._is_numeric(first_value):
+                # Check if it's a ranking
+                if self._could_be_ranking(column_values):
+                    column_names.append('Rank')
+                # Check if it's a count
+                elif self._could_be_count(column_values):
+                    column_names.append('Count')
+                else:
+                    column_names.append('Value')
+            
+            # Check for tournament names
+            elif self._looks_like_tournament(first_value):
+                column_names.append('Tournament')
+            
+            # Check for surface types
+            elif self._looks_like_surface(first_value):
+                column_names.append('Surface')
+            
+            # Default
+            else:
+                column_names.append(f"Column_{col_idx + 1}")
+        
+        return column_names if len(column_names) == num_cols else None
+    
+    def _looks_like_player_name(self, value: str) -> bool:
+        """Check if value looks like a player name."""
+        if not value or len(value) < 2:
+            return False
+        # Player names typically have 2+ words or are capitalized
+        words = value.split()
+        return len(words) >= 1 and value[0].isupper()
+    
+    def _looks_like_year(self, value: str) -> bool:
+        """Check if value looks like a year."""
+        try:
+            year = int(value)
+            return 1900 <= year <= 2100
+        except:
+            return False
+    
+    def _looks_like_score(self, value: str) -> bool:
+        """Check if value looks like a tennis score."""
+        if not value:
+            return False
+        # Scores typically contain digits, dashes, or spaces
+        return bool(re.search(r'\d', value)) and ('-' in value or ' ' in value or '/' in value)
+    
+    def _is_numeric(self, value: str) -> bool:
+        """Check if value is numeric."""
+        try:
+            float(value)
+            return True
+        except:
+            return False
+    
+    def _could_be_ranking(self, values: List[str]) -> bool:
+        """Check if values could be rankings."""
+        try:
+            nums = [int(v) for v in values[:10] if self._is_numeric(v)]
+            if not nums:
+                return False
+            # Rankings are typically small positive integers
+            return all(1 <= n <= 1000 for n in nums)
+        except:
+            return False
+    
+    def _could_be_count(self, values: List[str]) -> bool:
+        """Check if values could be counts."""
+        try:
+            nums = [int(v) for v in values[:10] if self._is_numeric(v)]
+            if not nums:
+                return False
+            # Counts are typically small positive integers
+            return all(0 <= n <= 10000 for n in nums)
+        except:
+            return False
+    
+    def _looks_like_tournament(self, value: str) -> bool:
+        """Check if value looks like a tournament name."""
+        tournament_keywords = ['wimbledon', 'open', 'masters', 'cup', 'championship', 'tournament']
+        return any(keyword in value.lower() for keyword in tournament_keywords)
+    
+    def _looks_like_surface(self, value: str) -> bool:
+        """Check if value looks like a surface type."""
+        surface_types = ['hard', 'clay', 'grass', 'carpet']
+        return value.lower() in surface_types
+    
+    def _infer_column_names(self, structured_data: List[List], num_cols: int, user_question: str,
+                           sql_query: Optional[str] = None, messages: Optional[List] = None) -> List[str]:
+        """
+        Adaptive column name inference using multi-layer approach:
+        1. Parse SQL SELECT clause (most reliable)
+        2. Analyze data patterns (adaptive)
+        3. Use query context (fallback)
+        
+        Args:
+            structured_data: List of lists representing rows
+            num_cols: Number of columns
+            user_question: User's question for context
+            sql_query: SQL query string (if available)
+            messages: Message list for additional context
+            
+        Returns:
+            List of column names
+        """
+        # Layer 1: Extract column names from SQL SELECT clause (most reliable)
+        if sql_query:
+            sql_columns = self._parse_sql_column_names(sql_query, num_cols)
+            if sql_columns and len(sql_columns) == num_cols:
+                return sql_columns
+        
+        # Layer 2: Analyze data patterns (adaptive)
+        data_columns = self._analyze_data_patterns(structured_data, num_cols)
+        if data_columns and len(data_columns) == num_cols:
+            return data_columns
+        
+        # Layer 3: Use query context (fallback to current hardcoded approach)
+        return self._infer_from_query_context(num_cols, user_question)
+    
+    def _infer_from_query_context(self, num_cols: int, user_question: str) -> List[str]:
+        """
+        Infer column names from query context (fallback method).
+        This is the original hardcoded approach, kept as fallback.
+        """
+        question_lower = user_question.lower()
+        
         if num_cols == 1:
-            question_lower = user_question.lower()
             if 'who won' in question_lower or 'winner' in question_lower:
                 return ['Winner']
             elif 'player' in question_lower:
@@ -346,8 +692,6 @@ class QueryProcessor:
                 return ['Result']
         
         elif num_cols == 2:
-            # Common two-column patterns
-            question_lower = user_question.lower()
             if 'compare' in question_lower or 'vs' in question_lower or 'head' in question_lower:
                 return ['Player', 'Wins']
             elif 'ranking' in question_lower or 'rank' in question_lower:
@@ -356,29 +700,21 @@ class QueryProcessor:
                 return ['Column_1', 'Column_2']
         
         elif num_cols == 3:
-            # Common three-column patterns (winner, loser, score)
-            question_lower = user_question.lower()
             if 'match' in question_lower or 'beat' in question_lower or 'defeat' in question_lower:
                 return ['Winner', 'Loser', 'Score']
             else:
                 return ['Column_1', 'Column_2', 'Column_3']
         
         elif num_cols >= 4:
-            # Multi-column patterns - try to infer from first row values
-            # Use generic names but could be improved with SQL parsing
             column_names = []
             for i in range(num_cols):
                 column_names.append(f"Column_{i+1}")
             
-            # Try common patterns based on question
-            question_lower = user_question.lower()
-            if 'match' in question_lower and num_cols >= 4:
-                # Could be: Year, Tournament, Winner, Loser, Score, etc.
+            if 'match' in question_lower:
                 common_match_cols = ['Year', 'Tournament', 'Winner', 'Loser', 'Score', 'Round', 'Surface']
                 if num_cols <= len(common_match_cols):
                     return common_match_cols[:num_cols]
             
             return column_names
         
-        # Fallback: generic column names
         return [f"Column_{i+1}" for i in range(num_cols)]
