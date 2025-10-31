@@ -5,6 +5,8 @@ Extracted from ui_components.py for better modularity.
 """
 
 import streamlit as st
+import pandas as pd
+from typing import Optional
 
 
 class UIDisplay:
@@ -18,6 +20,40 @@ class UIDisplay:
     3. render_filter_panel() - Renders filter controls (called by main_content)
     4. render_results_panel() - Renders results display (called by main_content)
     """
+    
+    @staticmethod
+    def _reset_ai_query_state():
+        """
+        Reset all AI query related session state variables.
+        Clears dataframe, structured data, results, and summary.
+        """
+        state_keys_to_clear = [
+            'ai_query_results',
+            'ai_query_summary',
+            'ai_query_structured_data',
+            'ai_query_dataframe',
+            'ai_query'  # Clear the query itself
+        ]
+        for key in state_keys_to_clear:
+            if key in st.session_state:
+                del st.session_state[key]
+    
+    @staticmethod
+    def _reset_main_content_state():
+        """
+        Reset all main content panel state (AI queries and table results).
+        Clears both AI query results and table analysis results.
+        """
+        # Reset AI query state
+        UIDisplay._reset_ai_query_state()
+        
+        # Reset table/analysis state
+        if 'analysis_generated' in st.session_state:
+            st.session_state.analysis_generated = False
+        if 'analysis_context' in st.session_state:
+            st.session_state.analysis_context = {}
+        if 'show_ai_results' in st.session_state:
+            st.session_state.show_ai_results = False
     
     @staticmethod
     def render_main_content(db_service, query_processor, agent_graph, logger, column_layout=None):
@@ -86,6 +122,10 @@ class UIDisplay:
                     send_clicked = st.button("Send", type="primary", key="search_send_button", use_container_width=True)
                     if send_clicked:
                         if ai_query:
+                            # Reset all AI query state and main content panel
+                            UIDisplay._reset_main_content_state()
+                            
+                            # Set new query and show AI results
                             st.session_state.ai_query = ai_query
                             st.session_state.show_ai_results = True
                             st.session_state.analysis_generated = False  # Hide table results
@@ -95,10 +135,12 @@ class UIDisplay:
                     # Always render the Clear button to ensure it's visible
                     clear_clicked = st.button("Clear", key="search_clear_button", use_container_width=True)
                     if clear_clicked:
+                        # Clear the search input
                         st.session_state.ai_search_input = ""
-                        st.session_state.ai_query_results = None
-                        st.session_state.show_ai_results = False
-                        st.session_state.analysis_generated = False
+                        
+                        # Reset all main content panel state (AI queries and table results)
+                        UIDisplay._reset_main_content_state()
+                        
                         st.rerun()
         
         # Return query from session state if it exists and show_ai_results is True
@@ -252,11 +294,19 @@ class UIDisplay:
         """
         # Handle AI Query Results
         if st.session_state.get('show_ai_results', False) and st.session_state.get('ai_query'):
-            try:
-                with st.spinner("AI is analyzing your question..."):
-                    query_processor.handle_user_query(st.session_state.ai_query, agent_graph, logger)
-            except Exception as e:
-                st.error(f"Error processing query: {e}")
+            # Check if we already have processed results
+            if st.session_state.get('ai_query_results'):
+                # Display the results
+                UIDisplay._render_ai_query_results()
+            else:
+                # Process the query
+                try:
+                    with st.spinner("AI is analyzing your question..."):
+                        query_processor.handle_user_query(st.session_state.ai_query, agent_graph, logger)
+                        # After processing, render the results
+                        UIDisplay._render_ai_query_results()
+                except Exception as e:
+                    st.error(f"Error processing query: {e}")
         
         # Handle Table Results
         elif st.session_state.get('analysis_generated', False):
@@ -284,4 +334,42 @@ class UIDisplay:
             else:
                 st.warning("No matches found for the selected criteria.")
         else:
+            pass
+    
+    @staticmethod
+    def _render_ai_query_results():
+        """
+        Render AI query results with summary and table (if applicable).
+        Handles display of both text-only and table responses.
+        """
+        summary = st.session_state.get('ai_query_summary', '')
+        dataframe = st.session_state.get('ai_query_dataframe')
+        is_table_candidate = st.session_state.get('ai_query_results', {}).get('is_table_candidate', False)
+        current_query = st.session_state.get('ai_query', '')
+        
+        if not summary and not dataframe:
+            st.warning("I processed your request but couldn't generate a clear response.")
+            return
+        
+        # Display summary
+        if summary:
+            st.success("Here's what I found:")
+            st.markdown(summary)
+        
+        # Display table if applicable
+        # IMPORTANT: Only show dataframe if is_table_candidate is True AND dataframe exists
+        # This prevents showing stale dataframes from previous queries
+        if dataframe is not None and is_table_candidate and not dataframe.empty:
+            # Use a unique key based on query text to prevent caching issues
+            import hashlib
+            query_hash = hashlib.md5(current_query.encode()).hexdigest()[:8]
+            dataframe_key = f"ai_query_df_{query_hash}"
+            
+            # Render dataframe with unique key
+            st.dataframe(dataframe, width='stretch', key=dataframe_key)
+        else:
+            # No table to show - this could be:
+            # 1. Text-only response (is_table_candidate = False)
+            # 2. No structured data for current query
+            # In either case, ensure we don't show stale dataframes
             pass

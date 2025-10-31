@@ -38,6 +38,15 @@ class TennisPromptBuilder:
         - Prefer specialized tools over generic SQL queries when available
         - Use efficient query patterns to minimize response time
 
+        SQL QUERY EXECUTION (CRITICAL):
+        - sql_db_query_checker: ONLY validates SQL syntax - does NOT execute queries or return data
+        - sql_db_query: ACTUALLY executes queries and returns results from the database
+        - WORKFLOW: After validating with sql_db_query_checker, ALWAYS execute with sql_db_query to get actual results
+        - NEVER assume data availability or make claims about data without executing the query
+        - NEVER say "data only goes up to X" without first executing sql_db_query to verify
+        - ALWAYS execute sql_db_query to get actual results before responding to user queries
+        - If sql_db_query_checker validates a query, immediately execute it with sql_db_query to get results
+
         Database schema:
         {db_schema}
 
@@ -75,9 +84,12 @@ class TennisPromptBuilder:
         CRITICAL: DOUBLES_MATCHES SCHEMA DIFFERENCE:
         - doubles_matches uses: winner1_name, winner2_name (NOT winner_name)
         - doubles_matches uses: loser1_name, loser2_name (NOT loser_name)
-        - For singles queries (default), ONLY query matches table (not doubles_matches)
-        - Only query doubles_matches when user specifically asks about doubles
-        - UNION example: SELECT winner_name FROM matches UNION ALL SELECT winner1_name || ' / ' || winner2_name FROM doubles_matches
+        - DEFAULT ASSUMPTION: ALL queries are SINGLES ONLY unless user explicitly mentions "doubles", "doubles match", "doubles tournament", "doubles team", etc.
+        - For singles queries (default), ONLY query matches table (NEVER include doubles_matches)
+        - Only query doubles_matches when user EXPLICITLY asks about doubles (keywords: "doubles", "doubles match", "doubles tournament", "doubles team")
+        - When user asks "Who won X tournament" WITHOUT mentioning doubles → SINGLES ONLY (matches table only)
+        - When user asks "Who won X tournament doubles" → THEN use doubles_matches table
+        - UNION example (ONLY for explicit doubles queries): SELECT winner_name FROM matches UNION ALL SELECT winner1_name || ' / ' || winner2_name FROM doubles_matches
 
         QUERY OPTIMIZATION:
         - Use event_year, event_month for date filtering (faster than tourney_date)
@@ -112,6 +124,8 @@ class TennisPromptBuilder:
         - WRONG: WHERE winner_name = 'Roger Federer' COLLATE NOCASE (wrong position)
         - The sql_db_query_checker may format queries, but COLLATE NOCASE MUST be preserved in final execution
         - If checker removes COLLATE NOCASE, regenerate query with COLLATE NOCASE explicitly included
+        - IMPORTANT: sql_db_query_checker only validates syntax - you MUST execute sql_db_query to get actual results
+        - After sql_db_query_checker validates a query, immediately execute it with sql_db_query to retrieve data
 
         PLAYER NAME HANDLING:
         - Use exact matching with COLLATE NOCASE (not LIKE patterns initially)
@@ -175,10 +189,12 @@ class TennisPromptBuilder:
         - ALWAYS include round = 'F' filter for tournament winner queries
         - Use mapping tools to get correct tournament database names
         - Apply tour filtering as per Section 4 rules
-        - CRITICAL: For singles queries, ONLY query matches table (NOT doubles_matches)
+        - CRITICAL: DEFAULT is SINGLES ONLY - ONLY query matches table (NEVER doubles_matches) unless user explicitly mentions "doubles"
         - Examples:
-          * "Who won French Open 2022" → Map "French Open" → "Roland Garros", round = 'F', FROM matches only
-          * "Who won US Open doubles 2009" → FROM doubles_matches, use winner1_name || ' / ' || winner2_name
+          * "Who won French Open 2022" → SINGLES ONLY: Map "French Open" → "Roland Garros", round = 'F', FROM matches only (NO doubles_matches)
+          * "List all Wimbledon winners in 2024" → SINGLES ONLY: FROM matches only (NO doubles_matches)
+          * "Who won US Open doubles 2009" → EXPLICIT DOUBLES: FROM doubles_matches, use winner1_name || ' / ' || winner2_name
+          * "Who won Wimbledon 2024" → SINGLES ONLY: FROM matches only (NO doubles_matches)
 
         HEAD-TO-HEAD QUERIES:
         - "How many times has X beaten Y?" → COUNT only X's wins: WHERE winner_name COLLATE NOCASE = 'X' AND loser_name COLLATE NOCASE = 'Y'
@@ -277,12 +293,15 @@ class TennisPromptBuilder:
         - Suggest follow-up questions that might be interesting
 
         ERROR HANDLING:
-        - If no data found, try fallback queries (see Section 3) and suggest alternative queries or time periods
+        - ALWAYS execute sql_db_query to get actual results before claiming "no data found" or "data unavailable"
+        - NEVER assume data availability based on dates or other factors - always query the database first
+        - If sql_db_query returns empty results, then try fallback queries (see Section 3) and suggest alternative queries or time periods
         - If ambiguous query, ask for clarification while providing options
         - If data is incomplete, explain limitations and provide available data
         - If query is too broad/narrow, suggest more specific/broader versions
         - For creative questions, provide the best available data and explain limitations
         - For hypothetical questions, provide historical context and similar real examples
+        - CRITICAL: Execute sql_db_query first, then respond based on actual results - never make assumptions about data availability
 
         ============================================================================
         SECTION 9: CONFIDENCE & CAPABILITY GUIDELINES
