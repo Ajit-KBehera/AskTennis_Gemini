@@ -9,8 +9,10 @@ import ast
 from datetime import datetime
 from typing import Optional
 from langchain_core.messages import HumanMessage, AIMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
 from tennis_logging.logging_factory import log_user_query, log_llm_interaction, log_final_response, log_error
 from ui.formatting.consolidated_formatter import ConsolidatedFormatter
+from config.config import Config
 
 
 class QueryProcessor:
@@ -33,9 +35,26 @@ class QueryProcessor:
         """
         self.data_formatter = data_formatter
     
+    @staticmethod
+    @st.cache_resource
+    def _get_summary_llm():
+        """
+        Get or create a lightweight LLM instance for summary generation.
+        Cached to avoid re-initializing on every request.
+        
+        Returns:
+            ChatGoogleGenerativeAI instance configured for summary generation
+        """
+        config = Config()
+        return ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash-lite",  # Fast model for quick summaries
+            google_api_key=config.api_key,
+            temperature=0.3  # Slightly higher temperature for more natural summaries
+        )
+    
     def _generate_summary(self, response_text: str) -> Optional[str]:
         """
-        Generate a 1-line summary of the response if it's longer than 4-5 lines.
+        Generate an intelligent 1-line summary using LLM if response is longer than 5 lines.
         
         Args:
             response_text: The full AI response text
@@ -53,7 +72,56 @@ class QueryProcessor:
         if len(lines) <= 5:
             return None
         
-        # Generate summary from first 2-3 sentences or first paragraph
+        try:
+            # Get cached LLM instance for summary generation
+            summary_llm = self._get_summary_llm()
+            
+            # Create a prompt for summary generation
+            # Limit response text to avoid token limits
+            limited_text = response_text[:2000]
+            summary_prompt = f"""Generate a concise, informative one-line summary (maximum 120 characters) of the following tennis-related response. 
+The summary should capture the main point or key information in a single sentence.
+
+Response to summarize:
+{limited_text}
+
+Summary (one line, max 120 chars):"""
+            
+            # Generate summary using LLM
+            response = summary_llm.invoke(summary_prompt)
+            
+            # Extract summary from response
+            if hasattr(response, 'content'):
+                summary = response.content.strip()
+            else:
+                summary = str(response).strip()
+            
+            # Ensure summary is not too long (safety check)
+            if len(summary) > 150:
+                summary = summary[:147].rsplit(' ', 1)[0] + "..."
+            
+            # Fallback to simple extraction if LLM fails or returns empty
+            if not summary or len(summary) < 10:
+                return self._fallback_summary(response_text, lines)
+            
+            return summary
+            
+        except Exception as e:
+            # Fallback to simple string-based summary if LLM fails
+            return self._fallback_summary(response_text, lines)
+    
+    def _fallback_summary(self, response_text: str, lines: list) -> Optional[str]:
+        """
+        Fallback method for summary generation using string manipulation.
+        Used when LLM summarization fails.
+        
+        Args:
+            response_text: The full AI response text
+            lines: List of non-empty lines from the response
+            
+        Returns:
+            Summary string or None
+        """
         # Try to extract first meaningful sentence(s)
         sentences = response_text.split('. ')
         
@@ -62,16 +130,18 @@ class QueryProcessor:
             summary = '. '.join(sentences[:2])
             if not summary.endswith('.'):
                 summary += '.'
+            # Ensure it's not too long
+            if len(summary) > 150:
+                summary = summary[:147].rsplit(' ', 1)[0] + "..."
             return summary.strip()
         elif len(sentences) == 1:
             # Single sentence - take first part if too long
             first_sentence = sentences[0]
             if len(first_sentence) > 150:
-                # Take first 150 chars and add ellipsis
-                return first_sentence[:150].rsplit(' ', 1)[0] + "..."
+                return first_sentence[:147].rsplit(' ', 1)[0] + "..."
             return first_sentence
         
-        # Fallback: take first line
+        # Final fallback: take first line
         return lines[0] if lines else None
     
     def handle_user_query(self, user_question: str, agent_graph, logger):
