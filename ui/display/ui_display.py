@@ -55,42 +55,51 @@ class UIDisplay:
         Render the search panel with input field, Send button, and Clear button.
         
         Args:
-            column_layout: List of column widths [search_width, send_width, clear_width].
-                         Defaults to [10, 1, 1].
+            column_layout: List of column widths [search_width, buttons_width].
+                         Defaults to [8, 4]. Buttons are placed in the second column.
         
         Returns:
             The query string if Send button was clicked, None otherwise.
         """
         if column_layout is None:
-            column_layout = [10, 1, 1]
+            column_layout = [8, 4]  # Search gets 8, buttons column gets 4
         
-        col_search, col_send, col_clear = st.columns(column_layout)
-        
-        with col_search:
-            ai_query = st.text_input(
-                "AskTennis Search:",
-                placeholder="Ask any tennis question (e.g., Who won Wimbledon 2022?)",
-                key="ai_search_input",
-                width='stretch'
-            )
-        
-        with col_send:
-            st.markdown("<br>", unsafe_allow_html=True)  # Add some spacing
-            if st.button("Send", type="primary", width='stretch'):
-                if ai_query:
-                    st.session_state.ai_query = ai_query
-                    st.session_state.show_ai_results = True
-                    st.session_state.analysis_generated = False  # Hide table results
-                    return ai_query
-        
-        with col_clear:
-            st.markdown("<br>", unsafe_allow_html=True)  # Add some spacing
-            if st.button("Clear", width='stretch'):
-                st.session_state.ai_search_input = ""
-                st.session_state.ai_query_results = None
-                st.session_state.show_ai_results = False
-                st.session_state.analysis_generated = False
-                st.rerun()
+        # Use a container to ensure the search panel always renders consistently
+        search_container = st.container()
+        with search_container:
+            col_search, col_buttons = st.columns(column_layout)
+            
+            with col_search:
+                ai_query = st.text_input(
+                    "AskTennis Search:",
+                    placeholder="Ask any tennis question (e.g., Who won Wimbledon 2022?)",
+                    key="ai_search_input",
+                    label_visibility="visible"
+                )
+            
+            with col_buttons:
+                # Put both buttons in the same column to prevent layout collapse
+                st.markdown("<br>", unsafe_allow_html=True)  # Add some spacing
+                btn_col1, btn_col2 = st.columns([1, 1])
+                
+                with btn_col1:
+                    send_clicked = st.button("Send", type="primary", key="search_send_button", use_container_width=True)
+                    if send_clicked:
+                        if ai_query:
+                            st.session_state.ai_query = ai_query
+                            st.session_state.show_ai_results = True
+                            st.session_state.analysis_generated = False  # Hide table results
+                            st.rerun()
+                
+                with btn_col2:
+                    # Always render the Clear button to ensure it's visible
+                    clear_clicked = st.button("Clear", key="search_clear_button", use_container_width=True)
+                    if clear_clicked:
+                        st.session_state.ai_search_input = ""
+                        st.session_state.ai_query_results = None
+                        st.session_state.show_ai_results = False
+                        st.session_state.analysis_generated = False
+                        st.rerun()
         
         # Return query from session state if it exists and show_ai_results is True
         if st.session_state.get('show_ai_results', False) and st.session_state.get('ai_query'):
@@ -202,11 +211,12 @@ class UIDisplay:
             generate_button = st.button(
                 "🔍 Generate",
                 type="primary",
-                width='stretch'
+                key="filter_generate_button",
+                use_container_width=True
             )
         
         with col_clear_cache:
-            if st.button("🗑️", help="Clear cached data if results seem stale"):
+            if st.button("🗑️", help="Clear cached data if results seem stale", key="filter_clear_cache_button"):
                 db_service.clear_cache()
                 st.success("Cache cleared!")
                 st.rerun()

@@ -57,3 +57,15 @@ div[data-testid="column"] {
     padding: 1rem;
 }
 
+/* Ensure search panel Clear button stays visible */
+.stButton > button {
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Ensure columns don't collapse - override any hiding */
+div[data-testid="column"] {
+    overflow: visible !important;
+    min-width: fit-content !important;
+}
+
