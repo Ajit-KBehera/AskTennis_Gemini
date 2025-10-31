@@ -60,7 +60,7 @@ class QueryProcessor:
                 # Log the complete conversation flow
                 log_llm_interaction(response["messages"], "COMPLETE_CONVERSATION_FLOW")
                 
-                # Process the response - now returns dict with summary and structured data
+                # Process the response - returns dict with structured data and dataframe
                 response_data = self.process_agent_response(response, logger, user_question)
                 
                 # Calculate total processing time
@@ -70,8 +70,6 @@ class QueryProcessor:
                 # Store response data in session state (clear old data first to fix caching)
                 if 'ai_query_results' in st.session_state:
                     del st.session_state.ai_query_results
-                if 'ai_query_summary' in st.session_state:
-                    del st.session_state.ai_query_summary
                 if 'ai_query_structured_data' in st.session_state:
                     del st.session_state.ai_query_structured_data
                 if 'ai_query_dataframe' in st.session_state:
@@ -79,16 +77,11 @@ class QueryProcessor:
                 
                 # Store new response data
                 st.session_state.ai_query_results = response_data
-                st.session_state.ai_query_summary = response_data.get('summary', '')
                 st.session_state.ai_query_structured_data = response_data.get('structured_data')
                 st.session_state.ai_query_dataframe = response_data.get('dataframe')
                 
                 # Log response
-                summary_text = response_data.get('summary', '')
-                if summary_text and summary_text.strip():
-                    log_final_response(summary_text, processing_time)
-                else:
-                    log_final_response("No clear response generated", processing_time)
+                log_final_response("Query processed", processing_time)
 
             except Exception as e:
                 # Log error
@@ -98,36 +91,15 @@ class QueryProcessor:
     def process_agent_response(self, response: dict, logger, user_question: str = "") -> Dict[str, Any]:
         """
         Process and format the agent's response.
-        Returns a dictionary with summary text and structured data (if available).
+        Returns a dictionary with structured data and dataframe (if available).
         
         Returns:
             Dict with keys:
-                - summary: str - Summary text to display
                 - structured_data: Optional[List[List]] - Raw structured data (list of lists)
                 - dataframe: Optional[pd.DataFrame] - DataFrame for table display
                 - is_table_candidate: bool - Whether response should show a table
         """
-        # Extract summary from LLM response
-        summary = ""
         structured_data = None
-        
-        # The final answer is in the content of the last AIMessage.
-        # Parse Gemini's structured output format
-        last_message = response["messages"][-1]
-        logger.info(f"Last message type: {type(last_message)}")
-        logger.info(f"Last message content: {last_message.content}")
-        logger.info(f"Last message content type: {type(last_message.content)}")
-        
-        if isinstance(last_message.content, list) and last_message.content:
-            # For Gemini, content is a list of dicts. We want the text from the first part.
-            summary = last_message.content[0].get("text", "")
-            if logger is not None:
-                logger.info(f"Extracted from list content: {summary}")
-        else:
-            # Fallback for standard string content
-            summary = last_message.content
-            if logger is not None:
-                logger.info(f"Using string content: {summary}")
         
         # Try to extract structured data from messages
         # IMPORTANT: Only check messages from the CURRENT query, not previous queries
@@ -167,9 +139,6 @@ class QueryProcessor:
                             # Check if first element is a tuple/list (database row format)
                             if isinstance(data[0], (list, tuple)):
                                 structured_data = data
-                                # Generate summary if not already extracted
-                                if not summary or not summary.strip():
-                                    summary = self._generate_summary_from_data(data, user_question)
                                 if logger is not None:
                                     logger.info(f"✅ Extracted structured data: {len(data)} rows")
                                 break
@@ -198,9 +167,6 @@ class QueryProcessor:
                                 # Verify this looks like database results (list of tuples/lists)
                                 if isinstance(data[0], (list, tuple)):
                                     structured_data = data
-                                    # Generate summary if not already extracted
-                                    if not summary or not summary.strip():
-                                        summary = self._generate_summary_from_data(data, user_question)
                                     if logger is not None:
                                         logger.info(f"✅ Extracted structured data from tool result message: {len(data)} rows")
                                     break
@@ -218,9 +184,6 @@ class QueryProcessor:
                                 data = ast.literal_eval(content_str)
                                 if data and len(data) > 0 and isinstance(data, list):
                                     structured_data = data
-                                    # Generate summary if not already extracted
-                                    if not summary or not summary.strip():
-                                        summary = self._generate_summary_from_data(data, user_question)
                                     if logger is not None:
                                         logger.info(f"✅ Extracted structured data from ToolMessage: {len(data)} rows")
                                     break
@@ -230,7 +193,7 @@ class QueryProcessor:
                             continue
         
         # Determine if table should be shown
-        is_table_candidate = self._should_show_table(structured_data, summary, user_question)
+        is_table_candidate = self._should_show_table(structured_data, user_question)
         
         # Extract SQL query for column name inference
         sql_query = self._extract_sql_query_from_messages(current_query_messages, logger)
@@ -245,21 +208,13 @@ class QueryProcessor:
                     logger.info(f"Failed to convert to DataFrame: {e}")
                 dataframe = None
         
-        # Ensure we have at least a summary
-        if not summary or not summary.strip():
-            if structured_data:
-                summary = self._generate_summary_from_data(structured_data, user_question)
-            else:
-                summary = "I processed your request but couldn't generate a clear response."
-        
         return {
-            'summary': summary,
             'structured_data': structured_data,
             'dataframe': dataframe,
             'is_table_candidate': is_table_candidate
         }
     
-    def _should_show_table(self, structured_data: Optional[List[List]], summary: str, user_question: str) -> bool:
+    def _should_show_table(self, structured_data: Optional[List[List]], user_question: str) -> bool:
         """
         Determine if response should display a table.
         
@@ -295,24 +250,6 @@ class QueryProcessor:
             return True
         
         return False
-    
-    def _generate_summary_from_data(self, data: List[List], user_question: str) -> str:
-        """Generate a concise summary sentence from structured data."""
-        if not data:
-            return "No results found."
-        
-        num_rows = len(data)
-        
-        # Single value
-        if num_rows == 1 and len(data[0]) == 1:
-            return f"The answer is: {data[0][0]}"
-        
-        # Single row, multiple columns
-        if num_rows == 1:
-            return self.data_formatter.format_with_context(data, user_question)
-        
-        # Multiple rows
-        return f"Found {num_rows} result(s) matching your query."
     
     def _convert_to_dataframe(self, structured_data: List[List], user_question: str, 
                              sql_query: Optional[str] = None, messages: Optional[List] = None) -> pd.DataFrame:
@@ -353,14 +290,12 @@ class QueryProcessor:
         Returns:
             SQL query string or None if not found
         """
-        
         for message in reversed(messages):
             # Check tool calls
             if hasattr(message, 'tool_calls') and message.tool_calls:
                 for tool_call in message.tool_calls:
                     if tool_call.get('name') in ['sql_db_query', 'sql_db_query_checker']:
-                        args = tool_call.get('args', {})
-                        query = args.get('query', '')
+                        query = tool_call.get('args', {}).get('query', '')
                         if query:
                             return query
             
@@ -376,7 +311,6 @@ class QueryProcessor:
                 
                 # Look for SELECT statements in content
                 if 'SELECT' in content_str.upper():
-                    # Try to extract SQL query
                     lines = content_str.split('\n')
                     sql_lines = []
                     in_sql = False
@@ -405,17 +339,12 @@ class QueryProcessor:
         Returns:
             List of column names or None if parsing fails
         """
-        
         if not sql_query:
             return None
         
         try:
-            # Normalize SQL query
-            sql_query = sql_query.strip()
-            
             # Handle UNION queries - take first SELECT clause
-            if 'UNION' in sql_query.upper():
-                sql_query = sql_query.split('UNION')[0]
+            sql_query = sql_query.split('UNION')[0].strip() if 'UNION' in sql_query.upper() else sql_query.strip()
             
             # Extract SELECT clause
             select_match = re.search(r'SELECT\s+(.*?)\s+FROM', sql_query, re.IGNORECASE | re.DOTALL)
@@ -424,10 +353,9 @@ class QueryProcessor:
             
             select_clause = select_match.group(1).strip()
             
-            # Split by comma, handling nested functions and subqueries
+            # Split columns handling nested parentheses
             columns = []
-            current_col = ""
-            paren_depth = 0
+            current_col, paren_depth = "", 0
             
             for char in select_clause:
                 if char == '(':
@@ -447,70 +375,133 @@ class QueryProcessor:
             if current_col.strip():
                 columns.append(current_col.strip())
             
-            # Clean and extract column names
+            # Extract column names
             column_names = []
             for col in columns:
                 col = col.strip()
+                name = None
                 
-                # Handle AS aliases
+                # Handle AS aliases (case-insensitive)
                 if ' AS ' in col.upper():
-                    alias = col.split(' AS ')[-1].strip()
-                    column_names.append(self._clean_column_name(alias))
-                # Handle aliases with quotes
-                elif re.search(r'\s+["\']?(\w+)["\']?\s*$', col):
-                    match = re.search(r'\s+["\']?(\w+)["\']?\s*$', col)
-                    column_names.append(self._clean_column_name(match.group(1)))
-                # Handle aggregate functions
-                elif re.match(r'\w+\(.*?\)', col, re.IGNORECASE):
-                    func_match = re.match(r'(\w+)\(.*?\)', col, re.IGNORECASE)
+                    name = col.split(' AS ')[-1].strip()
+                # Handle aliases with quotes: COUNT(*) AS "total"
+                elif re.search(r'AS\s+["\']?(\w+)["\']?', col, re.IGNORECASE):
+                    name = re.search(r'AS\s+["\']?(\w+)["\']?', col, re.IGNORECASE).group(1)
+                # Handle aggregate functions: COUNT(id), SUM(score), etc.
+                elif re.match(r'(\w+)\(', col, re.IGNORECASE):
+                    func_match = re.match(r'(\w+)\(', col, re.IGNORECASE)
                     func_name = func_match.group(1).lower()
                     if func_name in ['count', 'sum', 'avg', 'min', 'max']:
-                        # Try to extract column name from function
+                        # Try to extract inner column name
                         inner_match = re.search(r'\(["\']?(\w+)["\']?\)', col, re.IGNORECASE)
                         if inner_match:
-                            column_names.append(f"{func_name.title()}({self._clean_column_name(inner_match.group(1))})")
+                            name = f"{func_name.title()}({self._clean_column_name(inner_match.group(1))})"
                         else:
-                            column_names.append(f"{func_name.title()}")
+                            name = func_name.title()
                     else:
-                        column_names.append(self._clean_column_name(col))
-                # Handle simple column names
+                        name = col
+                # Handle simple column names (with optional quotes)
                 else:
-                    # Remove quotes and get column name
-                    clean_name = re.sub(r'["\']', '', col)
+                    name = re.sub(r'["\']', '', col)
                     # Handle table.column format
-                    if '.' in clean_name:
-                        clean_name = clean_name.split('.')[-1]
-                    column_names.append(self._clean_column_name(clean_name))
+                    if '.' in name:
+                        name = name.split('.')[-1]
+                
+                column_names.append(self._clean_column_name(name))
             
-            # Ensure we have the right number of columns
+            # Adjust length to match num_cols
             if len(column_names) == num_cols:
                 return column_names
             elif len(column_names) > num_cols:
                 return column_names[:num_cols]
             else:
                 # Pad with generic names if needed
-                while len(column_names) < num_cols:
-                    column_names.append(f"Column_{len(column_names) + 1}")
-                return column_names
+                return column_names + [f"Column_{i+1}" for i in range(len(column_names), num_cols)]
                 
-        except Exception as e:
+        except Exception:
             return None
     
     def _clean_column_name(self, name: str) -> str:
         """Clean and format column name for display."""
-        
         # Remove quotes and whitespace
         name = re.sub(r'["\']', '', name).strip()
         
         # Handle snake_case to Title Case
         if '_' in name:
-            parts = name.split('_')
-            name = ' '.join(word.capitalize() for word in parts)
+            return ' '.join(word.capitalize() for word in name.split('_'))
         else:
             # Capitalize first letter
-            name = name.capitalize()
+            return name.capitalize()
+    
+    def _detect_column_type(self, value: str, column_values: List[str]) -> Optional[str]:
+        """
+        Detect column type from value and column samples using pattern matching.
         
-        return name
+        Args:
+            value: First value in the column
+            column_values: Sample values from the column
+            
+        Returns:
+            Detected column type name or None
+        """
+        if not value or len(value) < 1:
+            return None
+        
+        value_str = str(value).strip()
+        
+        # Check for player names (capitalized, multi-word)
+        if value_str[0].isupper() and len(value_str) >= 2:
+            # Check if it's winner/loser based on values
+            if any('winner' in str(v).lower() for v in column_values[:3]):
+                return 'Winner'
+            elif any('loser' in str(v).lower() for v in column_values[:3]):
+                return 'Loser'
+            return 'Player'
+        
+        # Check for years (1900-2100)
+        if value_str.isdigit():
+            year = int(value_str)
+            if 1900 <= year <= 2100:
+                return 'Year'
+        
+        # Check for scores (contains digits + dash/space/slash)
+        if re.search(r'\d', value_str) and any(x in value_str for x in ['-', ' ', '/']):
+            return 'Score'
+        
+        # Check for tournament names (keywords)
+        tournament_keywords = ['wimbledon', 'open', 'masters', 'cup', 'championship', 'tournament']
+        if any(keyword in value_str.lower() for keyword in tournament_keywords):
+            return 'Tournament'
+        
+        # Check for surface types
+        surface_types = ['hard', 'clay', 'grass', 'carpet']
+        if value_str.lower() in surface_types:
+            return 'Surface'
+        
+        # Check for numeric values
+        try:
+            float(value_str)
+            # Analyze numeric patterns
+            nums = []
+            for v in column_values[:10]:
+                try:
+                    nums.append(int(float(str(v))))
+                except:
+                    pass
+            
+            if nums:
+                # Check if it's rankings (typically 1-1000)
+                if all(1 <= n <= 1000 for n in nums):
+                    return 'Rank'
+                # Check if it's counts (typically 0-10000)
+                elif all(0 <= n <= 10000 for n in nums):
+                    return 'Count'
+                else:
+                    return 'Value'
+        except:
+            pass
+        
+        return None
     
     def _analyze_data_patterns(self, structured_data: List[List], num_cols: int) -> Optional[List[str]]:
         """
@@ -536,113 +527,11 @@ class QueryProcessor:
                 column_names.append(f"Column_{col_idx + 1}")
                 continue
             
-            # Analyze patterns
-            first_value = column_values[0] if column_values else ""
-            
-            # Check for player names (common tennis data)
-            if self._looks_like_player_name(first_value):
-                if any('winner' in str(v).lower() for v in column_values[:3]):
-                    column_names.append('Winner')
-                elif any('loser' in str(v).lower() for v in column_values[:3]):
-                    column_names.append('Loser')
-                else:
-                    column_names.append('Player')
-            
-            # Check for years
-            elif self._looks_like_year(first_value):
-                column_names.append('Year')
-            
-            # Check for scores
-            elif self._looks_like_score(first_value):
-                column_names.append('Score')
-            
-            # Check for numeric data
-            elif self._is_numeric(first_value):
-                # Check if it's a ranking
-                if self._could_be_ranking(column_values):
-                    column_names.append('Rank')
-                # Check if it's a count
-                elif self._could_be_count(column_values):
-                    column_names.append('Count')
-                else:
-                    column_names.append('Value')
-            
-            # Check for tournament names
-            elif self._looks_like_tournament(first_value):
-                column_names.append('Tournament')
-            
-            # Check for surface types
-            elif self._looks_like_surface(first_value):
-                column_names.append('Surface')
-            
-            # Default
-            else:
-                column_names.append(f"Column_{col_idx + 1}")
+            # Detect column type from patterns
+            col_type = self._detect_column_type(column_values[0], column_values)
+            column_names.append(col_type if col_type else f"Column_{col_idx + 1}")
         
         return column_names if len(column_names) == num_cols else None
-    
-    def _looks_like_player_name(self, value: str) -> bool:
-        """Check if value looks like a player name."""
-        if not value or len(value) < 2:
-            return False
-        # Player names typically have 2+ words or are capitalized
-        words = value.split()
-        return len(words) >= 1 and value[0].isupper()
-    
-    def _looks_like_year(self, value: str) -> bool:
-        """Check if value looks like a year."""
-        try:
-            year = int(value)
-            return 1900 <= year <= 2100
-        except:
-            return False
-    
-    def _looks_like_score(self, value: str) -> bool:
-        """Check if value looks like a tennis score."""
-        if not value:
-            return False
-        # Scores typically contain digits, dashes, or spaces
-        return bool(re.search(r'\d', value)) and ('-' in value or ' ' in value or '/' in value)
-    
-    def _is_numeric(self, value: str) -> bool:
-        """Check if value is numeric."""
-        try:
-            float(value)
-            return True
-        except:
-            return False
-    
-    def _could_be_ranking(self, values: List[str]) -> bool:
-        """Check if values could be rankings."""
-        try:
-            nums = [int(v) for v in values[:10] if self._is_numeric(v)]
-            if not nums:
-                return False
-            # Rankings are typically small positive integers
-            return all(1 <= n <= 1000 for n in nums)
-        except:
-            return False
-    
-    def _could_be_count(self, values: List[str]) -> bool:
-        """Check if values could be counts."""
-        try:
-            nums = [int(v) for v in values[:10] if self._is_numeric(v)]
-            if not nums:
-                return False
-            # Counts are typically small positive integers
-            return all(0 <= n <= 10000 for n in nums)
-        except:
-            return False
-    
-    def _looks_like_tournament(self, value: str) -> bool:
-        """Check if value looks like a tournament name."""
-        tournament_keywords = ['wimbledon', 'open', 'masters', 'cup', 'championship', 'tournament']
-        return any(keyword in value.lower() for keyword in tournament_keywords)
-    
-    def _looks_like_surface(self, value: str) -> bool:
-        """Check if value looks like a surface type."""
-        surface_types = ['hard', 'clay', 'grass', 'carpet']
-        return value.lower() in surface_types
     
     def _infer_column_names(self, structured_data: List[List], num_cols: int, user_question: str,
                            sql_query: Optional[str] = None, messages: Optional[List] = None) -> List[str]:
@@ -673,48 +562,49 @@ class QueryProcessor:
         if data_columns and len(data_columns) == num_cols:
             return data_columns
         
-        # Layer 3: Use query context (fallback to current hardcoded approach)
+        # Layer 3: Use query context (fallback)
         return self._infer_from_query_context(num_cols, user_question)
     
     def _infer_from_query_context(self, num_cols: int, user_question: str) -> List[str]:
         """
         Infer column names from query context (fallback method).
-        This is the original hardcoded approach, kept as fallback.
+        Uses keyword matching to infer appropriate column names.
         """
-        question_lower = user_question.lower()
+        q = user_question.lower()
         
+        # Single column
         if num_cols == 1:
-            if 'who won' in question_lower or 'winner' in question_lower:
+            if 'who won' in q or 'winner' in q:
                 return ['Winner']
-            elif 'player' in question_lower:
+            elif 'player' in q:
                 return ['Player']
             else:
                 return ['Result']
         
+        # Two columns
         elif num_cols == 2:
-            if 'compare' in question_lower or 'vs' in question_lower or 'head' in question_lower:
+            if any(kw in q for kw in ['compare', 'vs', 'head']):
                 return ['Player', 'Wins']
-            elif 'ranking' in question_lower or 'rank' in question_lower:
+            elif 'ranking' in q or 'rank' in q:
                 return ['Player', 'Rank']
             else:
                 return ['Column_1', 'Column_2']
         
+        # Three columns
         elif num_cols == 3:
-            if 'match' in question_lower or 'beat' in question_lower or 'defeat' in question_lower:
+            if any(kw in q for kw in ['match', 'beat', 'defeat']):
                 return ['Winner', 'Loser', 'Score']
             else:
                 return ['Column_1', 'Column_2', 'Column_3']
         
+        # Four or more columns
         elif num_cols >= 4:
-            column_names = []
-            for i in range(num_cols):
-                column_names.append(f"Column_{i+1}")
-            
-            if 'match' in question_lower:
+            # For match-related queries, use common match columns
+            if 'match' in q and num_cols <= 7:
                 common_match_cols = ['Year', 'Tournament', 'Winner', 'Loser', 'Score', 'Round', 'Surface']
-                if num_cols <= len(common_match_cols):
-                    return common_match_cols[:num_cols]
-            
-            return column_names
+                return common_match_cols[:num_cols]
+            else:
+                return [f"Column_{i+1}" for i in range(num_cols)]
         
+        # Fallback
         return [f"Column_{i+1}" for i in range(num_cols)]

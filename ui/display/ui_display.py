@@ -25,11 +25,10 @@ class UIDisplay:
     def _reset_ai_query_state():
         """
         Reset all AI query related session state variables.
-        Clears dataframe, structured data, results, and summary.
+        Clears dataframe, structured data, and results.
         """
         state_keys_to_clear = [
             'ai_query_results',
-            'ai_query_summary',
             'ai_query_structured_data',
             'ai_query_dataframe',
             'ai_query'  # Clear the query itself
@@ -350,37 +349,23 @@ class UIDisplay:
     @staticmethod
     def _render_ai_query_results():
         """
-        Render AI query results with summary and table (if applicable).
-        Handles display of both text-only and table responses.
+        Render AI query results with table (if applicable).
+        Handles display of table responses.
         """
-        summary = st.session_state.get('ai_query_summary', '')
         dataframe = st.session_state.get('ai_query_dataframe')
         is_table_candidate = st.session_state.get('ai_query_results', {}).get('is_table_candidate', False)
         current_query = st.session_state.get('ai_query', '')
         
-        if not summary and not dataframe:
-            st.warning("I processed your request but couldn't generate a clear response.")
+        if dataframe is None or not is_table_candidate or dataframe.empty:
             return
-        
-        # Display summary
-        if summary:
-            st.success("Here's what I found:")
-            st.markdown(summary)
         
         # Display table if applicable
         # IMPORTANT: Only show dataframe if is_table_candidate is True AND dataframe exists
         # This prevents showing stale dataframes from previous queries
-        if dataframe is not None and is_table_candidate and not dataframe.empty:
-            # Use a unique key based on query text to prevent caching issues
-            import hashlib
-            query_hash = hashlib.md5(current_query.encode()).hexdigest()[:8]
-            dataframe_key = f"ai_query_df_{query_hash}"
-            
-            # Render dataframe with unique key
-            st.dataframe(dataframe, width='stretch', key=dataframe_key)
-        else:
-            # No table to show - this could be:
-            # 1. Text-only response (is_table_candidate = False)
-            # 2. No structured data for current query
-            # In either case, ensure we don't show stale dataframes
-            pass
+        # Use a unique key based on query text to prevent caching issues
+        import hashlib
+        query_hash = hashlib.md5(current_query.encode()).hexdigest()[:8]
+        dataframe_key = f"ai_query_df_{query_hash}"
+        
+        # Render dataframe with unique key
+        st.dataframe(dataframe, width='stretch', key=dataframe_key)
