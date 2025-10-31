@@ -1,7 +1,7 @@
 """
-Query processing utilities for AskTennis AI application.
+Query processing service for AskTennis AI application.
 Handles query processing, agent interaction, and response handling.
-Extracted from ui_components.py for better modularity.
+Moved from ui/processing/ for better architectural separation.
 """
 
 import streamlit as st
@@ -11,7 +11,7 @@ from typing import Optional
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from tennis_logging.logging_factory import log_user_query, log_llm_interaction, log_final_response, log_error
-from ui.formatting.consolidated_formatter import ConsolidatedFormatter
+from utils.formatters import ConsolidatedFormatter
 from config.config import Config
 
 
@@ -282,3 +282,4 @@ Summary (one line, max 120 chars):"""
                             continue
         
         return final_answer
+

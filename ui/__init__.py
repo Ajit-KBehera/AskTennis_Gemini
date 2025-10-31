@@ -1,9 +1,9 @@
 """
 UI module for AskTennis AI application.
-Contains all UI components, display logic, formatting, and processing.
+Contains all UI components and display logic.
+Note: Formatting utilities moved to utils/formatters.py
+Note: Query processing moved to services/query_service.py
 """
 
 from .display.ui_display import UIDisplay
-from .formatting.consolidated_formatter import ConsolidatedFormatter
-from .processing.query_processor import QueryProcessor
-__all__ = ['UIDisplay', 'ConsolidatedFormatter', 'QueryProcessor']
+__all__ = ['UIDisplay']

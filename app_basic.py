@@ -18,8 +18,8 @@ from agent.agent_factory import setup_langgraph_agent
 
 # --- UI Components ---
 from ui.display.ui_display import UIDisplay
-from ui.formatting.consolidated_formatter import ConsolidatedFormatter
-from ui.processing.query_processor import QueryProcessor
+from utils.formatters import ConsolidatedFormatter
+from services.query_service import QueryProcessor
 
 # Services
 from services.database_service import DatabaseService
