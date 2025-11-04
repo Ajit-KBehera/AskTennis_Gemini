@@ -29,11 +29,11 @@ class DatabaseService:
         try:
             conn = sqlite3.connect(_self.db_path)
             query = """
-            SELECT DISTINCT winner_name as player_name FROM matches 
-            WHERE winner_name IS NOT NULL AND winner_name != ''
-            UNION
-            SELECT DISTINCT loser_name as player_name FROM matches 
-            WHERE loser_name IS NOT NULL AND loser_name != ''
+            SELECT DISTINCT 
+                COALESCE(full_name, name_first || ' ' || name_last) as player_name
+            FROM players 
+            WHERE (full_name IS NOT NULL AND full_name != '') 
+               OR (name_first IS NOT NULL AND name_last IS NOT NULL)
             ORDER BY player_name
             """
             df = pd.read_sql_query(query, conn)
