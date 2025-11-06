@@ -470,7 +470,8 @@ def standardize_tourney_level(level, tour=None, era=None):
 
 def standardize_tourney_levels(df, tour_name):
     """
-    Apply tourney level standardization to a dataframe.
+    Apply tourney level standardization to a dataframe using vectorized operations.
+    Optimized version that uses map() instead of apply() for better performance.
     
     Args:
         df: DataFrame with tourney_level column
@@ -491,12 +492,45 @@ def standardize_tourney_levels(df, tour_name):
     for level, count in original_levels.head(10).items():
         print(f"  {level}: {count:,} matches")
     
-    # Apply standardization
+    # Apply standardization using vectorized operations
     print("Applying standardization...")
-    df['tourney_level'] = df.apply(
-        lambda row: standardize_tourney_level(row['tourney_level'], tour_name), 
-        axis=1
-    )
+    
+    # Create a copy to avoid modifying original
+    df = df.copy()
+    
+    # Handle missing/empty values
+    mask_not_na = df['tourney_level'].notna() & (df['tourney_level'] != '')
+    
+    if mask_not_na.sum() > 0:
+        # Convert to string and strip whitespace for all non-NA values
+        df.loc[mask_not_na, 'tourney_level'] = df.loc[mask_not_na, 'tourney_level'].astype(str).str.strip()
+        
+        # Handle special case: WTA 'D' level → 'BJK_Cup'
+        if tour_name == 'WTA':
+            wta_d_mask = mask_not_na & (df['tourney_level'] == 'D')
+            if wta_d_mask.sum() > 0:
+                df.loc[wta_d_mask, 'tourney_level'] = 'BJK_Cup'
+                # Update mask to exclude already processed values
+                mask_not_na = mask_not_na & ~wta_d_mask
+        
+        # Apply mapping using vectorized map() operation
+        if mask_not_na.sum() > 0:
+            levels_to_map = df.loc[mask_not_na, 'tourney_level']
+            mapped_levels = levels_to_map.map(TOURNEY_LEVEL_MAPPINGS)
+            
+            # Only update where mapping exists (non-null result)
+            # mapped_levels has the same index as levels_to_map (which is mask_not_na positions)
+            mapped_mask = mapped_levels.notna()
+            if mapped_mask.sum() > 0:
+                # Use the index from mapped_levels to update the DataFrame
+                df.loc[mapped_levels.index[mapped_mask], 'tourney_level'] = mapped_levels[mapped_mask]
+            
+            # Warn about unmapped levels
+            unmapped_mask = mapped_levels.isna()
+            if unmapped_mask.sum() > 0:
+                unmapped_levels = df.loc[mapped_levels.index[unmapped_mask], 'tourney_level'].unique()
+                for level in unmapped_levels[:5]:  # Show first 5 unmapped levels
+                    print(f"Warning: Unknown tourney_level '{level}' for tour '{tour_name}'")
     
     # Count standardized levels
     standardized_levels = df['tourney_level'].value_counts()
