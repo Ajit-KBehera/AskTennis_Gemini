@@ -8,7 +8,7 @@ of the created database, including data counts, distributions, and sample querie
 import sqlite3
 
 # Import configuration
-from load_data.config import DB_FILE
+from .config import DB_FILE
 
 def verify_enhancement():
     """

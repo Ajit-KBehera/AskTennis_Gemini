@@ -9,7 +9,7 @@ import sqlite3
 import pandas as pd
 
 # Import configuration
-from load_data.config import (
+from .config import (
     DB_FILE,
     CREATE_TABLE_MATCHES, CREATE_TABLE_PLAYERS, CREATE_TABLE_RANKINGS, CREATE_TABLE_DOUBLES,
     CREATE_INDEXES_MATCHES, CREATE_INDEXES_PLAYERS, CREATE_INDEXES_RANKINGS, CREATE_INDEXES_DOUBLES,

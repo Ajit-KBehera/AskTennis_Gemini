@@ -10,7 +10,7 @@ import glob
 import os
 
 # Import configuration
-from load_data.config import (
+from .config import (
     PROJECT_ROOT, DATA_DIRS, YEARS_MAIN_TOUR,
     LOAD_ATP_PLAYERS, LOAD_WTA_PLAYERS,
     LOAD_ATP_RANKINGS, LOAD_WTA_RANKINGS,
@@ -21,7 +21,7 @@ from load_data.config import (
 )
 
 # Import utilities
-from load_data.utils import ProgressTracker
+from .utils import ProgressTracker
 
 
 def load_players_data():

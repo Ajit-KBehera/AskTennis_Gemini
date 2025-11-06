@@ -19,6 +19,7 @@ def parse_date_components(df):
     Parse tourney_date into event_year, event_month, event_date columns.
     Adds three new columns while keeping the original tourney_date column.
     Places the new columns right beside the tourney_date column.
+    If columns already exist, they will be overwritten.
     
     Args:
         df: DataFrame with tourney_date column
@@ -35,6 +36,19 @@ def parse_date_components(df):
     event_year = df_copy['tourney_date'].dt.year
     event_month = df_copy['tourney_date'].dt.month
     event_date = df_copy['tourney_date'].dt.day
+    
+    # Check if columns already exist and remove them to avoid duplicates
+    columns_to_remove = []
+    if 'event_year' in df_copy.columns:
+        columns_to_remove.append('event_year')
+    if 'event_month' in df_copy.columns:
+        columns_to_remove.append('event_month')
+    if 'event_date' in df_copy.columns:
+        columns_to_remove.append('event_date')
+    
+    if columns_to_remove:
+        df_copy = df_copy.drop(columns=columns_to_remove)
+        print(f"Removed existing columns to avoid duplicates: {columns_to_remove}")
     
     # Find the position of tourney_date column
     tourney_date_pos = df_copy.columns.get_loc('tourney_date')

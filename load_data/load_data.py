@@ -10,36 +10,52 @@ This module orchestrates the complete data loading pipeline:
 Usage:
     python -m load_data.load_data
     or
+    python load_data/load_data.py
+    or
     from load_data.load_data import create_database_with_players, verify_enhancement
 """
 
-# Import data loading functions
-from load_data.data_loaders import (
-    load_players_data,
-    load_rankings_data,
-    load_matches_data,
-    load_doubles_data
-)
-
-# Import data transformation functions
-from load_data.data_transformers import (
-    parse_date_components,
-    parse_score_data,
-    fix_missing_surface_data,
-    standardize_tourney_levels
-)
-
-# Import database building functions
-from load_data.database_builder import build_database
-
-# Import database verification functions
-from load_data.database_verifier import verify_enhancement
-
-# Import utilities
-from load_data.utils import ProgressTracker
-
-# Import configuration
-from load_data.config import DB_FILE
+# Handle imports for both direct execution and module import
+try:
+    # Try relative imports first (when run as module)
+    from .data_loaders import (
+        load_players_data,
+        load_rankings_data,
+        load_matches_data,
+        load_doubles_data
+    )
+    from .data_transformers import (
+        parse_date_components,
+        parse_score_data,
+        fix_missing_surface_data,
+        standardize_tourney_levels
+    )
+    from .database_builder import build_database
+    from .database_verifier import verify_enhancement
+    from .utils import ProgressTracker
+    from .config import DB_FILE
+except ImportError:
+    # Fall back to absolute imports (when run directly)
+    import sys
+    import os
+    # Add parent directory to path
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from load_data.data_loaders import (
+        load_players_data,
+        load_rankings_data,
+        load_matches_data,
+        load_doubles_data
+    )
+    from load_data.data_transformers import (
+        parse_date_components,
+        parse_score_data,
+        fix_missing_surface_data,
+        standardize_tourney_levels
+    )
+    from load_data.database_builder import build_database
+    from load_data.database_verifier import verify_enhancement
+    from load_data.utils import ProgressTracker
+    from load_data.config import DB_FILE
 
 
 def create_database_with_players():
