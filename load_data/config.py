@@ -13,7 +13,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIRS = [os.path.join(PROJECT_ROOT, "data/tennis_atp"), os.path.join(PROJECT_ROOT, "data/tennis_wta")]
 YEARS_MAIN_TOUR = list(range(1968, 2026))  # Years for main tour matches (Open Era: 1968-2024)
                                               # Note: Amateur matches (1877-1967) are loaded separately from atp_matches_amateur.csv
-DB_FILE = os.path.join(PROJECT_ROOT, "tennis_data_new.db")
+DB_FILE = os.path.join(PROJECT_ROOT, "tennis_data_OE_Singles_Rankings_Players.db")
 
 # --- Data Loading Switches ---
 # Control which data sources are loaded into the database
@@ -40,7 +40,7 @@ LOAD_DAVIS_CUP = True              # Davis Cup matches
 LOAD_FED_CUP = True                # Fed Cup (BJK Cup) matches
 
 # Doubles Data Switches
-LOAD_DOUBLES_MATCHES = True         # ATP Doubles matches
+LOAD_DOUBLES_MATCHES = False         # ATP Doubles matches
 
 # --- Database Creation Switches ---
 # Control which database structures are created
@@ -49,19 +49,19 @@ LOAD_DOUBLES_MATCHES = True         # ATP Doubles matches
 # Table Creation Switches
 CREATE_TABLE_MATCHES = True          # Create matches table
 CREATE_TABLE_PLAYERS = True          # Create players table
-CREATE_TABLE_RANKINGS = False         # Create rankings table
+CREATE_TABLE_RANKINGS = True         # Create rankings table
 CREATE_TABLE_DOUBLES = False          # Create doubles_matches table
 
 # Index Creation Switches
 CREATE_INDEXES_MATCHES = True       # Create indexes for matches table
 CREATE_INDEXES_PLAYERS = True       # Create indexes for players table
-CREATE_INDEXES_RANKINGS = False      # Create indexes for rankings table
+CREATE_INDEXES_RANKINGS = True      # Create indexes for rankings table
 CREATE_INDEXES_DOUBLES = False      # Create indexes for doubles_matches table
 
 # View Creation Switches
 CREATE_VIEW_WINNER_INFO = True      # Create matches_with_winner_info view
 CREATE_VIEW_LOSER_INFO = True       # Create matches_with_loser_info view
 CREATE_VIEW_FULL_INFO = True        # Create matches_with_full_info view
-CREATE_VIEW_MATCHES_RANKINGS = False # Create matches_with_rankings view
-CREATE_VIEW_RANKINGS_HISTORY = False # Create player_rankings_history view
+CREATE_VIEW_MATCHES_RANKINGS = True # Create matches_with_rankings view
+CREATE_VIEW_RANKINGS_HISTORY = True # Create player_rankings_history view
 

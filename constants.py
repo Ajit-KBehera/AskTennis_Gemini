@@ -4,7 +4,7 @@ Centralizes all hardcoded values and configuration settings.
 """
 
 # Database Configuration
-DEFAULT_DB_PATH = "sqlite:///tennis_data_new.db"
+DEFAULT_DB_PATH = "sqlite:///tennis_data_OE_Singles_Rankings_Players.db"
 
 # LLM Configuration
 DEFAULT_MODEL = "gemini-2.5-flash-lite"
