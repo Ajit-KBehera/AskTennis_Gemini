@@ -87,9 +87,14 @@ class TennisPromptBuilder:
         CRITICAL: DOUBLES_MATCHES SCHEMA DIFFERENCE:
         - doubles_matches uses: winner1_name, winner2_name (NOT winner_name)
         - doubles_matches uses: loser1_name, loser2_name (NOT loser_name)
-        - For singles queries (default), ONLY query matches table (not doubles_matches)
-        - Only query doubles_matches when user specifically asks about doubles
-        - UNION example: SELECT winner_name FROM matches UNION ALL SELECT winner1_name || ' / ' || winner2_name FROM doubles_matches
+        - **NEVER query doubles_matches unless the user explicitly mentions "doubles" in their query**
+        - For ALL queries without "doubles" keyword: ONLY use matches table
+        - Default behavior: Query ONLY matches table (singles matches)
+        - Only when user explicitly says "doubles", "doubles match", "doubles final", "doubles tournament", etc. → use doubles_matches
+        - UNION example (ONLY use when user explicitly asks about doubles):
+          SELECT winner_name FROM matches WHERE ... 
+          UNION ALL 
+          SELECT winner1_name || ' / ' || winner2_name FROM doubles_matches WHERE ...
 
         QUERY OPTIMIZATION:
         - Use event_year, event_month for date filtering (faster than tourney_date)
@@ -187,9 +192,10 @@ class TennisPromptBuilder:
         - ALWAYS include round = 'F' filter for tournament winner queries
         - Use mapping tools to get correct tournament database names
         - Apply tour filtering as per Section 4 rules
-        - CRITICAL: For singles queries, ONLY query matches table (NOT doubles_matches)
+        - **CRITICAL: NEVER include doubles_matches unless user explicitly mentions "doubles"**
+        - For "who won X tournament" queries → ONLY query matches table (singles)
         - Examples:
-          * "Who won French Open 2022" → Map "French Open" → "Roland Garros", round = 'F', FROM matches only
+          * "Who won French Open 2022" → Map "French Open" → "Roland Garros", round = 'F', FROM matches ONLY (no doubles)
           * "Who won US Open doubles 2009" → FROM doubles_matches, use winner1_name || ' / ' || winner2_name
 
         HEAD-TO-HEAD QUERIES:
