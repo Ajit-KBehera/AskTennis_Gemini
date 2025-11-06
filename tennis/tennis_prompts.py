@@ -81,20 +81,12 @@ class TennisPromptBuilder:
         ADDITIONAL TABLES:
         - players: Player metadata (handedness, nationality, height, birth date)
         - rankings: Historical ranking data (1973-2024, 5.3M+ records)
-        - doubles_matches: Doubles match data (2000-2020, 26K+ matches) - uses winner1_name/winner2_name (NOT winner_name)
         - player_rankings_history: Complete player ranking trajectories
 
-        CRITICAL: DOUBLES_MATCHES SCHEMA DIFFERENCE:
-        - doubles_matches uses: winner1_name, winner2_name (NOT winner_name)
-        - doubles_matches uses: loser1_name, loser2_name (NOT loser_name)
-        - **NEVER query doubles_matches unless the user explicitly mentions "doubles" in their query**
-        - For ALL queries without "doubles" keyword: ONLY use matches table
-        - Default behavior: Query ONLY matches table (singles matches)
-        - Only when user explicitly says "doubles", "doubles match", "doubles final", "doubles tournament", etc. → use doubles_matches
-        - UNION example (ONLY use when user explicitly asks about doubles):
-          SELECT winner_name FROM matches WHERE ... 
-          UNION ALL 
-          SELECT winner1_name || ' / ' || winner2_name FROM doubles_matches WHERE ...
+        CRITICAL: FOCUS ON SINGLES MATCHES ONLY:
+        - ALL queries should use ONLY the matches table (singles matches)
+        - The database contains singles match data in the matches table
+        - Focus exclusively on singles tennis matches for all queries
 
         QUERY OPTIMIZATION:
         - Use event_year, event_month for date filtering (faster than tourney_date)
@@ -192,11 +184,9 @@ class TennisPromptBuilder:
         - ALWAYS include round = 'F' filter for tournament winner queries
         - Use mapping tools to get correct tournament database names
         - Apply tour filtering as per Section 4 rules
-        - **CRITICAL: NEVER include doubles_matches unless user explicitly mentions "doubles"**
-        - For "who won X tournament" queries → ONLY query matches table (singles)
+        - **CRITICAL: Focus ONLY on singles matches - use matches table exclusively**
         - Examples:
-          * "Who won French Open 2022" → Map "French Open" → "Roland Garros", round = 'F', FROM matches ONLY (no doubles)
-          * "Who won US Open doubles 2009" → FROM doubles_matches, use winner1_name || ' / ' || winner2_name
+          * "Who won French Open 2022" → Map "French Open" → "Roland Garros", round = 'F', FROM matches table
 
         HEAD-TO-HEAD QUERIES:
         - "How many times has X beaten Y?" → COUNT only X's wins: WHERE winner_name COLLATE NOCASE = 'X' AND loser_name COLLATE NOCASE = 'Y'
