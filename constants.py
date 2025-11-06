@@ -18,6 +18,10 @@ APP_SUBTITLE = "#### Powered by Gemini & LangGraph (Stateful Agent)"
 # Logging Configuration
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 LOG_LEVEL = "INFO"
+# Global logging enable/disable flag
+# Set to False to disable all logging activity
+# Can be overridden with LOG_ENABLED environment variable
+LOG_ENABLED = True
 
 # Testing Configuration
 MINIMUM_TEST_INTERVAL_SECONDS = 75

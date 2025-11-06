@@ -3,7 +3,7 @@ import streamlit as st
 
 # --- Local Application Imports ---
 # Logging
-from tennis_logging.logging_factory import setup_logging
+from tennis_logging.simplified_factory import setup_logging, log_error
 
 # UI Components
 from ui.utils.style_loader import load_css
@@ -38,8 +38,9 @@ try:
     ui_display.render_search_panel()
     
     # --- Main Layout: Main Content (Filter + Results) ---
-    ui_display.render_main_content(db_service, query_processor, agent_graph, logger)
+    ui_display.render_main_content(db_service, query_processor, agent_graph)
         
 except Exception as e:
+    log_error(e, "Failed to initialize the AI agent in app_ui", component="app_ui")
     st.error(f"Failed to initialize the AI agent: {e}")
     st.stop()

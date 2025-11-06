@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Optional
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
-from tennis_logging.logging_factory import log_user_query, log_llm_interaction, log_final_response, log_error
+from tennis_logging.simplified_factory import log_user_query, log_llm_interaction, log_final_response, log_error, log_agent_response_parsing, get_session_id
 from utils.formatters import ConsolidatedFormatter
 from config.config import Config
 
@@ -144,20 +144,25 @@ Summary (one line, max 120 chars):"""
         # Final fallback: take first line
         return lines[0] if lines else None
     
-    def handle_user_query(self, user_question: str, agent_graph, logger):
+    def handle_user_query(self, user_question: str, agent_graph):
         """Handle user query processing and store results in session state."""
-        # Log the user query
-        log_user_query(user_question, "user_session")
+        # Get session ID from session state (set in logging_setup)
+        # Use helper function to ensure session ID is always available
+        session_id = get_session_id()
+        
+        # Log the user query with actual session ID
+        log_user_query(user_question, session_id, component="query_service")
         
         with st.spinner("The AI is analyzing your question and querying the database..."):
             try:
                 start_time = datetime.now()
                 
                 # The config dictionary ensures each user gets their own conversation history.
-                config = {"configurable": {"thread_id": "user_session"}}
+                # Use the same session ID for thread_id to maintain conversation context per session
+                config = {"configurable": {"thread_id": session_id}}
                 
                 # Log the initial LLM interaction
-                log_llm_interaction([HumanMessage(content=user_question)], "INITIAL_USER_QUERY")
+                log_llm_interaction([HumanMessage(content=user_question)], "INITIAL_USER_QUERY", component="query_service")
                 
                 # Only pass the new message - LangGraph's checkpointer automatically loads
                 # conversation history from memory based on the thread_id in config
@@ -167,10 +172,10 @@ Summary (one line, max 120 chars):"""
                 )
                 
                 # Log the complete conversation flow
-                log_llm_interaction(response["messages"], "COMPLETE_CONVERSATION_FLOW")
+                log_llm_interaction(response["messages"], "COMPLETE_CONVERSATION_FLOW", component="query_service")
                 
                 # Process the response
-                final_answer = self.process_agent_response(response, logger, user_question)
+                final_answer = self.process_agent_response(response, user_question)
                 
                 # Calculate total processing time
                 end_time = datetime.now()
@@ -185,77 +190,122 @@ Summary (one line, max 120 chars):"""
                 
                 if final_answer and final_answer.strip():
                     # Log successful response
-                    log_final_response(final_answer, processing_time)
+                    log_final_response(final_answer, processing_time, component="query_service")
                 else:
                     # Log warning case
-                    log_final_response("No clear response generated", processing_time)
+                    log_final_response("No clear response generated", processing_time, component="query_service")
 
             except Exception as e:
                 # Log error
-                log_error(e, f"Processing user query: {user_question}")
+                log_error(e, f"Processing user query: {user_question}", component="query_service")
                 st.error(f"An error occurred while processing your request: {e}")
     
-    def process_agent_response(self, response: dict, logger, user_question: str = "") -> str:
+    def process_agent_response(self, response: dict, user_question: str = "") -> str:
         """Process and format the agent's response."""
         # The final answer is in the content of the last AIMessage.
         # Parse Gemini's structured output format
         last_message = response["messages"][-1]
-        logger.info(f"Last message type: {type(last_message)}")
-        logger.info(f"Last message content: {last_message.content}")
-        logger.info(f"Last message content type: {type(last_message.content)}")
+        log_agent_response_parsing(
+            step="initial_parse",
+            message_type=type(last_message).__name__,
+            content_preview=str(last_message.content),
+            details={"content_type": type(last_message.content).__name__},
+            component="query_service"
+        )
         
         if isinstance(last_message.content, list) and last_message.content:
             # For Gemini, content is a list of dicts. We want the text from the first part.
             final_answer = last_message.content[0].get("text", "")
-            if logger is not None:
-                logger.info(f"Extracted from list content: {final_answer}")
+            log_agent_response_parsing(
+                step="list_extraction",
+                message_type="AIMessage",
+                content_preview=final_answer,
+                details={"extraction_method": "list_content"},
+                component="query_service"
+            )
         else:
             # Fallback for standard string content
             final_answer = last_message.content
-            if logger is not None:
-                logger.info(f"Using string content: {final_answer}")
+            log_agent_response_parsing(
+                step="string_extraction",
+                message_type="AIMessage",
+                content_preview=final_answer,
+                details={"extraction_method": "string_content"},
+                component="query_service"
+            )
         
         # If no final answer found, try to extract from tool messages and format properly
         if not final_answer or not final_answer.strip():
-            if logger is not None:
-                logger.info("No clear final answer found, attempting to parse database results...")
+            log_agent_response_parsing(
+                step="fallback_parse_initiated",
+                details={"reason": "no_clear_answer_found"},
+                component="query_service"
+            )
             # First, try to parse database results from AI messages
             for i, message in enumerate(reversed(response["messages"])):
                 if isinstance(message, AIMessage) and message.content:
-                    if logger is not None:
-                        logger.info(f"Checking AI message {i}: {message.content}")
+                    log_agent_response_parsing(
+                        step="checking_ai_message",
+                        message_type="AIMessage",
+                        details={"message_index": i, "total_messages": len(response["messages"])},
+                        component="query_service"
+                    )
                     try:
                         content_str = str(message.content)
-                        if logger is not None:
-                            logger.info(f"Content string: {content_str}")
+                        log_agent_response_parsing(
+                            step="content_string_conversion",
+                            content_preview=content_str,
+                            component="query_service"
+                        )
                         if content_str.startswith('[') and content_str.endswith(']'):
-                            if logger is not None:
-                                logger.info("Found list-like content, attempting to parse...")
+                            log_agent_response_parsing(
+                                step="list_parsing_attempt",
+                                details={"content_format": "list_like"},
+                                component="query_service"
+                            )
                             data = ast.literal_eval(content_str)
-                            if logger is not None:
-                                logger.info(f"Parsed data: {data}")
+                            log_agent_response_parsing(
+                                step="data_parsed",
+                                details={
+                                    "data_length": len(data) if isinstance(data, list) else "N/A",
+                                    "first_row_length": len(data[0]) if isinstance(data, list) and data else "N/A"
+                                },
+                                component="query_service"
+                            )
                             if data and len(data) > 0:
                                 # Format the result properly based on the query type
                                 if len(data) == 1 and len(data[0]) == 1:
                                     # Single result (like winner name)
                                     result = data[0][0]
                                     final_answer = f"The answer is: {result}"
-                                    if logger is not None:
-                                        logger.info(f"✅ Formatted single result: {final_answer}")
+                                    log_agent_response_parsing(
+                                        step="formatting_complete",
+                                        details={"format_type": "single_result", "result_preview": str(result)[:100]},
+                                        component="query_service"
+                                    )
                                 elif len(data) == 1 and len(data[0]) > 1:
                                     # Multiple columns, single row - use improved formatting
                                     final_answer = self.data_formatter.format_with_context(data, user_question)
-                                    if logger is not None:
-                                        logger.info(f"✅ Formatted multi-column result: {final_answer}")
+                                    log_agent_response_parsing(
+                                        step="formatting_complete",
+                                        details={"format_type": "multi_column_single_row"},
+                                        component="query_service"
+                                    )
                                 else:
                                     # Multiple rows - use improved formatting
                                     final_answer = self.data_formatter.format_with_context(data, user_question)
-                                    if logger is not None:
-                                        logger.info(f"✅ Formatted multi-row result: {final_answer}")
+                                    log_agent_response_parsing(
+                                        step="formatting_complete",
+                                        details={"format_type": "multi_row"},
+                                        component="query_service"
+                                    )
                                 break
                     except Exception as e:
-                        if logger is not None:
-                            logger.info(f"Failed to parse message {i}: {e}")
+                        log_agent_response_parsing(
+                            step="parse_error",
+                            details={"error": str(e), "message_index": i},
+                            component="query_service"
+                        )
                         continue
             
             # If still no answer, try tool messages

@@ -5,6 +5,7 @@ Extracted from ui_components.py for better modularity.
 """
 
 import streamlit as st
+from tennis_logging.simplified_factory import log_error
 
 
 class UIDisplay:
@@ -20,7 +21,7 @@ class UIDisplay:
     """
     
     @staticmethod
-    def render_main_content(db_service, query_processor, agent_graph, logger, column_layout=None):
+    def render_main_content(db_service, query_processor, agent_graph, column_layout=None):
         """
         Render the main content area with filter panel on left and results panel on right.
         
@@ -28,7 +29,6 @@ class UIDisplay:
             db_service: DatabaseService instance for querying data
             query_processor: QueryProcessor instance for handling AI queries
             agent_graph: LangGraph agent instance
-            logger: Logger instance for logging
             column_layout: List of column widths [left_width, right_width].
                          Defaults to [1.2, 6.8].
         """
@@ -47,7 +47,7 @@ class UIDisplay:
         # REMAINING SPACE: RESULTS OR AI QUERY
         # =============================================================================
         with col_remaining:
-            UIDisplay.render_results_panel(query_processor, agent_graph, logger, db_service)
+            UIDisplay.render_results_panel(query_processor, agent_graph, db_service)
     
     @staticmethod
     def render_search_panel(column_layout=None):
@@ -249,7 +249,7 @@ class UIDisplay:
         return False
     
     @staticmethod
-    def render_results_panel(query_processor, agent_graph, logger, db_service):
+    def render_results_panel(query_processor, agent_graph, db_service):
         """
         Render the results panel displaying either AI query results or table/filter results.
         Handles conditional rendering based on session state flags.
@@ -257,14 +257,13 @@ class UIDisplay:
         Args:
             query_processor: QueryProcessor instance for handling AI queries
             agent_graph: LangGraph agent instance
-            logger: Logger instance for logging
             db_service: DatabaseService instance for querying data
         """
         # Handle AI Query Results
         if st.session_state.get('show_ai_results', False) and st.session_state.get('ai_query'):
             try:
                 with st.spinner("AI is analyzing your question..."):
-                    query_processor.handle_user_query(st.session_state.ai_query, agent_graph, logger)
+                    query_processor.handle_user_query(st.session_state.ai_query, agent_graph)
                 
                 # Display summary and response if available
                 summary = st.session_state.get('ai_query_summary')
@@ -286,6 +285,7 @@ class UIDisplay:
                         st.info("💡 **Tip**: If you didn't find what you're looking for, try checking the spelling of player or tournament names. The system is case-sensitive and requires exact matches.")
                 
             except Exception as e:
+                log_error(e, f"Error processing query in UI display: {st.session_state.get('ai_query', 'unknown')}", component="ui_display")
                 st.error(f"Error processing query: {e}")
         
         # Handle Table Results

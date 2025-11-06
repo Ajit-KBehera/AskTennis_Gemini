@@ -7,7 +7,7 @@ from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.messages import AIMessage
 from datetime import datetime
-from tennis_logging.logging_factory import log_tool_usage, log_database_query, log_error
+from tennis_logging.simplified_factory import log_tool_usage, log_database_query, log_error
 from agent.agent_state import AgentState
 from typing import List, Any
 
@@ -106,7 +106,7 @@ class LangGraphBuilder:
                     tool_input = tool_call["args"]
                     
                     # Log tool usage start
-                    log_tool_usage(tool_name, tool_input, "Executing...", None)
+                    log_tool_usage(tool_name, tool_input, "Executing...", None, component="langgraph_builder")
                     
                     # Find the tool and execute it
                     for tool in self.tools:
@@ -118,19 +118,20 @@ class LangGraphBuilder:
                                 execution_time = (end_time - start_time).total_seconds()
                                 
                                 # Log tool result
-                                log_tool_usage(tool_name, tool_input, result, execution_time)
+                                log_tool_usage(tool_name, tool_input, result, execution_time, component="langgraph_builder")
                                 
                                 # If it's a database query, log it separately
                                 if tool_name == "sql_db_query":
                                     log_database_query(
                                         tool_input.get("query", ""), 
                                         result, 
-                                        execution_time
+                                        execution_time,
+                                        component="langgraph_builder"
                                     )
                                 
                                 return {"messages": [AIMessage(content=str(result), tool_calls=[])]}
                             except Exception as e:
-                                log_error(e, f"Tool execution failed: {tool_name}")
+                                log_error(e, f"Tool execution failed: {tool_name}", component="langgraph_builder")
                                 return {
                                     "messages": [
                                         AIMessage(

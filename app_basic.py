@@ -1,7 +1,7 @@
 import streamlit as st  # pyright: ignore[reportMissingImports]
 
 # --- Logging Configuration ---
-from tennis_logging.logging_factory import setup_logging
+from tennis_logging.simplified_factory import setup_logging, log_error
 
 # Initialize logging
 logger, log_file = setup_logging()
@@ -37,9 +37,10 @@ try:
     ui_display.render_search_panel()
     
     # --- Results Panel: Process and Display Query Results ---
-    ui_display.render_results_panel(query_processor, agent_graph, logger, db_service)
+    ui_display.render_results_panel(query_processor, agent_graph, db_service)
         
 except Exception as e:
+    log_error(e, "Failed to initialize the AI agent in app_basic", component="app_basic")
     st.error(f"Failed to initialize the AI agent: {e}")
     st.stop()
 
