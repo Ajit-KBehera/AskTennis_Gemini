@@ -41,8 +41,10 @@ class TennisPromptBuilder:
         - sql_db_query: Use AFTER validation to execute the query and retrieve data
         - Workflow: Validate → Execute → Format Results → Answer User
         - NEVER validate the same query multiple times in a row
-        - If checker returns a formatted query, use that exact query in sql_db_query
-        - If validation passes, execute immediately - do not re-validate
+        - If checker returns a formatted query (even if wrapped in markdown code blocks), use that EXACT query in sql_db_query
+        - If validation passes (checker returns formatted SQL), execute immediately - do not re-validate
+        - IMPORTANT: sql_db_query_checker returns formatted SQL, NOT query results. You MUST use sql_db_query to get actual data.
+        - If you see formatted SQL from sql_db_query_checker, that means validation succeeded - proceed to execution immediately
         
         CRITICAL REQUIREMENTS:
         - ALWAYS include winner_name and loser_name in SELECT statements (never return scores without player names)
@@ -259,6 +261,24 @@ class TennisPromptBuilder:
         - "Who has the most aces in 2023?" → MAX(w_ace) with GROUP BY winner_name
         - "Who has the best first serve percentage?" → Calculate (w_1stIn/w_svpt)*100
         - "Which players have the longest match durations?" → MAX(minutes) with ORDER BY
+        
+        PLAYER STATISTICS (COMBINING WINNER/LOSER STATS):
+        - When calculating statistics for a specific player across all matches, you must combine both winner_* and loser_* columns
+        - Use CASE statements to select the appropriate column based on whether the player won or lost
+        - CORRECT PATTERN for player statistics (e.g., first serve percentage):
+          SELECT AVG(CASE 
+            WHEN winner_name COLLATE NOCASE = 'Player Name' AND w_svpt > 0 
+              THEN CAST(w_1stIn AS REAL) / w_svpt 
+            WHEN loser_name COLLATE NOCASE = 'Player Name' AND l_svpt > 0 
+              THEN CAST(l_1stIn AS REAL) / l_svpt 
+            ELSE NULL 
+          END) * 100 as statistic_value
+          FROM matches 
+          WHERE (winner_name COLLATE NOCASE = 'Player Name' OR loser_name COLLATE NOCASE = 'Player Name')
+            AND event_year <= YYYY
+        - WRONG PATTERN (returns two separate values):
+          SELECT AVG(...) FROM matches WHERE winner_name = 'Player' UNION ALL SELECT AVG(...) FROM matches WHERE loser_name = 'Player'
+        - This pattern works for: first serve %, second serve %, aces, double faults, break points saved, etc.
 
         COMPARATIVE ANALYSIS:
         - "Compare Federer vs Nadal on clay" → Surface-specific head-to-head with surface filter
@@ -291,6 +311,13 @@ class TennisPromptBuilder:
         - If query is too broad/narrow, suggest more specific/broader versions
         - For creative questions, provide the best available data and explain limitations
         - For hypothetical questions, provide historical context and similar real examples
+        
+        ANTI-LOOP PROTECTION:
+        - If sql_db_query_checker returns formatted SQL (even in markdown), that is SUCCESS - proceed to sql_db_query immediately
+        - NEVER call sql_db_query_checker twice for the same query
+        - If you've already validated a query, you MUST execute it with sql_db_query - do not validate again
+        - If you're unsure whether to validate or execute, EXECUTE - sql_db_query will return errors if the query is invalid
+        - Remember: sql_db_query_checker validates syntax, sql_db_query returns actual data
 
         ============================================================================
         SECTION 9: CONFIDENCE & CAPABILITY GUIDELINES

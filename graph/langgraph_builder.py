@@ -105,6 +105,27 @@ class LangGraphBuilder:
                     tool_name = tool_call["name"]
                     tool_input = tool_call["args"]
                     
+                    # Loop detection: Check if sql_db_query_checker was just called with the same query
+                    if tool_name == "sql_db_query_checker":
+                        query = tool_input.get("query", "")
+                        # Check recent AIMessages for tool_calls with the same query
+                        recent_checker_calls = 0
+                        for msg in messages[-10:]:
+                            if isinstance(msg, AIMessage) and hasattr(msg, 'tool_calls') and msg.tool_calls:
+                                for tc in msg.tool_calls:
+                                    if isinstance(tc, dict) and tc.get("name") == "sql_db_query_checker":
+                                        tc_args = tc.get("args", {})
+                                        if isinstance(tc_args, dict) and tc_args.get("query") == query:
+                                            recent_checker_calls += 1
+                        if recent_checker_calls > 0:
+                            # Query was already validated - log warning
+                            log_error(
+                                ValueError("Query validation loop detected - query already validated"),
+                                f"sql_db_query_checker called multiple times for same query. Use sql_db_query to execute.",
+                                component="langgraph_builder"
+                            )
+                            # Still execute the checker, but log the warning
+                    
                     # Log tool usage start
                     log_tool_usage(tool_name, tool_input, "Executing...", None, component="langgraph_builder")
                     
@@ -128,6 +149,15 @@ class LangGraphBuilder:
                                         execution_time,
                                         component="langgraph_builder"
                                     )
+                                
+                                # If sql_db_query_checker returned formatted SQL, add a hint to execute
+                                if tool_name == "sql_db_query_checker" and result and "SELECT" in str(result).upper():
+                                    result_str = str(result)
+                                    # Extract SQL from markdown code blocks if present
+                                    if "```" in result_str:
+                                        # Add hint message
+                                        hint = "\n\n[Note: Query validation successful. Use sql_db_query with this exact query to retrieve data.]"
+                                        result = result_str + hint
                                 
                                 return {"messages": [AIMessage(content=str(result), tool_calls=[])]}
                             except Exception as e:
