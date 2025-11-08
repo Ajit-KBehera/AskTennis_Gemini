@@ -123,7 +123,8 @@ class DatabaseService:
                                 opponent: Optional[str] = None, 
                                 tournament: Optional[str] = None, 
                                 year: Optional[str] = None, 
-                                surfaces: Optional[List[str]] = None, 
+                                surfaces: Optional[List[str]] = None,
+                                return_all_columns: bool = False,
                                 _cache_bust: int = 0) -> pd.DataFrame:
         """Get matches based on filters."""
         try:
@@ -141,18 +142,19 @@ class DatabaseService:
             params = []
             
             # Optimize: if both player and opponent are specified, combine them into one condition
+            # Use COLLATE NOCASE for case-insensitive matching
             if player and player != self.ALL_PLAYERS and opponent and opponent != self.ALL_OPPONENTS:
                 # Match where both players are involved (either order)
-                where_conditions.append("((winner_name = ? AND loser_name = ?) OR (winner_name = ? AND loser_name = ?))")
+                where_conditions.append("((winner_name COLLATE NOCASE = ? AND loser_name COLLATE NOCASE = ?) OR (winner_name COLLATE NOCASE = ? AND loser_name COLLATE NOCASE = ?))")
                 params.extend([player, opponent, opponent, player])
             else:
                 # Handle player and opponent separately if only one is specified
                 if player and player != self.ALL_PLAYERS:
-                    where_conditions.append("(winner_name = ? OR loser_name = ?)")
+                    where_conditions.append("(winner_name COLLATE NOCASE = ? OR loser_name COLLATE NOCASE = ?)")
                     params.extend([player, player])
                 
                 if opponent and opponent != self.ALL_OPPONENTS:
-                    where_conditions.append("(winner_name = ? OR loser_name = ?)")
+                    where_conditions.append("(winner_name COLLATE NOCASE = ? OR loser_name COLLATE NOCASE = ?)")
                     params.extend([opponent, opponent])
             
             if tournament and tournament != self.ALL_TOURNAMENTS:
@@ -189,21 +191,33 @@ class DatabaseService:
             
             where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
             
-            query = f"""
-            SELECT
-                event_year,
-                tourney_date,
-                tourney_name,
-                round,
-                winner_name,
-                loser_name,
-                surface,
-                score
-            FROM matches 
-            WHERE {where_clause}
-            ORDER BY tourney_date ASC, match_num ASC
-            LIMIT {self.DEFAULT_QUERY_LIMIT}
-            """
+            # Select columns based on return_all_columns parameter
+            if return_all_columns:
+                # Return all columns for chart generation
+                query = f"""
+                SELECT *
+                FROM matches 
+                WHERE {where_clause}
+                ORDER BY tourney_date ASC, match_num ASC
+                LIMIT {self.DEFAULT_QUERY_LIMIT}
+                """
+            else:
+                # Return selected columns for table display
+                query = f"""
+                SELECT
+                    event_year,
+                    tourney_date,
+                    tourney_name,
+                    round,
+                    winner_name,
+                    loser_name,
+                    surface,
+                    score
+                FROM matches 
+                WHERE {where_clause}
+                ORDER BY tourney_date ASC, match_num ASC
+                LIMIT {self.DEFAULT_QUERY_LIMIT}
+                """
             
             with sqlite3.connect(self.db_path) as conn:
                 df = pd.read_sql_query(query, conn, params=params)

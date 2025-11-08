@@ -29,19 +29,31 @@ from first_serve_timeline import create_timeline_chart
 from serve_radar_chart import create_radar_chart
 
 
-def create_combined_serve_charts(player_name, year):
+def create_combined_serve_charts(player_name, year, df=None):
     """
     Create combined serve charts (timeline and radar) for a player.
     
     Args:
         player_name: Name of the player
         year: Year of the season
+        df: Optional pre-loaded DataFrame. If None, data will be loaded from database.
         
     Returns:
         go.Figure: Combined Plotly figure with both charts
     """
-    # Load match data
-    df = load_player_matches(player_name, year)
+    # Load match data if not provided
+    if df is None:
+        df = load_player_matches(player_name, year)
+    else:
+        # Filter DataFrame by year if provided DataFrame contains multiple years
+        if 'event_year' in df.columns:
+            df = df[df['event_year'] == year].copy()
+            if df.empty:
+                raise ValueError(f"No matches found for {player_name} in {year}")
+    
+    # Sort by date and match number
+    if 'tourney_date' in df.columns and 'match_num' in df.columns:
+        df = df.sort_values(by=['tourney_date', 'match_num']).reset_index(drop=True)
     
     # Calculate serve statistics
     player = calculate_match_serve_stats(df, player_name, case_sensitive=True)

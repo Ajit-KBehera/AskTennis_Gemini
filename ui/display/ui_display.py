@@ -91,7 +91,7 @@ class UIDisplay:
                 btn_col1, btn_col2 = st.columns([1, 1])
                 
                 with btn_col1:
-                    send_clicked = st.button("Send", type="primary", key="search_send_button", use_container_width=True)
+                    send_clicked = st.button("Send", type="primary", key="search_send_button")
                     if send_clicked:
                         if ai_query:
                             st.session_state.ai_query = ai_query
@@ -101,7 +101,7 @@ class UIDisplay:
                 
                 with btn_col2:
                     # Always render the Clear button to ensure it's visible
-                    clear_clicked = st.button("Clear", key="search_clear_button", use_container_width=True)
+                    clear_clicked = st.button("Clear", key="search_clear_button")
                     if clear_clicked:
                         # Clear all related session state
                         st.session_state.ai_query_results = None
@@ -221,8 +221,7 @@ class UIDisplay:
             generate_button = st.button(
                 "🔍 Generate",
                 type="primary",
-                key="filter_generate_button",
-                use_container_width=True
+                key="filter_generate_button"
             )
         
         with col_clear_cache:
@@ -288,30 +287,100 @@ class UIDisplay:
                 log_error(e, f"Error processing query in UI display: {st.session_state.get('ai_query', 'unknown')}", component="ui_display")
                 st.error(f"Error processing query: {e}")
         
-        # Handle Table Results
+        # Handle Table/Chart Results with Tabs
         elif st.session_state.get('analysis_generated', False):
             filters = st.session_state.analysis_filters
             
-            # Get data from database
+            # Load data once with all columns (needed for charts)
             df = db_service.get_matches_with_filters(
                 player=filters['player'],
                 opponent=filters['opponent'],
                 tournament=filters['tournament'],
                 year=filters['year'],
                 surfaces=filters['surfaces'],
+                return_all_columns=True,  # Get all columns for charts
                 _cache_bust=st.session_state.get('cache_bust', 0)
             )
             
-            if not df.empty:
-                # Display results table
-                st.dataframe(df, width='stretch')
-                
-                # Clear button
-                if st.button("🗑️ Clear Results"):
+            if df.empty:
+                st.warning("No matches found for the selected criteria.")
+                return
+            
+            # Define display columns for table view
+            display_columns = ['event_year', 'tourney_date', 'tourney_name', 
+                              'round', 'winner_name', 'loser_name', 'surface', 'score']
+            
+            # Create tabs for different views
+            tab_matches, tab_serve, tab_return, tab_raw = st.tabs([
+                "📊 Matches", 
+                "🎾 Serve", 
+                "🏓 Return", 
+                "📋 RAW"
+            ])
+            
+            # Tab 1: Matches Table
+            with tab_matches:
+                st.dataframe(df[display_columns], width='stretch')
+                if st.button("🗑️ Clear Results", key="clear_matches"):
                     st.session_state.analysis_generated = False
                     st.session_state.analysis_context = {}
                     st.rerun()
-            else:
-                st.warning("No matches found for the selected criteria.")
+            
+            # Tab 2: Serve Statistics
+            with tab_serve:
+                if filters['player'] and filters['player'] != 'All Players':
+                    if filters['year'] and filters['year'] != 'All Years':
+                        try:
+                            # Import chart creation function
+                            import sys
+                            import os
+                            sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+                            from serve.charts.combined_serve_charts import create_combined_serve_charts
+                            
+                            # Filter DataFrame for the selected player and year
+                            # The DataFrame already has the correct filters applied, but we need to ensure
+                            # it contains matches for the selected player
+                            player_df = df[
+                                ((df['winner_name'].str.lower() == filters['player'].lower()) |
+                                 (df['loser_name'].str.lower() == filters['player'].lower())) &
+                                (df['event_year'] == int(filters['year']))
+                            ].copy()
+                            
+                            if not player_df.empty:
+                                # Create and display serve charts using pre-loaded DataFrame
+                                fig = create_combined_serve_charts(
+                                    filters['player'], 
+                                    int(filters['year']), 
+                                    df=player_df
+                                )
+                                # Use config parameter for Plotly configuration
+                                st.plotly_chart(fig, width='stretch', config={'displayModeBar': True})
+                            else:
+                                st.warning(f"No matches found for {filters['player']} in {filters['year']}.")
+                        except Exception as e:
+                            log_error(e, f"Error generating serve charts for {filters['player']}", component="ui_display")
+                            st.error(f"Error generating serve charts: {e}")
+                            st.info("Please ensure the player name matches exactly and has matches in the selected year.")
+                    else:
+                        st.info("ℹ️ Please select a specific year to view serve statistics.")
+                else:
+                    st.info("ℹ️ Please select a player to view serve statistics.")
+            
+            # Tab 3: Return Statistics (Future)
+            with tab_return:
+                st.info("🚧 Return statistics visualization coming soon...")
+            
+            # Tab 4: Raw Data
+            with tab_raw:
+                st.dataframe(df, width='stretch')
+                # Download button for CSV export
+                csv_data = df.to_csv(index=False)
+                st.download_button(
+                    label="📥 Download CSV",
+                    data=csv_data,
+                    file_name=f"tennis_matches_{filters.get('year', 'all')}.csv",
+                    mime="text/csv",
+                    key="download_raw_csv"
+                )
         else:
             pass
