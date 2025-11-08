@@ -156,22 +156,12 @@ fig.update_layout(
 # Display Plot
 # ============================================================================
 
-# Try to show with notebook renderer, fallback to browser or save HTML file
+# Display Plot
 try:
-    if 'ipykernel' in sys.modules or 'IPython' in sys.modules:
-        from IPython.display import HTML, display  # type: ignore
-        display(HTML(fig.to_html(include_plotlyjs='cdn')))
-    else:
-        # Try browser renderer first (opens in default browser)
-        try:
-            fig.show(renderer='browser')
-        except Exception:
-            # Fallback: save to HTML file
-            html_file = 'tennis_plot.html'
-            fig.write_html(html_file)
-            print(f"Plot saved to {html_file}. Open it in your browser to view.")
-except Exception as e:
-    # Final fallback: save to HTML file
-    html_file = 'tennis_plot.html'
+    fig.show(renderer='browser')
+    print("Plot displayed in browser.")
+except Exception:
+    print("Error displaying plot in browser. Saving to HTML file.")
+    html_file = '1stServe_plot.html'
     fig.write_html(html_file)
-    print(f"Plot saved to {html_file}. Open it in your browser to view.")
+    print(f"Plot saved to {html_file}.")
