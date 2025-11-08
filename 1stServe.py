@@ -79,19 +79,19 @@ def add_vertical_lines(fig, y_data_series, y_min=0, color='gray', width=0.8, opa
 # Data Loading and Processing
 # ============================================================================
 
-conn = sqlite3.connect("tennis_data_OE_Singles_Rankings_Players.db")
-df = pd.read_sql_query("SELECT * FROM matches", conn)
-conn.close()  # Close database connection
-
 # Example player name
 player_name = 'Carlos Alcaraz'
 year = 2024
 
-# Filter matches involving the player
-player = df[((df['winner_name'] == player_name) | (df['loser_name'] == player_name)) & (df['event_year'].isin([year]))].copy()
+conn = sqlite3.connect("tennis_data_OE_Singles_Rankings_Players.db")
+df = pd.read_sql_query(f"SELECT * FROM matches WHERE event_year = {year} AND (winner_name = '{player_name}' OR loser_name = '{player_name}')", conn)
+conn.close()  # Close database connection
 
 # Sort by tourney date and match number
-player = player.sort_values(by=['tourney_date', 'match_num']).reset_index(drop=True)
+df = df.sort_values(by=['tourney_date', 'match_num']).reset_index(drop=True)
+
+# Copy dataframe to player
+player = df.copy()
 
 # Compute player's first-serve-in percentage, guarding against zero/NaN serve attempts
 player['player_1stIn'] = np.where(
