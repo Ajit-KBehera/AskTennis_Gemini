@@ -83,12 +83,8 @@ def add_vertical_lines(fig, y_data_series, y_min=0, color='gray', width=0.8, opa
 player_name = 'Carlos Alcaraz'
 year = 2024
 
-conn = sqlite3.connect("tennis_data_OE_Singles_Rankings_Players.db")
-df = pd.read_sql_query(f"SELECT * FROM matches WHERE event_year = {year} AND (winner_name = '{player_name}' OR loser_name = '{player_name}')", conn)
-conn.close()  # Close database connection
-
-# Sort by tourney date and match number
-df = df.sort_values(by=['tourney_date', 'match_num']).reset_index(drop=True)
+with sqlite3.connect("tennis_data_OE_Singles_Rankings_Players.db") as conn:
+    df = pd.read_sql_query(f"SELECT * FROM matches WHERE event_year = {year} AND (winner_name = '{player_name}' OR loser_name = '{player_name}')", conn).sort_values(by=['tourney_date', 'match_num']).reset_index(drop=True)
 
 # Copy dataframe to player
 player = df.copy()
