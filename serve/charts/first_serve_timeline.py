@@ -3,6 +3,11 @@ import numpy as np
 import plotly.graph_objects as go
 import sqlite3
 import sys
+import os
+
+# Add parent directory to path to import serve_stats
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from serve_stats import calculate_match_serve_stats, get_match_hover_data
 
 # ============================================================================
 # Function Definitions
@@ -87,33 +92,14 @@ sql_query = "SELECT * FROM matches WHERE event_year = ? AND (winner_name COLLATE
 with sqlite3.connect("tennis_data_OE_Singles_Rankings_Players.db") as conn:
     df = pd.read_sql_query(sql_query, conn, params=(year, player_name, player_name)).sort_values(by=['tourney_date', 'match_num']).reset_index(drop=True)
 
-# Copy dataframe to player
-player = df.copy()
+# Check if dataframe is empty
+if df.empty:
+    print(f"No matches found for {player_name} in {year}")
+    sys.exit(1)
 
-# Compute player's first-serve-in percentage, guarding against zero/NaN serve attempts
-player['player_1stIn'] = np.where(
-    player['winner_name'] == player_name,
-    np.where(player['w_svpt'] > 0, player['w_1stIn'] / player['w_svpt'] * 100, np.nan),
-    np.where(player['l_svpt'] > 0, player['l_1stIn'] / player['l_svpt'] * 100, np.nan)
-)
-
-# Compute player's first-serve-won percentage, guarding against zero/NaN serve attempts and division by zero
-player['player_1stWon'] = np.where(
-    player['winner_name'] == player_name,
-    np.where((player['w_svpt'] > 0) & (player['w_1stIn'] > 0), 
-             player['w_1stWon'] / player['w_1stIn'] * 100, np.nan),
-    np.where((player['l_svpt'] > 0) & (player['l_1stIn'] > 0), 
-             player['l_1stWon'] / player['l_1stIn'] * 100, np.nan)
-)
-
-# Calculate opponent and result for hover tooltips
-player['opponent'] = np.where(
-    player['winner_name'] == player_name,
-    player['loser_name'],
-    player['winner_name']
-)
-player['result'] = np.where(player['winner_name'] == player_name, 'W', 'L')
-playerdata = player[['tourney_name', 'round', 'opponent', 'result']].values
+# Calculate serve statistics using shared module
+player = calculate_match_serve_stats(df, player_name, case_sensitive=True)
+playerdata = get_match_hover_data(df, player_name, case_sensitive=True)
 
 # Create x-axis positions
 x_positions = list(range(len(player)))
@@ -159,6 +145,7 @@ try:
     print("Plot displayed in browser.")
 except Exception:
     print("Error displaying plot in browser. Saving to HTML file.")
-    html_file = '1stServe_plot.html'
+    html_file = 'first_serve_timeline_plot.html'
     fig.write_html(html_file)
     print(f"Plot saved to {html_file}.")
+
