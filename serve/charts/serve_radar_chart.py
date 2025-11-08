@@ -1,13 +1,15 @@
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-import sqlite3
 import sys
 import os
 
-# Add parent directory to path to import serve_stats
+# Add parent directories to path to import shared modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 from serve_stats import calculate_aggregated_serve_stats
+from serveCharts import load_player_matches
+from utils.chart_utils import display_chart
 
 # ============================================================================
 # Function Definitions
@@ -76,50 +78,28 @@ def create_radar_chart(stats, player_name, year):
 # Data Loading and Processing
 # ============================================================================
 
-# Example player name
-player_name = 'Alex de Minaur'
-year = 2024
-sql_query = "SELECT * FROM matches WHERE event_year = ? AND (winner_name COLLATE NOCASE = ? OR loser_name COLLATE NOCASE = ?)"
-
-with sqlite3.connect("tennis_data_OE_Singles_Rankings_Players.db") as conn:
-    df = pd.read_sql_query(sql_query, conn, params=(year, player_name, player_name)).sort_values(by=['tourney_date', 'match_num']).reset_index(drop=True)
-
-# Check if dataframe is empty
-if df.empty:
-    print(f"No matches found for {player_name} in {year}")
-    sys.exit(1)
-
-# Calculate aggregated serve statistics using shared module
-serve_stats = calculate_aggregated_serve_stats(df, player_name, case_sensitive=False)
-
-# Print statistics for reference
-print(f"\nServe Statistics for {player_name} ({year}):")
-print("-" * 50)
-for stat_name, stat_value in serve_stats.items():
-    if not np.isnan(stat_value):
-        print(f"{stat_name}: {stat_value:.2f}")
-    else:
-        print(f"{stat_name}: N/A")
-print("-" * 50)
-
-# ============================================================================
-# Plot Creation
-# ============================================================================
-
-# Create radar chart
-fig = create_radar_chart(serve_stats, player_name, year)
-
-# ============================================================================
-# Display Plot
-# ============================================================================
-
-# Display Plot
-try:
-    fig.show(renderer='browser')
-    print("\nPlot displayed in browser.")
-except Exception:
-    print("Error displaying plot in browser. Saving to HTML file.")
-    html_file = 'serve_radar_chart.html'
-    fig.write_html(html_file)
-    print(f"Plot saved to {html_file}.")
+if __name__ == "__main__":
+    # Example player name
+    player_name = 'Elena Rybakina'
+    year = 2024
+    
+    # Load match data using shared function
+    df = load_player_matches(player_name, year)
+    
+    # Calculate aggregated serve statistics using shared module
+    serve_stats = calculate_aggregated_serve_stats(df, player_name, case_sensitive=False)
+    
+    # ============================================================================
+    # Plot Creation
+    # ============================================================================
+    
+    # Create radar chart
+    fig = create_radar_chart(serve_stats, player_name, year)
+    
+    # ============================================================================
+    # Display Plot
+    # ============================================================================
+    
+    # Display plot using shared function
+    display_chart(fig, html_filename='serve_radar_chart.html')
 

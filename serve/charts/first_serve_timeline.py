@@ -1,13 +1,15 @@
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-import sqlite3
 import sys
 import os
 
-# Add parent directory to path to import serve_stats
+# Add parent directories to path to import shared modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 from serve_stats import calculate_match_serve_stats, get_match_hover_data
+from serveCharts import load_player_matches
+from utils.chart_utils import display_chart
 
 # ============================================================================
 # Function Definitions
@@ -80,72 +82,79 @@ def add_vertical_lines(fig, y_data_series, y_min=0, color='gray', width=0.8, opa
             ))
 
 
+def create_timeline_chart(player_df, player_name, year, playerdata, x_positions):
+    """
+    Create the first serve timeline chart.
+    
+    Args:
+        player_df: DataFrame with calculated serve statistics
+        player_name: Name of the player
+        year: Year of the season
+        playerdata: Hover data for tooltips
+        x_positions: X-axis positions for matches
+        
+    Returns:
+        go.Figure: Plotly figure object for timeline chart
+    """
+    fig = go.Figure()
+    
+    # Add elements in order: background first, then main data, then overlays
+    # 1. Draw vertical lines (background layer)
+    add_vertical_lines(fig, [player_df['player_1stIn'], player_df['player_1stWon']])
+    
+    # 2. Add scatter plots (main data layer)
+    add_scatter_trace(fig, x_positions, player_df['player_1stIn'], 'First Serves In (%)', 'blue', 'First Serves In', playerdata)
+    add_scatter_trace(fig, x_positions, player_df['player_1stWon'], 'First Serves Won (%)', 'orange', 'First Serves Won', playerdata)
+    
+    # 3. Add trend lines (overlay layer)
+    add_trend_line(fig, player_df['player_1stIn'], 'First Serves In', 'blue')
+    add_trend_line(fig, player_df['player_1stWon'], 'First Serves Won', 'orange')
+    
+    # 4. Update layout
+    fig.update_layout(
+        title=f"{player_name} - First Serve Performance - {year} Season",
+        xaxis_title="Matches",
+        yaxis_title="(%)",
+        hovermode='closest',
+        width=1200,
+        height=600,
+        template='plotly_white',
+        showlegend=True
+    )
+    
+    return fig
+
+
 # ============================================================================
 # Data Loading and Processing
 # ============================================================================
 
-# Example player name
-player_name = 'Elena Rybakina'
-year = 2024
-sql_query = "SELECT * FROM matches WHERE event_year = ? AND (winner_name COLLATE NOCASE = ? OR loser_name COLLATE NOCASE = ?)"
-
-with sqlite3.connect("tennis_data_OE_Singles_Rankings_Players.db") as conn:
-    df = pd.read_sql_query(sql_query, conn, params=(year, player_name, player_name)).sort_values(by=['tourney_date', 'match_num']).reset_index(drop=True)
-
-# Check if dataframe is empty
-if df.empty:
-    print(f"No matches found for {player_name} in {year}")
-    sys.exit(1)
-
-# Calculate serve statistics using shared module
-player = calculate_match_serve_stats(df, player_name, case_sensitive=True)
-playerdata = get_match_hover_data(df, player_name, case_sensitive=True)
-
-# Create x-axis positions
-x_positions = list(range(len(player)))
-
-# ============================================================================
-# Plot Creation
-# ============================================================================
-
-# Create Plotly figure
-fig = go.Figure()
-
-# Add elements in order: background first, then main data, then overlays
-# 1. Draw vertical lines (background layer)
-add_vertical_lines(fig, [player['player_1stIn'], player['player_1stWon']])
-
-# 2. Add scatter plots (main data layer)
-add_scatter_trace(fig, x_positions, player['player_1stIn'], 'First Serves In (%)', 'blue', 'First Serves In', playerdata)
-add_scatter_trace(fig, x_positions, player['player_1stWon'], 'First Serves Won (%)', 'orange', 'First Serves Won', playerdata)
-
-# 3. Add trend lines (overlay layer)
-add_trend_line(fig, player['player_1stIn'], 'First Serves In', 'blue')
-add_trend_line(fig, player['player_1stWon'], 'First Serves Won', 'orange')
-
-# 4. Update layout (final step)
-fig.update_layout(
-    title=f"{player_name} - First Serve Performance - {year} Season",
-    xaxis_title="Matches",
-    yaxis_title="(%)",
-    hovermode='closest',
-    width=1200,
-    height=600,
-    template='plotly_white',
-    showlegend=True
-)
-
-# ============================================================================
-# Display Plot
-# ============================================================================
-
-# Display Plot
-try:
-    fig.show(renderer='browser')
-    print("Plot displayed in browser.")
-except Exception:
-    print("Error displaying plot in browser. Saving to HTML file.")
-    html_file = 'first_serve_timeline_plot.html'
-    fig.write_html(html_file)
-    print(f"Plot saved to {html_file}.")
+if __name__ == "__main__":
+    # Example player name
+    player_name = 'Elena Rybakina'
+    year = 2024
+    
+    # Load match data using shared function
+    df = load_player_matches(player_name, year)
+    
+    # Calculate serve statistics using shared module
+    player = calculate_match_serve_stats(df, player_name, case_sensitive=True)
+    playerdata = get_match_hover_data(df, player_name, case_sensitive=True)
+    
+    # Create x-axis positions
+    x_positions = list(range(len(player)))
+    
+    # ============================================================================
+    # Plot Creation
+    # ============================================================================
+    
+    # Create timeline chart using reusable function
+    fig = create_timeline_chart(player, player_name, year, playerdata, x_positions)
+    
+    # ============================================================================
+    # Display Plot
+    # ============================================================================
+    
+    # Display plot using shared function
+    display_chart(fig, html_filename='first_serve_timeline_plot.html')
 
