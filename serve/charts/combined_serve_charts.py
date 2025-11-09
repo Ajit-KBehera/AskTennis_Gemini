@@ -22,15 +22,12 @@ from serve_stats import (
     build_year_suffix
 )
 
-# Import data loading function (must be before chart imports to avoid circular dependency)
-from data_loader import load_player_matches
-
 # Import chart creation functions from individual chart files
 from first_serve_timeline import create_timeline_chart
 from serve_radar_chart import create_radar_chart
 
 
-def create_combined_serve_charts(player_name, year, df=None, opponent=None, tournament=None, surfaces=None):
+def create_combined_serve_charts(player_name, year, df, opponent=None, tournament=None, surfaces=None):
     """
     Create combined serve charts (timeline and radar) for a player.
     
@@ -40,41 +37,41 @@ def create_combined_serve_charts(player_name, year, df=None, opponent=None, tour
             - int or str: Single year (e.g., 2024)
             - list: Multiple years (e.g., [2022, 2023, 2024])
             - None: Career view (all years)
-        df: Optional pre-loaded DataFrame. If None, data will be loaded from database.
-        opponent: Optional opponent name to filter matches
-        tournament: Optional tournament name to filter matches
-        surfaces: Optional list of surfaces to filter matches (e.g., ['Hard', 'Clay'])
+        df: DataFrame containing match data (required). Should already be filtered by player,
+            opponent, tournament, and surfaces. Year filtering will be applied if needed.
+        opponent: Optional opponent name (for chart title display)
+        tournament: Optional tournament name (for chart title display)
+        surfaces: Optional list of surfaces (for chart title display)
         
     Returns:
         go.Figure: Combined Plotly figure with both charts
+        
+    Raises:
+        ValueError: If DataFrame is empty after year filtering
     """
-    # Load match data if not provided
-    if df is None:
-        df = load_player_matches(player_name, year=year, opponent=opponent, tournament=tournament, surfaces=surfaces)
-    else:
-        # Filter DataFrame by year(s) if provided DataFrame contains multiple years
-        if 'event_year' in df.columns and year is not None:
+    # Filter DataFrame by year(s) if provided DataFrame contains multiple years
+    if 'event_year' in df.columns and year is not None:
+        if isinstance(year, list):
+            # Multiple years: filter to those years
+            df = df[df['event_year'].isin(year)].copy()
+        else:
+            # Single year: filter to that year
+            year_int = int(year) if isinstance(year, str) else year
+            df = df[df['event_year'] == year_int].copy()
+        
+        if df.empty:
+            filter_info = f"{player_name}"
             if isinstance(year, list):
-                # Multiple years: filter to those years
-                df = df[df['event_year'].isin(year)].copy()
+                filter_info += f" in {year}"
             else:
-                # Single year: filter to that year
-                year_int = int(year) if isinstance(year, str) else year
-                df = df[df['event_year'] == year_int].copy()
-            
-            if df.empty:
-                filter_info = f"{player_name}"
-                if isinstance(year, list):
-                    filter_info += f" in {year}"
-                else:
-                    filter_info += f" in {year}"
-                if opponent:
-                    filter_info += f" vs {opponent}"
-                if tournament:
-                    filter_info += f" at {tournament}"
-                if surfaces:
-                    filter_info += f" on {', '.join(surfaces)}"
-                raise ValueError(f"No matches found for {filter_info}")
+                filter_info += f" in {year}"
+            if opponent:
+                filter_info += f" vs {opponent}"
+            if tournament:
+                filter_info += f" at {tournament}"
+            if surfaces:
+                filter_info += f" on {', '.join(surfaces)}"
+            raise ValueError(f"No matches found for {filter_info}")
     
     # Sort by date and match number
     if 'tourney_date' in df.columns and 'match_num' in df.columns:
