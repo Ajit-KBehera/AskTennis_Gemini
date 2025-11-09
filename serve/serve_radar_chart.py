@@ -11,7 +11,7 @@ import numpy as np
 import plotly.graph_objects as go
 
 # Local application imports
-from .serve_stats import build_year_suffix
+# (No imports needed - stats dictionary passed directly)
 
 
 # ============================================================================
@@ -25,11 +25,8 @@ def create_radar_chart(stats, player_name, year):
     
     Args:
         stats: Dictionary containing serve statistics
-        player_name: Name of the player
-        year: Year(s) for the chart. Can be:
-            - int or str: Single year (e.g., 2024)
-            - list: Multiple years (e.g., [2022, 2023, 2024])
-            - None: Career view (all years)
+        player_name: Name of the player (used in trace name)
+        year: Year(s) for the chart (kept for API compatibility, title set by combined chart)
         
     Returns:
         go.Figure: Plotly figure object
@@ -52,30 +49,6 @@ def create_radar_chart(stats, player_name, year):
         line=dict(color='blue', width=2),
         marker=dict(size=8, color='blue')
     ))
-    
-    # Update layout for polar chart
-    fig.update_layout(
-        polar=dict(
-            radialaxis=dict(
-                visible=True,
-                range=[0, 100],
-                tickfont=dict(size=10),
-                gridcolor='lightgray',
-                gridwidth=1
-            ),
-            angularaxis=dict(
-                tickfont=dict(size=12),
-                rotation=90,
-                direction='counterclockwise'
-            )
-        ),
-        title=f"{player_name} - Serve Statistics Radar Chart - {build_year_suffix(year)}",
-        font=dict(size=14),
-        width=800,
-        height=800,
-        template='plotly_white',
-        showlegend=True
-    )
     
     return fig
 

@@ -10,7 +10,7 @@ import numpy as np
 import plotly.graph_objects as go
 
 # Local application imports
-from .serve_stats import build_year_suffix, get_match_hover_data
+from .serve_stats import get_match_hover_data
 
 
 # ============================================================================
@@ -99,41 +99,29 @@ def create_timeline_chart(player_df, player_name, year):
     Returns:
         go.Figure: Plotly figure object for timeline chart
     """
+    # Sort by date and match number for chronological timeline display
+    df = player_df.copy()
+    if 'tourney_date' in df.columns and 'match_num' in df.columns:
+        df = df.sort_values(by=['tourney_date', 'match_num']).reset_index(drop=True)
+    
     # Get hover data for tooltips
-    hoverdata = get_match_hover_data(player_df, player_name, case_sensitive=True)
+    hoverdata = get_match_hover_data(df, player_name, case_sensitive=True)
     
     # Create x-axis positions for matches
-    x_positions = list(range(len(player_df)))
+    x_positions = list(range(len(df)))
     
     fig = go.Figure()
     
     # Add elements in order: background first, then main data, then overlays
     # 1. Draw vertical lines (background layer)
-    add_vertical_lines(fig, [player_df['player_1stIn'], player_df['player_1stWon']])
+    add_vertical_lines(fig, [df['player_1stIn'], df['player_1stWon']])
     
     # 2. Add scatter plots (main data layer)
-    add_scatter_trace(fig, x_positions, player_df['player_1stIn'], 'First Serves In (%)', 'blue', 'First Serves In', hoverdata)
-    add_scatter_trace(fig, x_positions, player_df['player_1stWon'], 'First Serves Won (%)', 'orange', 'First Serves Won', hoverdata)
+    add_scatter_trace(fig, x_positions, df['player_1stIn'], 'First Serves In (%)', 'blue', 'First Serves In', hoverdata)
+    add_scatter_trace(fig, x_positions, df['player_1stWon'], 'First Serves Won (%)', 'orange', 'First Serves Won', hoverdata)
     
     # 3. Add trend lines (overlay layer)
-    add_trend_line(fig, player_df['player_1stIn'], 'First Serves In', 'blue')
-    add_trend_line(fig, player_df['player_1stWon'], 'First Serves Won', 'orange')
-    
-    # Build title based on year parameter
-    title_suffix = build_year_suffix(year)
-    
-    # 4. Update layout
-    fig.update_layout(
-        title=f"{player_name} - First Serve Performance - {title_suffix}",
-        xaxis_title="Matches",
-        yaxis_title="(%)",
-        yaxis=dict(range=[0, 100]),  # Fix y-axis range to 0-100%
-        hovermode='closest',
-        width=1200,
-        height=600,
-        template='plotly_white',
-        showlegend=True
-    )
+    add_trend_line(fig, df['player_1stIn'], 'First Serves In', 'blue')
+    add_trend_line(fig, df['player_1stWon'], 'First Serves Won', 'orange')
     
     return fig
-

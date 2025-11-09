@@ -38,10 +38,6 @@ def create_combined_serve_charts(player_name, year, df, opponent=None, tournamen
     Returns:
         go.Figure: Combined Plotly figure with both charts
     """
-    # Sort by date and match number
-    if 'tourney_date' in df.columns and 'match_num' in df.columns:
-        df = df.sort_values(by=['tourney_date', 'match_num']).reset_index(drop=True)
-    
     # Build filter suffix for chart titles
     filter_parts = []
     if opponent:
