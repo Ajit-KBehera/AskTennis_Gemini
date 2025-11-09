@@ -13,8 +13,7 @@ from plotly.subplots import make_subplots
 from .serve_stats import (
     build_year_suffix,
     calculate_aggregated_serve_stats,
-    calculate_match_serve_stats,
-    get_match_hover_data
+    calculate_match_serve_stats
 )
 from .first_serve_timeline import create_timeline_chart
 from .serve_radar_chart import create_radar_chart
@@ -58,14 +57,13 @@ def create_combined_serve_charts(player_name, year, df, opponent=None, tournamen
     
     # Calculate serve statistics
     player = calculate_match_serve_stats(df, player_name, case_sensitive=True)
-    playerdata = get_match_hover_data(df, player_name, case_sensitive=True)
     serve_stats = calculate_aggregated_serve_stats(df, player_name, case_sensitive=False)
     
     # Create x-axis positions for timeline
     x_positions = list(range(len(player)))
     
     # Create individual charts using reusable functions
-    timeline_fig = create_timeline_chart(player, player_name, year, playerdata, x_positions)
+    timeline_fig = create_timeline_chart(player, player_name, year, x_positions)
     radar_fig = create_radar_chart(serve_stats, player_name, year)
     
     # Create subplot figure with 2 rows, 1 column

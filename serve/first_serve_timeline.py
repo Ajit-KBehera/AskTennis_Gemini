@@ -10,7 +10,7 @@ import numpy as np
 import plotly.graph_objects as go
 
 # Local application imports
-from .serve_stats import build_year_suffix
+from .serve_stats import build_year_suffix, get_match_hover_data
 
 
 # ============================================================================
@@ -84,7 +84,7 @@ def add_vertical_lines(fig, y_data_series, y_min=0, y_max=100, color='gray', wid
             ))
 
 
-def create_timeline_chart(player_df, player_name, year, playerdata, x_positions):
+def create_timeline_chart(player_df, player_name, year, x_positions):
     """
     Create the first serve timeline chart.
     
@@ -95,12 +95,14 @@ def create_timeline_chart(player_df, player_name, year, playerdata, x_positions)
             - int or str: Single year (e.g., 2024)
             - list: Multiple years (e.g., [2022, 2023, 2024])
             - None: Career view (all years)
-        playerdata: Hover data for tooltips
         x_positions: X-axis positions for matches
         
     Returns:
         go.Figure: Plotly figure object for timeline chart
     """
+    # Get hover data for tooltips
+    hoverdata = get_match_hover_data(player_df, player_name, case_sensitive=True)
+    
     fig = go.Figure()
     
     # Add elements in order: background first, then main data, then overlays
@@ -108,8 +110,8 @@ def create_timeline_chart(player_df, player_name, year, playerdata, x_positions)
     add_vertical_lines(fig, [player_df['player_1stIn'], player_df['player_1stWon']])
     
     # 2. Add scatter plots (main data layer)
-    add_scatter_trace(fig, x_positions, player_df['player_1stIn'], 'First Serves In (%)', 'blue', 'First Serves In', playerdata)
-    add_scatter_trace(fig, x_positions, player_df['player_1stWon'], 'First Serves Won (%)', 'orange', 'First Serves Won', playerdata)
+    add_scatter_trace(fig, x_positions, player_df['player_1stIn'], 'First Serves In (%)', 'blue', 'First Serves In', hoverdata)
+    add_scatter_trace(fig, x_positions, player_df['player_1stWon'], 'First Serves Won (%)', 'orange', 'First Serves Won', hoverdata)
     
     # 3. Add trend lines (overlay layer)
     add_trend_line(fig, player_df['player_1stIn'], 'First Serves In', 'blue')
