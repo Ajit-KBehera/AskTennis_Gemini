@@ -7,8 +7,11 @@ import os
 # Add parent directories to path to import shared modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+# Add current directory to path for local imports
+sys.path.insert(0, os.path.dirname(__file__))
+
 from serve_stats import calculate_match_serve_stats, get_match_hover_data
-from serveCharts import load_player_matches
+from data_loader import load_player_matches
 from utils.chart_utils import display_chart
 
 # ============================================================================
@@ -89,7 +92,10 @@ def create_timeline_chart(player_df, player_name, year, playerdata, x_positions)
     Args:
         player_df: DataFrame with calculated serve statistics
         player_name: Name of the player
-        year: Year of the season
+        year: Year(s) for the chart. Can be:
+            - int or str: Single year (e.g., 2024)
+            - list: Multiple years (e.g., [2022, 2023, 2024])
+            - None: Career view (all years)
         playerdata: Hover data for tooltips
         x_positions: X-axis positions for matches
         
@@ -110,9 +116,21 @@ def create_timeline_chart(player_df, player_name, year, playerdata, x_positions)
     add_trend_line(fig, player_df['player_1stIn'], 'First Serves In', 'blue')
     add_trend_line(fig, player_df['player_1stWon'], 'First Serves Won', 'orange')
     
+    # Build title based on year parameter
+    if year is None:
+        title_suffix = "Career"
+    elif isinstance(year, list):
+        if len(year) == 1:
+            title_suffix = f"{year[0]} Season"
+        else:
+            year_range = f"{min(year)}-{max(year)}"
+            title_suffix = f"{year_range} Seasons"
+    else:
+        title_suffix = f"{year} Season"
+    
     # 4. Update layout
     fig.update_layout(
-        title=f"{player_name} - First Serve Performance - {year} Season",
+        title=f"{player_name} - First Serve Performance - {title_suffix}",
         xaxis_title="Matches",
         yaxis_title="(%)",
         hovermode='closest',

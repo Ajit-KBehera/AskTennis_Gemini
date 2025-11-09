@@ -7,13 +7,28 @@ import os
 # Add parent directories to path to import shared modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+# Add current directory to path for local imports
+sys.path.insert(0, os.path.dirname(__file__))
+
 from serve_stats import calculate_aggregated_serve_stats
-from serveCharts import load_player_matches
+from data_loader import load_player_matches
 from utils.chart_utils import display_chart
 
 # ============================================================================
 # Function Definitions
 # ============================================================================
+
+def _build_year_suffix(year):
+    """Build year suffix string for chart titles."""
+    if year is None:
+        return "Career"
+    elif isinstance(year, list):
+        if len(year) == 1:
+            return f"{year[0]} Season"
+        else:
+            return f"{min(year)}-{max(year)} Seasons"
+    else:
+        return f"{year} Season"
 
 
 def create_radar_chart(stats, player_name, year):
@@ -23,7 +38,10 @@ def create_radar_chart(stats, player_name, year):
     Args:
         stats: Dictionary containing serve statistics
         player_name: Name of the player
-        year: Year of the season
+        year: Year(s) for the chart. Can be:
+            - int or str: Single year (e.g., 2024)
+            - list: Multiple years (e.g., [2022, 2023, 2024])
+            - None: Career view (all years)
         
     Returns:
         go.Figure: Plotly figure object
@@ -63,7 +81,7 @@ def create_radar_chart(stats, player_name, year):
                 direction='counterclockwise'
             )
         ),
-        title=f"{player_name} - Serve Statistics Radar Chart - {year} Season",
+        title=f"{player_name} - Serve Statistics Radar Chart - {_build_year_suffix(year)}",
         font=dict(size=14),
         width=800,
         height=800,

@@ -11,49 +11,99 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import sys
 import os
+import sqlite3
 
 # Add parent directories to path to import shared modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+# Add current directory to path for local imports
+sys.path.insert(0, os.path.dirname(__file__))
+
 from serve_stats import (
     calculate_match_serve_stats, 
     calculate_aggregated_serve_stats,
     get_match_hover_data
 )
-from serveCharts import load_player_matches
 from utils.chart_utils import display_chart
 
+# Import data loading function (must be before chart imports to avoid circular dependency)
+from data_loader import load_player_matches
+
 # Import chart creation functions from individual chart files
-sys.path.insert(0, os.path.dirname(__file__))
 from first_serve_timeline import create_timeline_chart
 from serve_radar_chart import create_radar_chart
 
 
-def create_combined_serve_charts(player_name, year, df=None):
+def create_combined_serve_charts(player_name, year, df=None, opponent=None, tournament=None, surfaces=None):
     """
     Create combined serve charts (timeline and radar) for a player.
     
     Args:
         player_name: Name of the player
-        year: Year of the season
+        year: Year(s) for the chart. Can be:
+            - int or str: Single year (e.g., 2024)
+            - list: Multiple years (e.g., [2022, 2023, 2024])
+            - None: Career view (all years)
         df: Optional pre-loaded DataFrame. If None, data will be loaded from database.
+        opponent: Optional opponent name to filter matches
+        tournament: Optional tournament name to filter matches
+        surfaces: Optional list of surfaces to filter matches (e.g., ['Hard', 'Clay'])
         
     Returns:
         go.Figure: Combined Plotly figure with both charts
     """
     # Load match data if not provided
     if df is None:
-        df = load_player_matches(player_name, year)
+        df = load_player_matches(player_name, year=year, opponent=opponent, tournament=tournament, surfaces=surfaces)
     else:
-        # Filter DataFrame by year if provided DataFrame contains multiple years
-        if 'event_year' in df.columns:
-            df = df[df['event_year'] == year].copy()
+        # Filter DataFrame by year(s) if provided DataFrame contains multiple years
+        if 'event_year' in df.columns and year is not None:
+            if isinstance(year, list):
+                # Multiple years: filter to those years
+                df = df[df['event_year'].isin(year)].copy()
+            else:
+                # Single year: filter to that year
+                year_int = int(year) if isinstance(year, str) else year
+                df = df[df['event_year'] == year_int].copy()
+            
             if df.empty:
-                raise ValueError(f"No matches found for {player_name} in {year}")
+                filter_info = f"{player_name}"
+                if isinstance(year, list):
+                    filter_info += f" in {year}"
+                else:
+                    filter_info += f" in {year}"
+                if opponent:
+                    filter_info += f" vs {opponent}"
+                if tournament:
+                    filter_info += f" at {tournament}"
+                if surfaces:
+                    filter_info += f" on {', '.join(surfaces)}"
+                raise ValueError(f"No matches found for {filter_info}")
     
     # Sort by date and match number
     if 'tourney_date' in df.columns and 'match_num' in df.columns:
         df = df.sort_values(by=['tourney_date', 'match_num']).reset_index(drop=True)
+    
+    # Build filter suffix for chart titles
+    filter_parts = []
+    if opponent:
+        filter_parts.append(f"vs {opponent}")
+    if tournament:
+        filter_parts.append(f"at {tournament}")
+    if surfaces and len(surfaces) > 0:
+        filter_parts.append(f"on {', '.join(surfaces)}")
+    filter_suffix = f" ({', '.join(filter_parts)})" if filter_parts else ""
+    
+    # Build year suffix for titles
+    if year is None:
+        year_suffix = "Career"
+    elif isinstance(year, list):
+        if len(year) == 1:
+            year_suffix = f"{year[0]} Season"
+        else:
+            year_suffix = f"{min(year)}-{max(year)} Seasons"
+    else:
+        year_suffix = f"{year} Season"
     
     # Calculate serve statistics
     player = calculate_match_serve_stats(df, player_name, case_sensitive=True)
@@ -72,8 +122,8 @@ def create_combined_serve_charts(player_name, year, df=None):
         rows=2,
         cols=1,
         subplot_titles=(
-            f"{player_name} - First Serve Performance Timeline - {year} Season",
-            f"{player_name} - Serve Statistics Radar Chart - {year} Season"
+            f"{player_name} - First Serve Performance Timeline - {year_suffix}{filter_suffix}",
+            f"{player_name} - Serve Statistics Radar Chart - {year_suffix}{filter_suffix}"
         ),
         specs=[[{"type": "xy"}], [{"type": "polar"}]],
         vertical_spacing=0.15
@@ -92,22 +142,26 @@ def create_combined_serve_charts(player_name, year, df=None):
     combined_fig.update_yaxes(title_text="(%)", row=1, col=1)
     
     # Update polar layout for radar subplot (row 2)
-    # Note: polar2 refers to the second polar subplot (row 2, col 1)
-    combined_fig.update_layout(
-        polar2=dict(
-            radialaxis=dict(
-                visible=True,
-                range=[0, 100],
-                tickfont=dict(size=10),
-                gridcolor='lightgray',
-                gridwidth=1
-            ),
-            angularaxis=dict(
-                tickfont=dict(size=12),
-                rotation=90,
-                direction='counterclockwise'
-            )
+    # Use update_polars() method instead of polar2 keyword argument (deprecated)
+    combined_fig.update_polars(
+        row=2,
+        col=1,
+        radialaxis=dict(
+            visible=True,
+            range=[0, 100],
+            tickfont=dict(size=10),
+            gridcolor='lightgray',
+            gridwidth=1
         ),
+        angularaxis=dict(
+            tickfont=dict(size=12),
+            rotation=90,
+            direction='counterclockwise'
+        )
+    )
+    
+    # Update general layout
+    combined_fig.update_layout(
         template='plotly_white',
         showlegend=True,
         height=1400,

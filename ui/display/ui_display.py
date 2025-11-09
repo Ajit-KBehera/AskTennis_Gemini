@@ -292,7 +292,7 @@ class UIDisplay:
             filters = st.session_state.analysis_filters
             
             # Load data once with all columns (needed for charts)
-            df = db_service.get_matches_with_filters(
+            df_matches = db_service.get_matches_with_filters(
                 player=filters['player'],
                 opponent=filters['opponent'],
                 tournament=filters['tournament'],
@@ -302,7 +302,7 @@ class UIDisplay:
                 _cache_bust=st.session_state.get('cache_bust', 0)
             )
             
-            if df.empty:
+            if df_matches.empty:
                 st.warning("No matches found for the selected criteria.")
                 return
             
@@ -320,7 +320,7 @@ class UIDisplay:
             
             # Tab 1: Matches Table
             with tab_matches:
-                st.dataframe(df[display_columns], width='stretch')
+                st.dataframe(df_matches[display_columns], width='stretch')
                 if st.button("🗑️ Clear Results", key="clear_matches"):
                     st.session_state.analysis_generated = False
                     st.session_state.analysis_context = {}
@@ -329,40 +329,43 @@ class UIDisplay:
             # Tab 2: Serve Statistics
             with tab_serve:
                 if filters['player'] and filters['player'] != 'All Players':
-                    if filters['year'] and filters['year'] != 'All Years':
-                        try:
-                            # Import chart creation function
-                            import sys
-                            import os
-                            sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
-                            from serve.charts.combined_serve_charts import create_combined_serve_charts
-                            
-                            # Filter DataFrame for the selected player and year
-                            # The DataFrame already has the correct filters applied, but we need to ensure
-                            # it contains matches for the selected player
-                            player_df = df[
-                                ((df['winner_name'].str.lower() == filters['player'].lower()) |
-                                 (df['loser_name'].str.lower() == filters['player'].lower())) &
-                                (df['event_year'] == int(filters['year']))
-                            ].copy()
-                            
-                            if not player_df.empty:
-                                # Create and display serve charts using pre-loaded DataFrame
-                                fig = create_combined_serve_charts(
-                                    filters['player'], 
-                                    int(filters['year']), 
-                                    df=player_df
-                                )
-                                # Use config parameter for Plotly configuration
-                                st.plotly_chart(fig, width='stretch', config={'displayModeBar': True})
-                            else:
-                                st.warning(f"No matches found for {filters['player']} in {filters['year']}.")
-                        except Exception as e:
-                            log_error(e, f"Error generating serve charts for {filters['player']}", component="ui_display")
-                            st.error(f"Error generating serve charts: {e}")
-                            st.info("Please ensure the player name matches exactly and has matches in the selected year.")
-                    else:
-                        st.info("ℹ️ Please select a specific year to view serve statistics.")
+                    try:
+                        # Import chart creation function
+                        import sys
+                        import os
+                        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+                        from serve.charts.combined_serve_charts import create_combined_serve_charts
+                        
+                        # Extract filter values for chart title/display
+                        opponent = filters['opponent'] if filters['opponent'] != 'All Opponents' else None
+                        tournament = filters['tournament'] if filters['tournament'] != 'All Tournaments' else None
+                        surfaces = filters['surfaces'] if filters['surfaces'] else None
+                        
+                        # Handle year parameter: convert to int if specific year, None if "All Years" (career view)
+                        year_param = None
+                        if filters['year'] and filters['year'] != 'All Years':
+                            try:
+                                year_param = int(filters['year'])
+                            except (ValueError, TypeError):
+                                year_param = None  # Fallback to career view if year is invalid
+                        # If year_param is None, it means "All Years" (career view)
+                        
+                        # Create and display serve charts using pre-loaded DataFrame
+                        # df_matches already has correct filters applied (player, year, opponent, tournament, surfaces)
+                        fig = create_combined_serve_charts(
+                            filters['player'], 
+                            year_param,  # Can be int (single year) or None (career view)
+                            df=df_matches,
+                            opponent=opponent,
+                            tournament=tournament,
+                            surfaces=surfaces
+                        )
+                        # Use config parameter for Plotly configuration
+                        st.plotly_chart(fig, width='stretch', config={'displayModeBar': True})
+                    except Exception as e:
+                        log_error(e, f"Error generating serve charts for {filters['player']}", component="ui_display")
+                        st.error(f"Error generating serve charts: {e}")
+                        st.info("Please ensure the player name matches exactly and has matches in the selected filters.")
                 else:
                     st.info("ℹ️ Please select a player to view serve statistics.")
             
@@ -372,9 +375,9 @@ class UIDisplay:
             
             # Tab 4: Raw Data
             with tab_raw:
-                st.dataframe(df, width='stretch')
+                st.dataframe(df_matches, width='stretch')
                 # Download button for CSV export
-                csv_data = df.to_csv(index=False)
+                csv_data = df_matches.to_csv(index=False)
                 st.download_button(
                     label="📥 Download CSV",
                     data=csv_data,
