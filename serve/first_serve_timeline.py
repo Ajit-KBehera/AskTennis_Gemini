@@ -1,12 +1,17 @@
+"""
+First serve timeline chart visualization.
+
+This module provides functions to create timeline charts showing first serve
+performance over time, including first serves in percentage and first serves won percentage.
+"""
+
+# Third-party imports
 import numpy as np
 import plotly.graph_objects as go
-import sys
-import os
 
-# Add parent directory to path for serve_stats import
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+# Local application imports
+from .serve_stats import build_year_suffix
 
-from serve_stats import build_year_suffix
 
 # ============================================================================
 # Function Definitions

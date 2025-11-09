@@ -1,12 +1,18 @@
+"""
+Serve statistics radar chart visualization.
+
+This module provides functions to create radar (polar) charts displaying
+comprehensive serve statistics including first serve percentage, first serve won,
+second serve won, ace rate, and double fault rate.
+"""
+
+# Third-party imports
 import numpy as np
 import plotly.graph_objects as go
-import sys
-import os
 
-# Add parent directory to path for serve_stats import
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+# Local application imports
+from .serve_stats import build_year_suffix
 
-from serve_stats import build_year_suffix
 
 # ============================================================================
 # Function Definitions

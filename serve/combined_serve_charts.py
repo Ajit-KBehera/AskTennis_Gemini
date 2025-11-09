@@ -5,26 +5,19 @@ This script combines multiple serve charts (timeline and radar) into a single
 display page, showing them one under another for comprehensive analysis.
 """
 
+# Third-party imports
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import sys
-import os
 
-# Add parent directory to path for serve_stats import
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-# Add current directory to path for local imports
-sys.path.insert(0, os.path.dirname(__file__))
-
-from serve_stats import (
-    calculate_match_serve_stats, 
+# Local application imports
+from .serve_stats import (
+    build_year_suffix,
     calculate_aggregated_serve_stats,
-    get_match_hover_data,
-    build_year_suffix
+    calculate_match_serve_stats,
+    get_match_hover_data
 )
-
-# Import chart creation functions from individual chart files
-from first_serve_timeline import create_timeline_chart
-from serve_radar_chart import create_radar_chart
+from .first_serve_timeline import create_timeline_chart
+from .serve_radar_chart import create_radar_chart
 
 
 def create_combined_serve_charts(player_name, year, df, opponent=None, tournament=None, surfaces=None):
@@ -38,41 +31,14 @@ def create_combined_serve_charts(player_name, year, df, opponent=None, tournamen
             - list: Multiple years (e.g., [2022, 2023, 2024])
             - None: Career view (all years)
         df: DataFrame containing match data (required). Should already be filtered by player,
-            opponent, tournament, and surfaces. Year filtering will be applied if needed.
+            year, opponent, tournament, and surfaces.
         opponent: Optional opponent name (for chart title display)
         tournament: Optional tournament name (for chart title display)
         surfaces: Optional list of surfaces (for chart title display)
         
     Returns:
         go.Figure: Combined Plotly figure with both charts
-        
-    Raises:
-        ValueError: If DataFrame is empty after year filtering
     """
-    # Filter DataFrame by year(s) if provided DataFrame contains multiple years
-    if 'event_year' in df.columns and year is not None:
-        if isinstance(year, list):
-            # Multiple years: filter to those years
-            df = df[df['event_year'].isin(year)].copy()
-        else:
-            # Single year: filter to that year
-            year_int = int(year) if isinstance(year, str) else year
-            df = df[df['event_year'] == year_int].copy()
-        
-        if df.empty:
-            filter_info = f"{player_name}"
-            if isinstance(year, list):
-                filter_info += f" in {year}"
-            else:
-                filter_info += f" in {year}"
-            if opponent:
-                filter_info += f" vs {opponent}"
-            if tournament:
-                filter_info += f" at {tournament}"
-            if surfaces:
-                filter_info += f" on {', '.join(surfaces)}"
-            raise ValueError(f"No matches found for {filter_info}")
-    
     # Sort by date and match number
     if 'tourney_date' in df.columns and 'match_num' in df.columns:
         df = df.sort_values(by=['tourney_date', 'match_num']).reset_index(drop=True)

@@ -331,10 +331,7 @@ class UIDisplay:
                 if filters['player'] and filters['player'] != 'All Players':
                     try:
                         # Import chart creation function
-                        import sys
-                        import os
-                        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
-                        from serve.charts.combined_serve_charts import create_combined_serve_charts
+                        from serve.combined_serve_charts import create_combined_serve_charts
                         
                         # Extract filter values for chart title/display
                         opponent = filters['opponent'] if filters['opponent'] != 'All Opponents' else None
