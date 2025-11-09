@@ -19,15 +19,15 @@ class UIDisplay:
     
     Method execution order:
     1. render_main_content() - Main entry point, orchestrates layout
-    2. render_search_panel() - Renders search input (called separately or by main_content)
-    3. render_filter_panel() - Renders filter controls (called by main_content)
-    4. render_results_panel() - Renders results display (called by main_content)
+    2. render_filter_panel() - Renders filter controls (called by main_content, left column)
+    3. render_search_panel() - Renders search input (called by main_content, right column top)
+    4. render_results_panel() - Renders results display (called by main_content, right column bottom)
     """
     
     @staticmethod
     def render_main_content(db_service, query_processor, agent_graph, column_layout=None):
         """
-        Render the main content area with filter panel on left and results panel on right.
+        Render the main content area with filter panel on left and search/results panel on right.
         
         Args:
             db_service: DatabaseService instance for querying data
@@ -42,15 +42,19 @@ class UIDisplay:
         col_left, col_remaining = st.columns(column_layout)
         
         # =============================================================================
-        # COLUMN 1: CLEAN FILTER PANEL (Left Side)
+        # COLUMN 1: FILTER PANEL (Left Side)
         # =============================================================================
         with col_left:
             UIDisplay.render_filter_panel(db_service)
         
         # =============================================================================
-        # REMAINING SPACE: RESULTS OR AI QUERY
+        # COLUMN 2: SEARCH PANEL + RESULTS PANEL (Right Side)
         # =============================================================================
         with col_remaining:
+            # Search panel at the top
+            UIDisplay.render_search_panel()
+            
+            # Results panel below search
             UIDisplay.render_results_panel(query_processor, agent_graph, db_service)
     
     @staticmethod

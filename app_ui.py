@@ -34,10 +34,7 @@ try:
     db_service = DatabaseService()
     ui_display = UIDisplay()
     
-    # --- Top Panel: AskTennis Search ---
-    ui_display.render_search_panel()
-    
-    # --- Main Layout: Main Content (Filter + Results) ---
+    # --- Main Layout: Filter Panel (Left) + Search & Results Panel (Right) ---
     ui_display.render_main_content(db_service, query_processor, agent_graph)
         
 except Exception as e:
