@@ -7,6 +7,7 @@ import sqlite3
 import pandas as pd
 from typing import List, Optional
 import streamlit as st
+from constants import DEFAULT_DB_PATH
 
 class DatabaseService:
     """Service for database operations in enhanced UI."""
@@ -22,8 +23,15 @@ class DatabaseService:
     MAX_YEAR = 2100
     DEFAULT_QUERY_LIMIT = 5000
     
-    def __init__(self, db_path: str = "tennis_data.db"):
+    def __init__(self, db_path: Optional[str] = None):
         """Initialize database service."""
+        if db_path is None:
+            # Extract file path from SQLAlchemy URI format if present
+            db_path = DEFAULT_DB_PATH
+            if db_path.startswith("sqlite:///"):
+                db_path = db_path.replace("sqlite:///", "")
+            elif db_path.startswith("sqlite://"):
+                db_path = db_path.replace("sqlite://", "")
         self.db_path = db_path
     
     @staticmethod

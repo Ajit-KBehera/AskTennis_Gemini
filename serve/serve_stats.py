@@ -86,14 +86,14 @@ def calculate_match_serve_stats(df, player_name, case_sensitive=False):
                  df['l_2ndWon'] / second_serve_attempted * 100, np.nan)
     )
     
-    # Calculate Ace Rate (aces per serve game)
-    aces = np.where(is_winner, df['w_ace'], df['l_ace'])
-    serve_games = np.where(is_winner, df['w_SvGms'], df['l_SvGms'])
-    df['player_ace_rate'] = np.where(serve_games > 0, aces / serve_games * 100, np.nan)
+    # Calculate Ace Rate (aces per total serve points)
+    player_aces = np.where(is_winner, df['w_ace'], df['l_ace'])
+    player_serve_points = np.where(is_winner, df['w_svpt'], df['l_svpt'])
+    df['player_ace_rate'] = np.where(player_serve_points > 0, player_aces / player_serve_points * 100, np.nan)
     
-    # Calculate Double Fault Rate (double faults per serve game)
-    double_faults = np.where(is_winner, df['w_df'], df['l_df'])
-    df['player_df_rate'] = np.where(serve_games > 0, double_faults / serve_games * 100, np.nan)
+    # Calculate Double Fault Rate (double faults per total serve points)
+    player_double_faults = np.where(is_winner, df['w_df'], df['l_df'])
+    df['player_df_rate'] = np.where(player_serve_points > 0, player_double_faults / player_serve_points * 100, np.nan)
     
     # Calculate opponent and result for hover tooltips
     df['opponent'] = np.where(
@@ -142,14 +142,14 @@ def calculate_match_serve_stats(df, player_name, case_sensitive=False):
                  df['l_2ndWon'] / opponent_second_serve_attempted * 100, np.nan)
     )
     
-    # Calculate Opponent Ace Rate (aces per serve game)
+    # Calculate Opponent Ace Rate (aces per total serve points)
     opponent_aces = np.where(is_opponent_winner, df['w_ace'], df['l_ace'])
-    opponent_serve_games = np.where(is_opponent_winner, df['w_SvGms'], df['l_SvGms'])
-    df['opponent_ace_rate'] = np.where(opponent_serve_games > 0, opponent_aces / opponent_serve_games * 100, np.nan)
+    opponent_serve_points = np.where(is_opponent_winner, df['w_svpt'], df['l_svpt'])
+    df['opponent_ace_rate'] = np.where(opponent_serve_points > 0, opponent_aces / opponent_serve_points * 100, np.nan)
     
-    # Calculate Opponent Double Fault Rate (double faults per serve game)
+    # Calculate Opponent Double Fault Rate (double faults per total serve points)
     opponent_double_faults = np.where(is_opponent_winner, df['w_df'], df['l_df'])
-    df['opponent_df_rate'] = np.where(opponent_serve_games > 0, opponent_double_faults / opponent_serve_games * 100, np.nan)
+    df['opponent_df_rate'] = np.where(opponent_serve_points > 0, opponent_double_faults / opponent_serve_points * 100, np.nan)
     
     return df
 
