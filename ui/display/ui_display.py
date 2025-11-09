@@ -252,6 +252,49 @@ class UIDisplay:
         return False
     
     @staticmethod
+    def _load_filtered_matches(db_service, filters):
+        """
+        Load match data based on filters and handle empty results.
+        
+        Args:
+            db_service: DatabaseService instance for querying data
+            filters: Dictionary containing filter values
+            
+        Returns:
+            pandas.DataFrame: DataFrame containing filtered matches, or None if empty
+        """
+        df_matches = db_service.get_matches_with_filters(
+            player=filters['player'],
+            opponent=filters['opponent'],
+            tournament=filters['tournament'],
+            year=filters['year'],
+            surfaces=filters['surfaces'],
+            return_all_columns=True,  # Get all columns for charts/tables Statistics
+            _cache_bust=st.session_state.get('cache_bust', 0)
+        )
+        
+        if df_matches.empty:
+            st.warning("No matches found for the selected criteria.")
+            return None
+        
+        return df_matches
+    
+    @staticmethod
+    def _create_analysis_tabs():
+        """
+        Create tabs for different analysis views.
+        
+        Returns:
+            tuple: Tuple of tab objects (tab_matches, tab_serve, tab_return, tab_raw)
+        """
+        return st.tabs([
+            "📊 Matches", 
+            "🎾 Serve", 
+            "🏓 Return", 
+            "📋 RAW"
+        ])
+    
+    @staticmethod
     def _render_matches_tab(df_matches, display_columns):
         """
         Render the Matches tab displaying filtered match data.
@@ -384,19 +427,9 @@ class UIDisplay:
         elif st.session_state.get('analysis_generated', False):
             filters = st.session_state.analysis_filters
             
-            # Load data once with all columns (needed for charts)
-            df_matches = db_service.get_matches_with_filters(
-                player=filters['player'],
-                opponent=filters['opponent'],
-                tournament=filters['tournament'],
-                year=filters['year'],
-                surfaces=filters['surfaces'],
-                return_all_columns=True,  # Get all columns for charts/tables Statistics
-                _cache_bust=st.session_state.get('cache_bust', 0)
-            )
-            
-            if df_matches.empty:
-                st.warning("No matches found for the selected criteria.")
+            # Load filtered match data
+            df_matches = UIDisplay._load_filtered_matches(db_service, filters)
+            if df_matches is None:
                 return
             
             # Define display columns for table view
@@ -404,12 +437,7 @@ class UIDisplay:
                               'round', 'winner_name', 'loser_name', 'surface', 'score']
             
             # Create tabs for different views
-            tab_matches, tab_serve, tab_return, tab_raw = st.tabs([
-                "📊 Matches", 
-                "🎾 Serve", 
-                "🏓 Return", 
-                "📋 RAW"
-            ])
+            tab_matches, tab_serve, tab_return, tab_raw = UIDisplay._create_analysis_tabs()
             
             # Render each tab using dedicated methods
             with tab_matches:
