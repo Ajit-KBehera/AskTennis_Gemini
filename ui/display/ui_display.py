@@ -10,6 +10,7 @@ import streamlit as st
 # Local application imports
 from tennis_logging.simplified_factory import log_error
 from serve.combined_serve_charts import create_combined_serve_charts
+from serve.serve_stats import build_year_suffix
 
 
 class UIDisplay:
@@ -412,14 +413,17 @@ class UIDisplay:
                 surfaces = filters['surfaces'] if filters['surfaces'] else None
                 year = filters['year'] if filters['year'] != 'All Years' else None
                 
+                # Build chart titles
+                year_suffix, filter_suffix = UIDisplay._build_chart_title_suffixes(year, opponent, tournament, surfaces)
+                timeline_title = f"{filters['player']} - First Serve Performance Timeline - {year_suffix}{filter_suffix}"
+                radar_title = f"{filters['player']} - Serve Statistics Radar Chart - {year_suffix}{filter_suffix}"
+                
                 # Create and display serve charts using pre-loaded DataFrame
                 timeline_fig, radar_fig = create_combined_serve_charts(
-                    filters['player'], 
-                    year,  # Can be str (single year) or None (career view)
-                    df=df_matches,
-                    opponent=opponent,
-                    tournament=tournament,
-                    surfaces=surfaces
+                    filters['player'],
+                    df_matches,
+                    timeline_title,
+                    radar_title
                 )
 
                 # Use config parameter for Plotly configuration to show the mode bar
@@ -444,6 +448,35 @@ class UIDisplay:
         Render the Return Statistics tab (placeholder for future implementation).
         """
         st.info("🚧 Return statistics visualization coming soon...")
+    
+    @staticmethod
+    def _build_chart_title_suffixes(year, opponent=None, tournament=None, surfaces=None):
+        """
+        Build filter and year suffixes for chart titles.
+        
+        Args:
+            year: Year(s) for the chart
+            opponent: Optional opponent name
+            tournament: Optional tournament name
+            surfaces: Optional list of surfaces
+            
+        Returns:
+            tuple: (year_suffix, filter_suffix) - Two suffix strings for chart titles
+        """
+        # Build filter suffix for chart titles
+        filter_parts = []
+        if opponent:
+            filter_parts.append(f"vs {opponent}")
+        if tournament:
+            filter_parts.append(f"at {tournament}")
+        if surfaces and len(surfaces) > 0:
+            filter_parts.append(f"on {', '.join(surfaces)}")
+        filter_suffix = f" ({', '.join(filter_parts)})" if filter_parts else ""
+        
+        # Build year suffix for titles
+        year_suffix = build_year_suffix(year)
+        
+        return year_suffix, filter_suffix
     
     @staticmethod
     def _render_raw_tab(df_matches, filters):
