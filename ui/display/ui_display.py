@@ -248,6 +248,42 @@ class UIDisplay:
         return False
     
     @staticmethod
+    def _render_ai_query_results(query_processor, agent_graph):
+        """
+        Render AI query results including summary and response.
+        
+        Args:
+            query_processor: QueryProcessor instance for handling AI queries
+            agent_graph: LangGraph agent instance
+        """
+        try:
+            with st.spinner("AI is analyzing your question..."):
+                query_processor.handle_user_query(st.session_state.ai_query, agent_graph)
+            
+            # Display summary and response if available
+            summary = st.session_state.get('ai_query_summary')
+            response = st.session_state.get('ai_query_response')
+            
+            if response:
+                # Show summary if available (only generated for responses > 5 lines)
+                if summary:
+                    st.markdown("### Summary")
+                    st.info(summary)
+                
+                # Show full response
+                st.markdown(response)
+            else:
+                st.warning("I processed your request but couldn't generate a clear response. Please check the conversation flow below for details.")
+                
+                # Check if this might be a misspelling issue
+                if "no results" in str(response).lower() or "not found" in str(response).lower():
+                    st.info("💡 **Tip**: If you didn't find what you're looking for, try checking the spelling of player or tournament names. The system is case-sensitive and requires exact matches.")
+        
+        except Exception as e:
+            log_error(e, f"Error processing query in UI display: {st.session_state.get('ai_query', 'unknown')}", component="ui_display")
+            st.error(f"Error processing query: {e}")
+
+    @staticmethod
     def render_results_panel(query_processor, agent_graph, db_service):
         """
         Render the results panel displaying either AI query results or table/filter results.
@@ -260,32 +296,7 @@ class UIDisplay:
         """
         # Handle AI Query Results
         if st.session_state.get('show_ai_results', False) and st.session_state.get('ai_query'):
-            try:
-                with st.spinner("AI is analyzing your question..."):
-                    query_processor.handle_user_query(st.session_state.ai_query, agent_graph)
-                
-                # Display summary and response if available
-                summary = st.session_state.get('ai_query_summary')
-                response = st.session_state.get('ai_query_response')
-                
-                if response:
-                    # Show summary if available (only generated for responses > 5 lines)
-                    if summary:
-                        st.markdown("### Summary")
-                        st.info(summary)
-                    
-                    # Show full response
-                    st.markdown(response)
-                else:
-                    st.warning("I processed your request but couldn't generate a clear response. Please check the conversation flow below for details.")
-                    
-                    # Check if this might be a misspelling issue
-                    if "no results" in str(response).lower() or "not found" in str(response).lower():
-                        st.info("💡 **Tip**: If you didn't find what you're looking for, try checking the spelling of player or tournament names. The system is case-sensitive and requires exact matches.")
-                
-            except Exception as e:
-                log_error(e, f"Error processing query in UI display: {st.session_state.get('ai_query', 'unknown')}", component="ui_display")
-                st.error(f"Error processing query: {e}")
+            UIDisplay._render_ai_query_results(query_processor, agent_graph)
         
         # Handle Table/Chart Results with Tabs
         elif st.session_state.get('analysis_generated', False):
