@@ -4,8 +4,12 @@ Handles all UI display components and user interface elements.
 Extracted from ui_components.py for better modularity.
 """
 
+# Third-party imports
 import streamlit as st
+
+# Local application imports
 from tennis_logging.simplified_factory import log_error
+from serve.combined_serve_charts import create_combined_serve_charts
 
 
 class UIDisplay:
@@ -248,6 +252,84 @@ class UIDisplay:
         return False
     
     @staticmethod
+    def _render_matches_tab(df_matches, display_columns):
+        """
+        Render the Matches tab displaying filtered match data.
+        
+        Args:
+            df_matches: DataFrame containing match data
+            display_columns: List of column names to display
+        """
+        st.dataframe(df_matches[display_columns], width='stretch')
+        if st.button("🗑️ Clear Results", key="clear_matches"):
+            st.session_state.analysis_generated = False
+            st.session_state.analysis_context = {}
+            st.rerun()
+    
+    @staticmethod
+    def _render_serve_tab(df_matches, filters):
+        """
+        Render the Serve Statistics tab with charts.
+        
+        Args:
+            df_matches: DataFrame containing match data (already filtered)
+            filters: Dictionary containing filter values
+        """
+        if filters['player'] and filters['player'] != 'All Players':
+            try:
+                # Extract filter values for chart title/display
+                opponent = filters['opponent'] if filters['opponent'] != 'All Opponents' else None
+                tournament = filters['tournament'] if filters['tournament'] != 'All Tournaments' else None
+                surfaces = filters['surfaces'] if filters['surfaces'] else None
+                year = filters['year'] if filters['year'] != 'All Years' else None
+                
+                # Create and display serve charts using pre-loaded DataFrame
+                # df_matches already has correct filters applied (player, year, opponent, tournament, surfaces)
+                fig = create_combined_serve_charts(
+                    filters['player'], 
+                    year,  # Can be str (single year) or None (career view)
+                    df=df_matches,
+                    opponent=opponent,
+                    tournament=tournament,
+                    surfaces=surfaces
+                )
+                # Use config parameter for Plotly configuration
+                st.plotly_chart(fig, width='stretch', config={'displayModeBar': True})
+            except Exception as e:
+                log_error(e, f"Error generating serve charts for {filters['player']}", component="ui_display")
+                st.error(f"Error generating serve charts: {e}")
+                st.info("Please ensure the player name matches exactly and has matches in the selected filters.")
+        else:
+            st.info("ℹ️ Please select a player to view serve statistics.")
+    
+    @staticmethod
+    def _render_return_tab():
+        """
+        Render the Return Statistics tab (placeholder for future implementation).
+        """
+        st.info("🚧 Return statistics visualization coming soon...")
+    
+    @staticmethod
+    def _render_raw_tab(df_matches, filters):
+        """
+        Render the RAW tab displaying full DataFrame and CSV download.
+        
+        Args:
+            df_matches: DataFrame containing match data
+            filters: Dictionary containing filter values (for CSV filename)
+        """
+        st.dataframe(df_matches, width='stretch')
+        # Download button for CSV export
+        csv_data = df_matches.to_csv(index=False)
+        st.download_button(
+            label="📥 Download CSV",
+            data=csv_data,
+            file_name=f"tennis_matches_{filters.get('year', 'all')}.csv",
+            mime="text/csv",
+            key="download_raw_csv"
+        )
+
+    @staticmethod
     def _render_ai_query_results(query_processor, agent_graph):
         """
         Render AI query results including summary and response.
@@ -282,7 +364,7 @@ class UIDisplay:
         except Exception as e:
             log_error(e, f"Error processing query in UI display: {st.session_state.get('ai_query', 'unknown')}", component="ui_display")
             st.error(f"Error processing query: {e}")
-
+    
     @staticmethod
     def render_results_panel(query_processor, agent_graph, db_service):
         """
@@ -329,69 +411,17 @@ class UIDisplay:
                 "📋 RAW"
             ])
             
-            # Tab 1: Matches Table
+            # Render each tab using dedicated methods
             with tab_matches:
-                st.dataframe(df_matches[display_columns], width='stretch')
-                if st.button("🗑️ Clear Results", key="clear_matches"):
-                    st.session_state.analysis_generated = False
-                    st.session_state.analysis_context = {}
-                    st.rerun()
+                UIDisplay._render_matches_tab(df_matches, display_columns)
             
-            # Tab 2: Serve Statistics
             with tab_serve:
-                if filters['player'] and filters['player'] != 'All Players':
-                    try:
-                        # Import chart creation function
-                        from serve.combined_serve_charts import create_combined_serve_charts
-                        
-                        # Extract filter values for chart title/display
-                        opponent = filters['opponent'] if filters['opponent'] != 'All Opponents' else None
-                        tournament = filters['tournament'] if filters['tournament'] != 'All Tournaments' else None
-                        surfaces = filters['surfaces'] if filters['surfaces'] else None
-                        
-                        # Handle year parameter: convert to int if specific year, None if "All Years" (career view)
-                        year_param = None
-                        if filters['year'] and filters['year'] != 'All Years':
-                            try:
-                                year_param = int(filters['year'])
-                            except (ValueError, TypeError):
-                                year_param = None  # Fallback to career view if year is invalid
-                        # If year_param is None, it means "All Years" (career view)
-                        
-                        # Create and display serve charts using pre-loaded DataFrame
-                        # df_matches already has correct filters applied (player, year, opponent, tournament, surfaces)
-                        fig = create_combined_serve_charts(
-                            filters['player'], 
-                            year_param,  # Can be int (single year) or None (career view)
-                            df=df_matches,
-                            opponent=opponent,
-                            tournament=tournament,
-                            surfaces=surfaces
-                        )
-                        # Use config parameter for Plotly configuration
-                        st.plotly_chart(fig, width='stretch', config={'displayModeBar': True})
-                    except Exception as e:
-                        log_error(e, f"Error generating serve charts for {filters['player']}", component="ui_display")
-                        st.error(f"Error generating serve charts: {e}")
-                        st.info("Please ensure the player name matches exactly and has matches in the selected filters.")
-                else:
-                    st.info("ℹ️ Please select a player to view serve statistics.")
+                UIDisplay._render_serve_tab(df_matches, filters)
             
-            # Tab 3: Return Statistics (Future)
             with tab_return:
-                st.info("🚧 Return statistics visualization coming soon...")
+                UIDisplay._render_return_tab()
             
-            # Tab 4: Raw Data
             with tab_raw:
-                st.dataframe(df_matches, width='stretch')
-                # Download button for CSV export
-                csv_data = df_matches.to_csv(index=False)
-                st.download_button(
-                    label="📥 Download CSV",
-                    data=csv_data,
-                    file_name=f"tennis_matches_{filters.get('year', 'all')}.csv",
-                    mime="text/csv",
-                    key="download_raw_csv"
-                )
+                UIDisplay._render_raw_tab(df_matches, filters)
         else:
             pass
