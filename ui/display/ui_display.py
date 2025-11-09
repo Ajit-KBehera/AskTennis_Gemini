@@ -413,8 +413,7 @@ class UIDisplay:
                 year = filters['year'] if filters['year'] != 'All Years' else None
                 
                 # Create and display serve charts using pre-loaded DataFrame
-                # df_matches already has correct filters applied (player, year, opponent, tournament, surfaces)
-                fig = create_combined_serve_charts(
+                timeline_fig, radar_fig = create_combined_serve_charts(
                     filters['player'], 
                     year,  # Can be str (single year) or None (career view)
                     df=df_matches,
@@ -425,7 +424,12 @@ class UIDisplay:
 
                 # Use config parameter for Plotly configuration to show the mode bar
                 plotly_config = {'displayModeBar': True, 'width': 'stretch'}
-                st.plotly_chart(fig, config=plotly_config)
+                
+                # Display timeline chart
+                st.plotly_chart(timeline_fig, config=plotly_config)
+                
+                # Display radar chart
+                st.plotly_chart(radar_fig, config=plotly_config)
 
             except Exception as e:
                 log_error(e, f"Error generating serve charts for {filters['player']}", component="ui_display")

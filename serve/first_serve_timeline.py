@@ -84,7 +84,7 @@ def add_vertical_lines(fig, y_data_series, y_min=0, y_max=100, color='gray', wid
             ))
 
 
-def create_timeline_chart(player_df, player_name, year):
+def create_timeline_chart(player_df, player_name, year, title=None):
     """
     Create the first serve timeline chart.
     
@@ -95,6 +95,7 @@ def create_timeline_chart(player_df, player_name, year):
             - int or str: Single year (e.g., 2024)
             - list: Multiple years (e.g., [2022, 2023, 2024])
             - None: Career view (all years)
+        title: Optional chart title. If None, a default title will be generated.
         
     Returns:
         go.Figure: Plotly figure object for timeline chart
@@ -123,5 +124,18 @@ def create_timeline_chart(player_df, player_name, year):
     # 3. Add trend lines (overlay layer)
     add_trend_line(fig, df['player_1stIn'], 'First Serves In', 'blue')
     add_trend_line(fig, df['player_1stWon'], 'First Serves Won', 'orange')
+    
+    # Configure layout
+    fig.update_layout(
+        title=title if title else f"{player_name} - First Serve Performance Timeline",
+        xaxis_title="Matches",
+        yaxis_title="(%)",
+        yaxis=dict(range=[0, 100]),  # Fix y-axis range to 0-100%
+        hovermode='closest',
+        template='plotly_white',
+        showlegend=True,
+        width=1200,
+        height=600
+    )
     
     return fig
