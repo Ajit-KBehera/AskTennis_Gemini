@@ -19,15 +19,14 @@ import plotly.graph_objects as go
 # ============================================================================
 
 
-def create_radar_chart(stats, player_name, year, title=None):
+def create_radar_chart(stats, player_name, title):
     """
     Create a radar chart for serve statistics.
     
     Args:
         stats: Dictionary containing serve statistics
         player_name: Name of the player (used in trace name)
-        year: Year(s) for the chart (kept for API compatibility)
-        title: Optional chart title. If None, a default title will be generated.
+        title: Chart title
         
     Returns:
         go.Figure: Plotly figure object
@@ -53,7 +52,7 @@ def create_radar_chart(stats, player_name, year, title=None):
     
     # Configure layout
     fig.update_layout(
-        title=title if title else f"{player_name} - Serve Statistics Radar Chart",
+        title=title,
         polar=dict(
             radialaxis=dict(
                 visible=True,

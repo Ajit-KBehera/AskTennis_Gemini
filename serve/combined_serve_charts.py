@@ -56,8 +56,8 @@ def create_combined_serve_charts(player_name, year, df, opponent=None, tournamen
     radar_title = f"{player_name} - Serve Statistics Radar Chart - {year_suffix}{filter_suffix}"
     
     # Create individual charts with titles and layout configured
-    timeline_fig = create_timeline_chart(matches_with_stats, player_name, year, title=timeline_title)
-    radar_fig = create_radar_chart(serve_stats, player_name, year, title=radar_title)
+    timeline_fig = create_timeline_chart(matches_with_stats, player_name, title=timeline_title)
+    radar_fig = create_radar_chart(serve_stats, player_name, title=radar_title)
     
     return timeline_fig, radar_fig
 
