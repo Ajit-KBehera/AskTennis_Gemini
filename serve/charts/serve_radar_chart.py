@@ -1,34 +1,16 @@
-import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import sys
 import os
 
-# Add parent directories to path to import shared modules
+# Add parent directory to path for serve_stats import
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
-# Add current directory to path for local imports
-sys.path.insert(0, os.path.dirname(__file__))
 
-from serve_stats import calculate_aggregated_serve_stats
-from data_loader import load_player_matches
-from utils.chart_utils import display_chart
+from serve_stats import build_year_suffix
 
 # ============================================================================
 # Function Definitions
 # ============================================================================
-
-def _build_year_suffix(year):
-    """Build year suffix string for chart titles."""
-    if year is None:
-        return "Career"
-    elif isinstance(year, list):
-        if len(year) == 1:
-            return f"{year[0]} Season"
-        else:
-            return f"{min(year)}-{max(year)} Seasons"
-    else:
-        return f"{year} Season"
 
 
 def create_radar_chart(stats, player_name, year):
@@ -81,7 +63,7 @@ def create_radar_chart(stats, player_name, year):
                 direction='counterclockwise'
             )
         ),
-        title=f"{player_name} - Serve Statistics Radar Chart - {_build_year_suffix(year)}",
+        title=f"{player_name} - Serve Statistics Radar Chart - {build_year_suffix(year)}",
         font=dict(size=14),
         width=800,
         height=800,
@@ -90,34 +72,4 @@ def create_radar_chart(stats, player_name, year):
     )
     
     return fig
-
-
-# ============================================================================
-# Data Loading and Processing
-# ============================================================================
-
-if __name__ == "__main__":
-    # Example player name
-    player_name = 'Elena Rybakina'
-    year = 2024
-    
-    # Load match data using shared function
-    df = load_player_matches(player_name, year)
-    
-    # Calculate aggregated serve statistics using shared module
-    serve_stats = calculate_aggregated_serve_stats(df, player_name, case_sensitive=False)
-    
-    # ============================================================================
-    # Plot Creation
-    # ============================================================================
-    
-    # Create radar chart
-    fig = create_radar_chart(serve_stats, player_name, year)
-    
-    # ============================================================================
-    # Display Plot
-    # ============================================================================
-    
-    # Display plot using shared function
-    display_chart(fig, html_filename='serve_radar_chart.html')
 

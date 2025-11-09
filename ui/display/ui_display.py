@@ -298,7 +298,7 @@ class UIDisplay:
                 tournament=filters['tournament'],
                 year=filters['year'],
                 surfaces=filters['surfaces'],
-                return_all_columns=True,  # Get all columns for charts
+                return_all_columns=True,  # Get all columns for charts/tables Statistics
                 _cache_bust=st.session_state.get('cache_bust', 0)
             )
             

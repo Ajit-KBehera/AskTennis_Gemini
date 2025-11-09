@@ -5,26 +5,22 @@ This script combines multiple serve charts (timeline and radar) into a single
 display page, showing them one under another for comprehensive analysis.
 """
 
-import pandas as pd
-import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import sys
 import os
-import sqlite3
 
-# Add parent directories to path to import shared modules
+# Add parent directory to path for serve_stats import
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 # Add current directory to path for local imports
 sys.path.insert(0, os.path.dirname(__file__))
 
 from serve_stats import (
     calculate_match_serve_stats, 
     calculate_aggregated_serve_stats,
-    get_match_hover_data
+    get_match_hover_data,
+    build_year_suffix
 )
-from utils.chart_utils import display_chart
 
 # Import data loading function (must be before chart imports to avoid circular dependency)
 from data_loader import load_player_matches
@@ -95,15 +91,7 @@ def create_combined_serve_charts(player_name, year, df=None, opponent=None, tour
     filter_suffix = f" ({', '.join(filter_parts)})" if filter_parts else ""
     
     # Build year suffix for titles
-    if year is None:
-        year_suffix = "Career"
-    elif isinstance(year, list):
-        if len(year) == 1:
-            year_suffix = f"{year[0]} Season"
-        else:
-            year_suffix = f"{min(year)}-{max(year)} Seasons"
-    else:
-        year_suffix = f"{year} Season"
+    year_suffix = build_year_suffix(year)
     
     # Calculate serve statistics
     player = calculate_match_serve_stats(df, player_name, case_sensitive=True)
@@ -142,22 +130,24 @@ def create_combined_serve_charts(player_name, year, df=None, opponent=None, tour
     combined_fig.update_yaxes(title_text="(%)", row=1, col=1)
     
     # Update polar layout for radar subplot (row 2)
-    # Use update_polars() method instead of polar2 keyword argument (deprecated)
+    # Use update_polars() with patch parameter to avoid deprecated keyword arguments
     combined_fig.update_polars(
-        row=2,
-        col=1,
-        radialaxis=dict(
-            visible=True,
-            range=[0, 100],
-            tickfont=dict(size=10),
-            gridcolor='lightgray',
-            gridwidth=1
+        patch=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, 100],
+                tickfont=dict(size=10),
+                gridcolor='lightgray',
+                gridwidth=1
+            ),
+            angularaxis=dict(
+                tickfont=dict(size=12),
+                rotation=90,
+                direction='counterclockwise'
+            )
         ),
-        angularaxis=dict(
-            tickfont=dict(size=12),
-            rotation=90,
-            direction='counterclockwise'
-        )
+        row=2,
+        col=1
     )
     
     # Update general layout
@@ -169,20 +159,4 @@ def create_combined_serve_charts(player_name, year, df=None, opponent=None, tour
     )
     
     return combined_fig
-
-
-# ============================================================================
-# Main Execution
-# ============================================================================
-
-if __name__ == "__main__":
-    # Example player name
-    player_name = 'Iga Swiatek'
-    year = 2024
-    
-    # Create combined charts
-    fig = create_combined_serve_charts(player_name, year)
-    
-    # Display combined charts
-    display_chart(fig, html_filename='combined_serve_charts.html')
 

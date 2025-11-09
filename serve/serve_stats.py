@@ -10,6 +10,30 @@ import pandas as pd
 import numpy as np
 
 
+def build_year_suffix(year):
+    """
+    Build year suffix string for chart titles.
+    
+    Args:
+        year: Year(s) for the chart. Can be:
+            - int or str: Single year (e.g., 2024)
+            - list: Multiple years (e.g., [2022, 2023, 2024])
+            - None: Career view (all years)
+    
+    Returns:
+        str: Year suffix string (e.g., "2024 Season", "2022-2024 Seasons", "Career")
+    """
+    if year is None:
+        return "Career"
+    elif isinstance(year, list):
+        if len(year) == 1:
+            return f"{year[0]} Season"
+        else:
+            return f"{min(year)}-{max(year)} Seasons"
+    else:
+        return f"{year} Season"
+
+
 def calculate_match_serve_stats(player_df, player_name, case_sensitive=False):
     """
     Calculate serve statistics for each match in the dataframe.

@@ -1,18 +1,12 @@
-import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import sys
 import os
 
-# Add parent directories to path to import shared modules
+# Add parent directory to path for serve_stats import
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
-# Add current directory to path for local imports
-sys.path.insert(0, os.path.dirname(__file__))
 
-from serve_stats import calculate_match_serve_stats, get_match_hover_data
-from data_loader import load_player_matches
-from utils.chart_utils import display_chart
+from serve_stats import build_year_suffix
 
 # ============================================================================
 # Function Definitions
@@ -117,16 +111,7 @@ def create_timeline_chart(player_df, player_name, year, playerdata, x_positions)
     add_trend_line(fig, player_df['player_1stWon'], 'First Serves Won', 'orange')
     
     # Build title based on year parameter
-    if year is None:
-        title_suffix = "Career"
-    elif isinstance(year, list):
-        if len(year) == 1:
-            title_suffix = f"{year[0]} Season"
-        else:
-            year_range = f"{min(year)}-{max(year)}"
-            title_suffix = f"{year_range} Seasons"
-    else:
-        title_suffix = f"{year} Season"
+    title_suffix = build_year_suffix(year)
     
     # 4. Update layout
     fig.update_layout(
@@ -141,38 +126,4 @@ def create_timeline_chart(player_df, player_name, year, playerdata, x_positions)
     )
     
     return fig
-
-
-# ============================================================================
-# Data Loading and Processing
-# ============================================================================
-
-if __name__ == "__main__":
-    # Example player name
-    player_name = 'Elena Rybakina'
-    year = 2024
-    
-    # Load match data using shared function
-    df = load_player_matches(player_name, year)
-    
-    # Calculate serve statistics using shared module
-    player = calculate_match_serve_stats(df, player_name, case_sensitive=True)
-    playerdata = get_match_hover_data(df, player_name, case_sensitive=True)
-    
-    # Create x-axis positions
-    x_positions = list(range(len(player)))
-    
-    # ============================================================================
-    # Plot Creation
-    # ============================================================================
-    
-    # Create timeline chart using reusable function
-    fig = create_timeline_chart(player, player_name, year, playerdata, x_positions)
-    
-    # ============================================================================
-    # Display Plot
-    # ============================================================================
-    
-    # Display plot using shared function
-    display_chart(fig, html_filename='first_serve_timeline_plot.html')
 
