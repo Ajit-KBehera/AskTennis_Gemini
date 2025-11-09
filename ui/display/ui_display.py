@@ -252,6 +252,92 @@ class UIDisplay:
         return False
     
     @staticmethod
+    def render_results_panel(query_processor, agent_graph, db_service):
+        """
+        Render the results panel displaying either AI query results or table/filter results.
+        Handles conditional rendering based on session state flags.
+        
+        Args:
+            query_processor: QueryProcessor instance for handling AI queries
+            agent_graph: LangGraph agent instance
+            db_service: DatabaseService instance for querying data
+        """
+        # Handle AI Query Results
+        if st.session_state.get('show_ai_results', False) and st.session_state.get('ai_query'):
+            UIDisplay._render_ai_query_results(query_processor, agent_graph)
+        
+        # Handle Table/Chart Results with Tabs
+        elif st.session_state.get('analysis_generated', False):
+            filters = st.session_state.analysis_filters
+            
+            # Load filtered match data
+            df_matches = UIDisplay._load_filtered_matches(db_service, filters)
+            if df_matches is None:
+                return
+            
+            # Define display columns for table view
+            display_columns = ['event_year', 'tourney_date', 'tourney_name', 
+                              'round', 'winner_name', 'loser_name', 'surface', 'score']
+            
+            # Create tabs for different views
+            tab_matches, tab_serve, tab_return, tab_raw = UIDisplay._create_analysis_tabs()
+            
+            # Render each tab using dedicated methods
+            with tab_matches:
+                UIDisplay._render_matches_tab(df_matches, display_columns)
+            
+            with tab_serve:
+                UIDisplay._render_serve_tab(df_matches, filters)
+            
+            with tab_return:
+                UIDisplay._render_return_tab()
+            
+            with tab_raw:
+                UIDisplay._render_raw_tab(df_matches, filters)
+        else:
+            pass
+    
+    # ============================================================================
+    # Private Helper Methods
+    # ============================================================================
+    
+    @staticmethod
+    def _render_ai_query_results(query_processor, agent_graph):
+        """
+        Render AI query results including summary and response.
+        
+        Args:
+            query_processor: QueryProcessor instance for handling AI queries
+            agent_graph: LangGraph agent instance
+        """
+        try:
+            with st.spinner("AI is analyzing your question..."):
+                query_processor.handle_user_query(st.session_state.ai_query, agent_graph)
+            
+            # Display summary and response if available
+            summary = st.session_state.get('ai_query_summary')
+            response = st.session_state.get('ai_query_response')
+            
+            if response:
+                # Show summary if available (only generated for responses > 5 lines)
+                if summary:
+                    st.markdown("### Summary")
+                    st.info(summary)
+                
+                # Show full response
+                st.markdown(response)
+            else:
+                st.warning("I processed your request but couldn't generate a clear response. Please check the conversation flow below for details.")
+                
+                # Check if this might be a misspelling issue
+                if "no results" in str(response).lower() or "not found" in str(response).lower():
+                    st.info("💡 **Tip**: If you didn't find what you're looking for, try checking the spelling of player or tournament names. The system is case-sensitive and requires exact matches.")
+        
+        except Exception as e:
+            log_error(e, f"Error processing query in UI display: {st.session_state.get('ai_query', 'unknown')}", component="ui_display")
+            st.error(f"Error processing query: {e}")
+    
+    @staticmethod
     def _load_filtered_matches(db_service, filters):
         """
         Load match data based on filters and handle empty results.
@@ -371,85 +457,3 @@ class UIDisplay:
             mime="text/csv",
             key="download_raw_csv"
         )
-
-    @staticmethod
-    def _render_ai_query_results(query_processor, agent_graph):
-        """
-        Render AI query results including summary and response.
-        
-        Args:
-            query_processor: QueryProcessor instance for handling AI queries
-            agent_graph: LangGraph agent instance
-        """
-        try:
-            with st.spinner("AI is analyzing your question..."):
-                query_processor.handle_user_query(st.session_state.ai_query, agent_graph)
-            
-            # Display summary and response if available
-            summary = st.session_state.get('ai_query_summary')
-            response = st.session_state.get('ai_query_response')
-            
-            if response:
-                # Show summary if available (only generated for responses > 5 lines)
-                if summary:
-                    st.markdown("### Summary")
-                    st.info(summary)
-                
-                # Show full response
-                st.markdown(response)
-            else:
-                st.warning("I processed your request but couldn't generate a clear response. Please check the conversation flow below for details.")
-                
-                # Check if this might be a misspelling issue
-                if "no results" in str(response).lower() or "not found" in str(response).lower():
-                    st.info("💡 **Tip**: If you didn't find what you're looking for, try checking the spelling of player or tournament names. The system is case-sensitive and requires exact matches.")
-        
-        except Exception as e:
-            log_error(e, f"Error processing query in UI display: {st.session_state.get('ai_query', 'unknown')}", component="ui_display")
-            st.error(f"Error processing query: {e}")
-    
-    @staticmethod
-    def render_results_panel(query_processor, agent_graph, db_service):
-        """
-        Render the results panel displaying either AI query results or table/filter results.
-        Handles conditional rendering based on session state flags.
-        
-        Args:
-            query_processor: QueryProcessor instance for handling AI queries
-            agent_graph: LangGraph agent instance
-            db_service: DatabaseService instance for querying data
-        """
-        # Handle AI Query Results
-        if st.session_state.get('show_ai_results', False) and st.session_state.get('ai_query'):
-            UIDisplay._render_ai_query_results(query_processor, agent_graph)
-        
-        # Handle Table/Chart Results with Tabs
-        elif st.session_state.get('analysis_generated', False):
-            filters = st.session_state.analysis_filters
-            
-            # Load filtered match data
-            df_matches = UIDisplay._load_filtered_matches(db_service, filters)
-            if df_matches is None:
-                return
-            
-            # Define display columns for table view
-            display_columns = ['event_year', 'tourney_date', 'tourney_name', 
-                              'round', 'winner_name', 'loser_name', 'surface', 'score']
-            
-            # Create tabs for different views
-            tab_matches, tab_serve, tab_return, tab_raw = UIDisplay._create_analysis_tabs()
-            
-            # Render each tab using dedicated methods
-            with tab_matches:
-                UIDisplay._render_matches_tab(df_matches, display_columns)
-            
-            with tab_serve:
-                UIDisplay._render_serve_tab(df_matches, filters)
-            
-            with tab_return:
-                UIDisplay._render_return_tab()
-            
-            with tab_raw:
-                UIDisplay._render_raw_tab(df_matches, filters)
-        else:
-            pass
