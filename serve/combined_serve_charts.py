@@ -90,7 +90,7 @@ def create_combined_serve_charts(player_name, year, df, opponent=None, tournamen
     
     # Update layout for timeline subplot (row 1)
     combined_fig.update_xaxes(title_text="Matches", row=1, col=1)
-    combined_fig.update_yaxes(title_text="(%)", row=1, col=1)
+    combined_fig.update_yaxes(title_text="(%)", range=[0, 100], row=1, col=1)  # Fix y-axis range to 0-100%
     
     # Update polar layout for radar subplot (row 2)
     # Use update_polars() with patch parameter to avoid deprecated keyword arguments

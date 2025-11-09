@@ -55,27 +55,27 @@ def add_trend_line(fig, y_data, name, color):
         ))
 
 
-def add_vertical_lines(fig, y_data_series, y_min=0, color='gray', width=0.8, opacity=0.3):
+def add_vertical_lines(fig, y_data_series, y_min=0, y_max=100, color='gray', width=0.8, opacity=0.3):
     """
-    Draw vertical lines from y_min to the maximum value across multiple y_data series at each x position.
+    Draw vertical lines from y_min to y_max at each x position.
     
     Args:
         fig (go.Figure): Plotly figure object to add lines to
         y_data_series (list): List of pandas Series containing y-values (e.g., [series1, series2])
         y_min (float): Starting y-value for vertical lines (default: 0)
+        y_max (float): Ending y-value for vertical lines (default: 100)
         color (str): Line color (default: 'gray')
         width (float): Line width (default: 0.8)
         opacity (float): Line opacity between 0 and 1 (default: 0.3)
     """
-    max_values = np.nanmax([series.values for series in y_data_series], axis=0)
-    valid_indices = ~np.isnan(max_values)
+    # Draw vertical lines from y_min to y_max for all valid data points
+    valid_indices = ~np.isnan(y_data_series[0])
     
     if np.any(valid_indices):
         x_vals = np.arange(len(y_data_series[0]))[valid_indices]
-        y_vals = max_values[valid_indices]
-        for i, val in zip(x_vals, y_vals):
+        for i in x_vals:
             fig.add_trace(go.Scatter(
-                x=[i, i], y=[y_min, val],
+                x=[i, i], y=[y_min, y_max],
                 mode='lines',
                 line=dict(color=color, width=width),
                 opacity=opacity,
@@ -123,6 +123,7 @@ def create_timeline_chart(player_df, player_name, year, playerdata, x_positions)
         title=f"{player_name} - First Serve Performance - {title_suffix}",
         xaxis_title="Matches",
         yaxis_title="(%)",
+        yaxis=dict(range=[0, 100]),  # Fix y-axis range to 0-100%
         hovermode='closest',
         width=1200,
         height=600,

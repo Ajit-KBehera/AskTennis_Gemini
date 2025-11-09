@@ -422,8 +422,11 @@ class UIDisplay:
                     tournament=tournament,
                     surfaces=surfaces
                 )
-                # Use config parameter for Plotly configuration
-                st.plotly_chart(fig, width='stretch', config={'displayModeBar': True})
+
+                # Use config parameter for Plotly configuration to show the mode bar
+                plotly_config = {'displayModeBar': True, 'width': 'stretch'}
+                st.plotly_chart(fig, config=plotly_config)
+
             except Exception as e:
                 log_error(e, f"Error generating serve charts for {filters['player']}", component="ui_display")
                 st.error(f"Error generating serve charts: {e}")
