@@ -55,27 +55,46 @@ def add_trend_line(fig, y_data, name, color):
         ))
 
 
-def add_vertical_lines(fig, y_data_series, y_min=0, y_max=100, color='gray', width=0.8, opacity=0.3):
+def add_vertical_lines(fig, y_data_series, y_min=0, y_max=None, color='gray', width=0.8, opacity=0.3):
     """
-    Draw vertical lines from y_min to y_max at each x position.
+    Draw vertical lines from y_min to the highest value between the two series at each x position.
     
     Args:
         fig (go.Figure): Plotly figure object to add lines to
         y_data_series (list): List of pandas Series containing y-values (e.g., [series1, series2])
         y_min (float): Starting y-value for vertical lines (default: 0)
-        y_max (float): Ending y-value for vertical lines (default: 100)
+        y_max (float): Ending y-value for vertical lines. If None, uses max of both series per match (default: None)
         color (str): Line color (default: 'gray')
         width (float): Line width (default: 0.8)
         opacity (float): Line opacity between 0 and 1 (default: 0.3)
     """
-    # Draw vertical lines from y_min to y_max for all valid data points
-    valid_indices = ~np.isnan(y_data_series[0])
+    series1 = y_data_series[0]
+    series2 = y_data_series[1] if len(y_data_series) > 1 else series1
+    
+    # Find valid indices (where at least one series has valid data)
+    valid_indices = ~(np.isnan(series1) & np.isnan(series2))
     
     if np.any(valid_indices):
-        x_vals = np.arange(len(y_data_series[0]))[valid_indices]
+        x_vals = np.arange(len(series1))[valid_indices]
+        
         for i in x_vals:
+            # Get values from both series at this index
+            val1 = series1.iloc[i] if hasattr(series1, 'iloc') else series1[i]
+            val2 = series2.iloc[i] if hasattr(series2, 'iloc') else series2[i]
+            
+            # Calculate the maximum value between the two series (ignoring NaN)
+            values = [v for v in [val1, val2] if not np.isnan(v)]
+            if values:
+                line_max = max(values)
+            else:
+                # If both are NaN, skip this line
+                continue
+            
+            # Use y_max if provided, otherwise use calculated maximum
+            line_end = y_max if y_max is not None else line_max
+            
             fig.add_trace(go.Scatter(
-                x=[i, i], y=[y_min, y_max],
+                x=[i, i], y=[y_min, line_end],
                 mode='lines',
                 line=dict(color=color, width=width),
                 opacity=opacity,
