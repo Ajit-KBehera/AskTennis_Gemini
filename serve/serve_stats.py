@@ -106,20 +106,32 @@ def calculate_match_serve_stats(player_df, player_name, case_sensitive=False):
     return df
 
 
-def calculate_aggregated_serve_stats(player_df, player_name, case_sensitive=False):
+def calculate_aggregated_serve_stats(df, player_name=None, case_sensitive=False):
     """
     Calculate aggregated serve statistics across all matches.
     
     Args:
-        player_df: DataFrame containing match data for the player
-        player_name: Name of the player
+        player_df: DataFrame containing match data. If stats columns already exist
+                   (player_1stIn, player_1stWon, etc.), they will be used directly.
+                   Otherwise, player_name must be provided to calculate them.
+        player_name: Name of the player (required only if stats need to be calculated)
         case_sensitive: Whether to use case-sensitive name matching (default: False)
         
     Returns:
         dict: Dictionary containing aggregated serve statistics
     """
-    # Calculate match-level stats
-    df_with_stats = calculate_match_serve_stats(player_df, player_name, case_sensitive)
+    # Check if stats columns already exist
+    required_stats_columns = ['player_1stIn', 'player_1stWon', 'player_2ndWon', 
+                               'player_ace_rate', 'player_df_rate']
+    
+    if all(col in df.columns for col in required_stats_columns):
+        # Stats already calculated, use them directly
+        df_with_stats = df
+    else:
+        # Calculate match-level stats
+        if player_name is None:
+            raise ValueError("player_name is required when stats columns are not present in the DataFrame")
+        df_with_stats = calculate_match_serve_stats(df, player_name, case_sensitive)
     
     # Calculate averages across all matches (excluding NaN values)
     stats = {

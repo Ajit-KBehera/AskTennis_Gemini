@@ -84,7 +84,7 @@ def add_vertical_lines(fig, y_data_series, y_min=0, y_max=100, color='gray', wid
             ))
 
 
-def create_timeline_chart(player_df, player_name, year, x_positions):
+def create_timeline_chart(player_df, player_name, year):
     """
     Create the first serve timeline chart.
     
@@ -95,13 +95,15 @@ def create_timeline_chart(player_df, player_name, year, x_positions):
             - int or str: Single year (e.g., 2024)
             - list: Multiple years (e.g., [2022, 2023, 2024])
             - None: Career view (all years)
-        x_positions: X-axis positions for matches
         
     Returns:
         go.Figure: Plotly figure object for timeline chart
     """
     # Get hover data for tooltips
     hoverdata = get_match_hover_data(player_df, player_name, case_sensitive=True)
+    
+    # Create x-axis positions for matches
+    x_positions = list(range(len(player_df)))
     
     fig = go.Figure()
     

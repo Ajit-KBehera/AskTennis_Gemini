@@ -56,14 +56,11 @@ def create_combined_serve_charts(player_name, year, df, opponent=None, tournamen
     year_suffix = build_year_suffix(year)
     
     # Calculate serve statistics
-    player = calculate_match_serve_stats(df, player_name, case_sensitive=True)
-    serve_stats = calculate_aggregated_serve_stats(df, player_name, case_sensitive=False)
-    
-    # Create x-axis positions for timeline
-    x_positions = list(range(len(player)))
+    matches_with_stats = calculate_match_serve_stats(df, player_name, case_sensitive=True)
+    serve_stats = calculate_aggregated_serve_stats(matches_with_stats)
     
     # Create individual charts using reusable functions
-    timeline_fig = create_timeline_chart(player, player_name, year, x_positions)
+    timeline_fig = create_timeline_chart(matches_with_stats, player_name, year)
     radar_fig = create_radar_chart(serve_stats, player_name, year)
     
     # Create subplot figure with 2 rows, 1 column
