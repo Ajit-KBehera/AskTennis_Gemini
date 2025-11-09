@@ -1,20 +1,66 @@
-/* Remove margins and make full width */
-.main .block-container {
-    padding-left: 0rem;
-    padding-right: 0rem;
-    max-width: 100%;
+/* ============================================================================
+   Full-Width Layout - Remove Left/Right Margins
+   ============================================================================ */
+
+/* Global box-sizing for consistent sizing */
+* {
+    box-sizing: border-box;
 }
 
-/* Remove column gaps and ensure columns don't collapse */
+/* Remove default body margins */
+body {
+    margin: 0;
+    padding: 0;
+}
+
+/* Root Streamlit containers - full width, no margins */
+#root,
+#root > div,
+.stApp,
+.stApp > header,
+.stApp > div {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+}
+
+/* Main content container - remove side margins, add top spacing */
+.block-container,
+.main .block-container,
+[data-testid="stAppViewContainer"] > .main .block-container {
+    padding-left: 0rem !important;
+    padding-right: 0rem !important;
+    padding-top: 2.5rem !important;
+    padding-bottom: 1rem !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Main content area - remove side padding */
+.main {
+    padding-left: 0rem !important;
+    padding-right: 0rem !important;
+}
+
+/* Streamlit view container and header - remove side margins */
+[data-testid="stAppViewContainer"],
+[data-testid="stHeader"],
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] > div {
+    padding-left: 0rem !important;
+    padding-right: 0rem !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Streamlit columns - remove gaps and side padding */
 div[data-testid="column"] {
     gap: 0rem;
     overflow: visible !important;
     min-width: fit-content !important;
-}
-
-/* Full width layout */
-.stApp {
-    max-width: 100%;
+    padding-left: 0rem !important;
+    padding-right: 0rem !important;
 }
 
 /* Ensure search panel Clear button stays visible */
