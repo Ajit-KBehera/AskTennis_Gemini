@@ -9,6 +9,7 @@ Charts are returned separately for flexible display in the UI.
 from .serve_stats import (
     build_year_suffix,
     calculate_aggregated_serve_stats,
+    calculate_aggregated_opponent_stats,
     calculate_match_serve_stats
 )
 from .first_serve_timeline import create_timeline_chart
@@ -69,9 +70,34 @@ def create_combined_serve_charts(player_name, df, year=None, opponent=None, tour
     matches_with_stats = calculate_match_serve_stats(df, player_name, case_sensitive=True)
     serve_stats = calculate_aggregated_serve_stats(matches_with_stats)
     
+    # Determine if comparison mode should be enabled (specific opponent selected)
+    show_comparison = opponent and opponent != "All Opponents"
+    opponent_stats = None
+    
+    if show_comparison:
+        # Calculate opponent aggregated stats
+        opponent_stats = calculate_aggregated_opponent_stats(matches_with_stats, opponent_name=opponent)
+        # If opponent stats not available (multiple opponents), disable comparison
+        if opponent_stats is None:
+            show_comparison = False
+    
     # Create individual charts with titles and layout configured
-    timeline_fig = create_timeline_chart(matches_with_stats, player_name, title=timeline_title)
-    radar_fig = create_radar_chart(serve_stats, player_name, title=radar_title)
+    # Timeline chart: Opponent comparison disabled (too many parameters clutter the chart)
+    timeline_fig = create_timeline_chart(
+        matches_with_stats, 
+        player_name, 
+        title=timeline_title,
+        show_opponent_comparison=False,  # Disabled - too many parameters
+        opponent_name=None
+    )
+    # Radar chart: Opponent comparison enabled when specific opponent selected
+    radar_fig = create_radar_chart(
+        serve_stats, 
+        player_name, 
+        title=radar_title,
+        opponent_stats=opponent_stats,
+        opponent_name=opponent if show_comparison else None
+    )
     
     return timeline_fig, radar_fig
 

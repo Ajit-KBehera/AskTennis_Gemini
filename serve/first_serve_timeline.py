@@ -103,14 +103,48 @@ def add_vertical_lines(fig, y_data_series, y_min=0, y_max=None, color='gray', wi
             ))
 
 
-def create_timeline_chart(player_df, player_name, title):
+def _add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, hoverdata=None):
     """
-    Create the first serve timeline chart.
+    Add opponent comparison traces to timeline chart.
+    
+    Reserved for future use - adds opponent scatter plots and trend lines.
+    Currently not used in timeline chart to avoid clutter (8 parameters total).
+    
+    Args:
+        fig: Plotly figure object
+        x_positions: List of x-axis positions
+        df: DataFrame with opponent stats columns
+        opponent_name: Name of opponent for legend
+        hoverdata: Hover data for tooltips
+    """
+    if 'opponent_1stIn' not in df.columns or 'opponent_1stWon' not in df.columns:
+        return
+    
+    opponent_label = f"{opponent_name}" if opponent_name else "Opponent"
+    
+    # Add opponent scatter traces
+    add_scatter_trace(fig, x_positions, df['opponent_1stIn'], 
+                     f'{opponent_label} - First Serves In (%)', 
+                     '#DC2626', 'Opponent - First Serves In', hoverdata)  # red-600
+    add_scatter_trace(fig, x_positions, df['opponent_1stWon'], 
+                     f'{opponent_label} - First Serves Won (%)', 
+                     '#F87171', 'Opponent - First Serves Won', hoverdata)  # red-400
+    
+    # Add opponent trend lines
+    add_trend_line(fig, df['opponent_1stIn'], f'{opponent_label} - First Serves In', '#DC2626')
+    add_trend_line(fig, df['opponent_1stWon'], f'{opponent_label} - First Serves Won', '#F87171')
+
+
+def create_timeline_chart(player_df, player_name, title, show_opponent_comparison=False, opponent_name=None):
+    """
+    Create the first serve timeline chart with optional opponent comparison.
     
     Args:
         player_df: DataFrame with calculated serve statistics
         player_name: Name of the player
         title: Chart title
+        show_opponent_comparison: If True, show opponent stats overlay (default: False)
+        opponent_name: Name of opponent for comparison (optional, for legend)
         
     Returns:
         go.Figure: Plotly figure object for timeline chart
@@ -123,7 +157,6 @@ def create_timeline_chart(player_df, player_name, title):
     # Get hover data for tooltips
     hoverdata = get_match_hover_data(df, player_name, case_sensitive=True)
     
-    # Create x-axis positions for matches
     x_positions = list(range(len(df)))
     
     fig = go.Figure()
@@ -132,20 +165,21 @@ def create_timeline_chart(player_df, player_name, title):
     # 1. Draw vertical lines (background layer)
     add_vertical_lines(fig, [df['player_1stIn'], df['player_1stWon']])
     
-    # 2. Add scatter plots (main data layer)
-    add_scatter_trace(fig, x_positions, df['player_1stIn'], 'First Serves In (%)', 'blue', 'First Serves In', hoverdata)
-    add_scatter_trace(fig, x_positions, df['player_1stWon'], 'First Serves Won (%)', 'orange', 'First Serves Won', hoverdata)
+    # 2. Add scatter plots (main data layer) - Player stats
+    player_label = f"{player_name}" if player_name else "Player"
+    add_scatter_trace(fig, x_positions, df['player_1stIn'], f'{player_label} - First Serves In (%)', '#2563EB', 'Player - First Serves In', hoverdata)  # blue
+    add_scatter_trace(fig, x_positions, df['player_1stWon'], f'{player_label} - First Serves Won (%)', '#F97316', 'Player - First Serves Won', hoverdata)  # orange
     
-    # 3. Add trend lines (overlay layer)
-    add_trend_line(fig, df['player_1stIn'], 'First Serves In', 'blue')
-    add_trend_line(fig, df['player_1stWon'], 'First Serves Won', 'orange')
+    # 4. Add trend lines (overlay layer) - Player trends (same colors, dashed)
+    add_trend_line(fig, df['player_1stIn'], f'{player_label} - First Serves In', '#2563EB')
+    add_trend_line(fig, df['player_1stWon'], f'{player_label} - First Serves Won', '#F97316')
     
     # Configure layout
     fig.update_layout(
         title=title,
         xaxis_title="Matches",
         yaxis_title="(%)",
-        yaxis=dict(range=[0, 100]),  # Fix y-axis range to 0-100%
+        yaxis=dict(range=[0, 100]),
         hovermode='closest',
         template='plotly_white',
         showlegend=True,

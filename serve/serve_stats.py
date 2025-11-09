@@ -34,7 +34,7 @@ def build_year_suffix(year):
         return f"{year} Season"
 
 
-def calculate_match_serve_stats(player_df, player_name, case_sensitive=False):
+def calculate_match_serve_stats(df, player_name, case_sensitive=False):
     """
     Calculate serve statistics for each match in the dataframe.
     
@@ -46,7 +46,7 @@ def calculate_match_serve_stats(player_df, player_name, case_sensitive=False):
     Returns:
         DataFrame: Original dataframe with added columns for serve statistics
     """
-    df = player_df.copy()
+    df = df.copy()
     
     # Determine if player was winner or loser for each match
     if case_sensitive:
@@ -103,6 +103,54 @@ def calculate_match_serve_stats(player_df, player_name, case_sensitive=False):
     )
     df['result'] = np.where(is_winner, 'W', 'L')
     
+    # =============================================================================
+    # OPPONENT SERVE STATISTICS CALCULATION
+    # =============================================================================
+    # Opponent stats are the opposite of player stats:
+    # - If player was winner, opponent was loser (use l_* columns)
+    # - If player was loser, opponent was winner (use w_* columns)
+    is_opponent_winner = ~is_winner
+    
+    # Calculate Opponent 1st Serve %
+    df['opponent_1stIn'] = np.where(
+        is_opponent_winner,
+        np.where(df['w_svpt'] > 0, df['w_1stIn'] / df['w_svpt'] * 100, np.nan),
+        np.where(df['l_svpt'] > 0, df['l_1stIn'] / df['l_svpt'] * 100, np.nan)
+    )
+    
+    # Calculate Opponent 1st Serve Won %
+    df['opponent_1stWon'] = np.where(
+        is_opponent_winner,
+        np.where((df['w_svpt'] > 0) & (df['w_1stIn'] > 0),
+                 df['w_1stWon'] / df['w_1stIn'] * 100, np.nan),
+        np.where((df['l_svpt'] > 0) & (df['l_1stIn'] > 0),
+                 df['l_1stWon'] / df['l_1stIn'] * 100, np.nan)
+    )
+    
+    # Calculate Opponent 2nd Serve Won %
+    opponent_second_serve_attempted = np.where(
+        is_opponent_winner,
+        df['w_svpt'] - df['w_1stIn'],
+        df['l_svpt'] - df['l_1stIn']
+    )
+    
+    df['opponent_2ndWon'] = np.where(
+        is_opponent_winner,
+        np.where(opponent_second_serve_attempted > 0,
+                 df['w_2ndWon'] / opponent_second_serve_attempted * 100, np.nan),
+        np.where(opponent_second_serve_attempted > 0,
+                 df['l_2ndWon'] / opponent_second_serve_attempted * 100, np.nan)
+    )
+    
+    # Calculate Opponent Ace Rate (aces per serve game)
+    opponent_aces = np.where(is_opponent_winner, df['w_ace'], df['l_ace'])
+    opponent_serve_games = np.where(is_opponent_winner, df['w_SvGms'], df['l_SvGms'])
+    df['opponent_ace_rate'] = np.where(opponent_serve_games > 0, opponent_aces / opponent_serve_games * 100, np.nan)
+    
+    # Calculate Opponent Double Fault Rate (double faults per serve game)
+    opponent_double_faults = np.where(is_opponent_winner, df['w_df'], df['l_df'])
+    df['opponent_df_rate'] = np.where(opponent_serve_games > 0, opponent_double_faults / opponent_serve_games * 100, np.nan)
+    
     return df
 
 
@@ -111,10 +159,10 @@ def calculate_aggregated_serve_stats(df, player_name=None, case_sensitive=False)
     Calculate aggregated serve statistics across all matches.
     
     Args:
-        player_df: DataFrame containing match data. If stats columns already exist
+        df: DataFrame containing match data. If stats columns already exist
                    (player_1stIn, player_1stWon, etc.), they will be used directly.
                    Otherwise, player_name must be provided to calculate them.
-        player_name: Name of the player (required only if stats need to be calculated)
+        player_name: Name of the player (optional if stats columns already exist)
         case_sensitive: Whether to use case-sensitive name matching (default: False)
         
     Returns:
@@ -140,6 +188,64 @@ def calculate_aggregated_serve_stats(df, player_name=None, case_sensitive=False)
         '2nd Serve Won %': np.nanmean(df_with_stats['player_2ndWon']),
         'Ace Rate': np.nanmean(df_with_stats['player_ace_rate']),
         'Double Fault Rate': np.nanmean(df_with_stats['player_df_rate'])
+    }
+    
+    return stats
+
+
+def calculate_aggregated_opponent_stats(df, opponent_name=None):
+    """
+    Calculate aggregated opponent serve statistics across all matches.
+    
+    Handles "All Opponents" case by checking if multiple opponents exist.
+    Aggregation is only meaningful when filtering by a specific opponent.
+    
+    Args:
+        df: DataFrame containing match data with opponent stats columns already calculated
+            (opponent_1stIn, opponent_1stWon, etc.)
+        opponent_name: Optional opponent name. If provided, only aggregates matches vs this opponent.
+                      If None, checks if single opponent exists in data.
+        
+    Returns:
+        dict: Dictionary containing aggregated opponent serve statistics, or None if:
+              - Multiple opponents exist and no specific opponent_name provided
+              - Specified opponent_name not found in data
+              - Required opponent stats columns are missing
+    """
+    # Check if opponent stats columns exist
+    required_stats_columns = ['opponent_1stIn', 'opponent_1stWon', 'opponent_2ndWon', 
+                               'opponent_ace_rate', 'opponent_df_rate', 'opponent']
+    
+    if not all(col in df.columns for col in required_stats_columns):
+        # Opponent stats not calculated yet - return None
+        return None
+    
+    # Filter by opponent if specified
+    if opponent_name:
+        df_filtered = df[df['opponent'] == opponent_name]
+        if df_filtered.empty:
+            # Specified opponent not found
+            return None
+    else:
+        # Check if multiple opponents exist
+        unique_opponents = df['opponent'].nunique()
+        if unique_opponents > 1:
+            # Multiple opponents - aggregation not meaningful
+            return None
+        elif unique_opponents == 0:
+            # No opponents found
+            return None
+        else:
+            # Single opponent - safe to aggregate
+            df_filtered = df
+    
+    # Calculate averages across all matches (excluding NaN values)
+    stats = {
+        '1st Serve %': np.nanmean(df_filtered['opponent_1stIn']),
+        '1st Serve Won %': np.nanmean(df_filtered['opponent_1stWon']),
+        '2nd Serve Won %': np.nanmean(df_filtered['opponent_2ndWon']),
+        'Ace Rate': np.nanmean(df_filtered['opponent_ace_rate']),
+        'Double Fault Rate': np.nanmean(df_filtered['opponent_df_rate'])
     }
     
     return stats

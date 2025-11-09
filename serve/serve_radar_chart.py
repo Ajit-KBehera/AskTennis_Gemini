@@ -19,36 +19,56 @@ import plotly.graph_objects as go
 # ============================================================================
 
 
-def create_radar_chart(stats, player_name, title):
+def create_radar_chart(stats, player_name, title, opponent_stats=None, opponent_name=None):
     """
-    Create a radar chart for serve statistics.
+    Create a radar chart for serve statistics with optional opponent comparison overlay.
     
     Args:
-        stats: Dictionary containing serve statistics
+        stats: Dictionary containing player serve statistics
         player_name: Name of the player (used in trace name)
         title: Chart title
+        opponent_stats: Optional dictionary containing opponent serve statistics for comparison
+        opponent_name: Optional name of opponent for legend
         
     Returns:
         go.Figure: Plotly figure object
     """
     # Prepare data for radar chart
     categories = list(stats.keys())
-    values = list(stats.values())
+    player_values = list(stats.values())
     
     # Handle NaN values by setting them to 0
-    values = [v if not np.isnan(v) else 0 for v in values]
+    player_values = [v if not np.isnan(v) else 0 for v in player_values]
     
     # Create radar chart (polar plot)
     fig = go.Figure()
     
+    # Add player trace
     fig.add_trace(go.Scatterpolar(
-        r=values,
+        r=player_values,
         theta=categories,
         fill='toself',
         name=player_name,
         line=dict(color='blue', width=2),
-        marker=dict(size=8, color='blue')
+        marker=dict(size=8, color='blue'),
+        opacity=0.7
     ))
+    
+    # Add opponent trace if provided
+    if opponent_stats:
+        opponent_values = [opponent_stats.get(cat, 0) for cat in categories]
+        opponent_values = [v if not np.isnan(v) else 0 for v in opponent_values]
+        
+        opponent_label = opponent_name if opponent_name else "Opponent"
+        fig.add_trace(go.Scatterpolar(
+            r=opponent_values,
+            theta=categories,
+            fill='toself',
+            name=opponent_label,
+            line=dict(color='red', width=2, dash='dash'),
+            marker=dict(size=8, color='red'),
+            opacity=0.5
+        ))
     
     # Configure layout
     fig.update_layout(
