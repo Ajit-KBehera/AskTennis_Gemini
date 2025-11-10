@@ -98,11 +98,12 @@ def calculate_match_serve_stats(df, player_name, case_sensitive=False):
     # Calculate Ace Rate (aces per total serve points)
     player_aces = np.where(is_winner, df['w_ace'], df['l_ace'])
     player_serve_points = np.where(is_winner, df['w_svpt'], df['l_svpt'])
-    df['player_ace_rate'] = np.where(player_serve_points > 0, player_aces / player_serve_points * 100, np.nan)
+    # Use np.divide with where to avoid division by zero warnings
+    df['player_ace_rate'] = np.divide(player_aces, player_serve_points, out=np.full_like(player_aces, np.nan, dtype=float), where=player_serve_points > 0) * 100
     
     # Calculate Double Fault Rate (double faults per total serve points)
     player_double_faults = np.where(is_winner, df['w_df'], df['l_df'])
-    df['player_df_rate'] = np.where(player_serve_points > 0, player_double_faults / player_serve_points * 100, np.nan)
+    df['player_df_rate'] = np.divide(player_double_faults, player_serve_points, out=np.full_like(player_double_faults, np.nan, dtype=float), where=player_serve_points > 0) * 100
     
     # Calculate opponent and result for hover tooltips
     df['opponent'] = np.where(
@@ -154,11 +155,12 @@ def calculate_match_serve_stats(df, player_name, case_sensitive=False):
     # Calculate Opponent Ace Rate (aces per total serve points)
     opponent_aces = np.where(is_opponent_winner, df['w_ace'], df['l_ace'])
     opponent_serve_points = np.where(is_opponent_winner, df['w_svpt'], df['l_svpt'])
-    df['opponent_ace_rate'] = np.where(opponent_serve_points > 0, opponent_aces / opponent_serve_points * 100, np.nan)
+    # Use np.divide with where to avoid division by zero warnings
+    df['opponent_ace_rate'] = np.divide(opponent_aces, opponent_serve_points, out=np.full_like(opponent_aces, np.nan, dtype=float), where=opponent_serve_points > 0) * 100
     
     # Calculate Opponent Double Fault Rate (double faults per total serve points)
     opponent_double_faults = np.where(is_opponent_winner, df['w_df'], df['l_df'])
-    df['opponent_df_rate'] = np.where(opponent_serve_points > 0, opponent_double_faults / opponent_serve_points * 100, np.nan)
+    df['opponent_df_rate'] = np.divide(opponent_double_faults, opponent_serve_points, out=np.full_like(opponent_double_faults, np.nan, dtype=float), where=opponent_serve_points > 0) * 100
     
     return df
 
