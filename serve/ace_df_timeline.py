@@ -55,11 +55,10 @@ def add_trend_line(fig, y_data, name, color):
             x=x,
             y=p(xc),
             mode='lines',
-            name=f'Trend ({name})',
+            name=f'{name}',
             line=dict(color=color, dash='dash', width=2),
             opacity=0.8,
-            hoverinfo='skip',
-            showlegend=False
+            hoverinfo='skip'
         ))
 
 
@@ -141,8 +140,8 @@ def _add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, ho
                      '#F87171', 'Double Fault Rate', hoverdata, use_lines=False)  # red-400
     
     # Add opponent trend lines
-    add_trend_line(fig, df['opponent_ace_rate'], f'{opponent_label} - Ace Rate', '#34D399')
-    add_trend_line(fig, df['opponent_df_rate'], f'{opponent_label} - Double Fault Rate', '#F87171')
+    add_trend_line(fig, df['opponent_ace_rate'], 'Ace Rate', '#34D399')
+    add_trend_line(fig, df['opponent_df_rate'], 'Double Fault Rate', '#F87171')
 
 
 def create_ace_df_timeline_chart(player_df, player_name, title, show_opponent_comparison=False, opponent_name=None):

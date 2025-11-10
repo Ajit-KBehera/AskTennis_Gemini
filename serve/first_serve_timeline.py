@@ -48,11 +48,10 @@ def add_trend_line(fig, y_data, name, color):
             x=x,
             y=p(xc),
             mode='lines',
-            name=f'Trend ({name})',
+            name=f'{name}',
             line=dict(color=color, dash='dash', width=2),
             opacity=0.8,
-            hoverinfo='skip',
-            showlegend=False
+            hoverinfo='skip'
         ))
 
 
@@ -136,9 +135,9 @@ def _add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, ho
                      '#854D3D', '2ndWon', hoverdata)  # brown-600
     
     # Add opponent trend lines
-    add_trend_line(fig, df['opponent_1stIn'], 'First Serves In', '#DC2626')
-    add_trend_line(fig, df['opponent_1stWon'], 'First Serves Won', '#F87171')
-    add_trend_line(fig, df['opponent_2ndWon'], 'Second Serves Won', '#854D3D')
+    add_trend_line(fig, df['opponent_1stIn'], '1stIn', '#DC2626')
+    add_trend_line(fig, df['opponent_1stWon'], '1stWon', '#F87171')
+    add_trend_line(fig, df['opponent_2ndWon'], '2ndWon', '#854D3D')
 
 def create_timeline_chart(player_df, player_name, title, show_opponent_comparison=False, opponent_name=None):
     """
@@ -177,9 +176,9 @@ def create_timeline_chart(player_df, player_name, title, show_opponent_compariso
     add_scatter_trace(fig, x_positions, df['player_2ndWon'], '2ndWon', '#10B981', '2ndWon', hoverdata)  # green
     
     # 4. Add trend lines (overlay layer) - Player trends (same colors, dashed)
-    add_trend_line(fig, df['player_1stIn'], '1st Serve In', '#2563EB')
-    add_trend_line(fig, df['player_1stWon'], '1st Serve Won', '#F97316')
-    add_trend_line(fig, df['player_2ndWon'], '2nd Serve Won', '#10B981')
+    add_trend_line(fig, df['player_1stIn'], '1stIn', '#2563EB')
+    add_trend_line(fig, df['player_1stWon'], '1stWon', '#F97316')
+    add_trend_line(fig, df['player_2ndWon'], '2ndWon', '#10B981')
     
     # Configure layout
     fig.update_layout(
