@@ -203,32 +203,52 @@ class UIDisplay:
         # =============================================================================
         # YEAR SELECTION (Range Slider)
         # =============================================================================
-        # Initialize year range in session state if not exists
+        # Get dynamic year range based on selected player
+        if selected_player and selected_player != "All Players":
+            min_year, max_year = db_service.get_player_year_range(selected_player)
+        else:
+            min_year, max_year = (1968, 2025)  # Default range for "All Players"
+        
+        # Track previous player to reset year range when player changes
+        if 'previous_player' not in st.session_state:
+            st.session_state.previous_player = selected_player
+        
+        # Reset year range if player changed
+        if st.session_state.previous_player != selected_player:
+            st.session_state.year_range = (min_year, max_year)
+            st.session_state.previous_player = selected_player
+        
+        # Initialize year range in session state if not exists or if current range is invalid
         if 'year_range' not in st.session_state:
-            st.session_state.year_range = (1968, 2025)
+            st.session_state.year_range = (min_year, max_year)
+        else:
+            # Ensure current range is within valid bounds
+            current_min, current_max = st.session_state.year_range
+            if current_min < min_year or current_max > max_year or current_min > current_max:
+                st.session_state.year_range = (min_year, max_year)
         
         # Checkbox for "All Years" option
         use_all_years = st.checkbox(
             "All Years",
             value=False,
             key="year_all_years_checkbox",
-            help="Select all available years (1968-2025)"
+            help=f"Select all available years ({min_year}-{max_year})"
         )
         
         if use_all_years:
             # Use full range when "All Years" is selected
             selected_year = None  # None represents "All Years"
             # Display the range but disable slider
-            st.info(f"Year Range: 1968 - 2025 (All Years)")
+            st.info(f"Year Range: {min_year} - {max_year} (All Years)")
         else:
-            # Year range slider
+            # Year range slider with dynamic min/max values
             year_range = st.slider(
                 "Select Year Range:",
-                min_value=1968,
-                max_value=2025,
+                min_value=min_year,
+                max_value=max_year,
                 value=st.session_state.year_range,
                 key="year_range_slider",
-                help="Drag handles to select start and end year. Drag both to same position for single year."
+                help=f"Drag handles to select start and end year. Drag both to same position for single year. Range: {min_year}-{max_year}"
             )
             # Store the range in session state
             st.session_state.year_range = year_range

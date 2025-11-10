@@ -96,6 +96,47 @@ class DatabaseService:
             st.error(f"Error fetching tournaments: {e}")
             return [DatabaseService.ALL_TOURNAMENTS, "Wimbledon", "French Open", "US Open", "Australian Open"]
     
+    @st.cache_data(ttl=300)  # Cache for 5 minutes
+    def get_player_year_range(_self, player_name: str) -> Tuple[int, int]:
+        """Get the year range (min and max event_year) for a specific player.
+        
+        Args:
+            player_name: Name of the player
+            
+        Returns:
+            Tuple[int, int]: (min_year, max_year) or (1968, 2025) if no matches found
+        """
+        player_name = _self._sanitize_string(player_name)
+        if not player_name or player_name == DatabaseService.ALL_PLAYERS:
+            return (1968, 2025)  # Default range
+        
+        try:
+            with sqlite3.connect(_self.db_path) as conn:
+                query = """
+                SELECT MIN(event_year) as min_year, MAX(event_year) as max_year
+                FROM matches 
+                WHERE (winner_name COLLATE NOCASE = ? OR loser_name COLLATE NOCASE = ?)
+                  AND event_year IS NOT NULL
+                """
+                df = pd.read_sql_query(query, conn, params=[player_name, player_name])
+            
+            if df.empty or df['min_year'].iloc[0] is None or df['max_year'].iloc[0] is None:
+                return (1968, 2025)  # Default range if no matches found
+            
+            min_year = int(df['min_year'].iloc[0])
+            max_year = int(df['max_year'].iloc[0])
+            
+            # Ensure valid range
+            if min_year < _self.MIN_YEAR:
+                min_year = _self.MIN_YEAR
+            if max_year > _self.MAX_YEAR:
+                max_year = _self.MAX_YEAR
+            
+            return (min_year, max_year)
+        except Exception as e:
+            st.warning(f"Error fetching year range for player: {e}")
+            return (1968, 2025)  # Default range on error
+    
     @st.cache_data(ttl=60)  # Cache for 1 minute
     def get_opponents_for_player(_self, player_name: str) -> List[str]:
         """Get opponents for a specific player."""
