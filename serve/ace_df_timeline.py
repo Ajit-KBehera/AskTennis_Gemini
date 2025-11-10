@@ -28,6 +28,7 @@ def add_scatter_trace(fig, x_positions, y_data, name, color, hover_label, custom
         'name': name,
         'marker': dict(color=color, size=8),
         'hovertemplate': f'{hover_label}: %{{y:.2f}}%<br>' +                  
+                      'Year: %{customdata[4]}<br>' +
                       'Tournament: %{customdata[0]}<br>' +
                       'Round: %{customdata[1]}<br>' +
                       'Opponent: %{customdata[2]}<br>' +
