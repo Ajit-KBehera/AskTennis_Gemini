@@ -58,7 +58,8 @@ def add_trend_line(fig, y_data, name, color):
             name=f'Trend ({name})',
             line=dict(color=color, dash='dash', width=2),
             opacity=0.8,
-            hoverinfo='skip'
+            hoverinfo='skip',
+            showlegend=False
         ))
 
 
@@ -133,11 +134,11 @@ def _add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, ho
     
     # Add opponent scatter traces
     add_scatter_trace(fig, x_positions, df['opponent_ace_rate'], 
-                     f'{opponent_label} - Ace Rate (%)', 
-                     '#34D399', 'Opponent - Ace Rate', hoverdata, use_lines=False)  # green-300
+                     'Ace Rate', 
+                     '#34D399', 'Ace Rate', hoverdata, use_lines=False)  # green-300
     add_scatter_trace(fig, x_positions, df['opponent_df_rate'], 
-                     f'{opponent_label} - Double Fault Rate (%)', 
-                     '#F87171', 'Opponent - Double Fault Rate', hoverdata, use_lines=False)  # red-400
+                     'Double Fault Rate', 
+                     '#F87171', 'Double Fault Rate', hoverdata, use_lines=False)  # red-400
     
     # Add opponent trend lines
     add_trend_line(fig, df['opponent_ace_rate'], f'{opponent_label} - Ace Rate', '#34D399')
@@ -181,11 +182,11 @@ def create_ace_df_timeline_chart(player_df, player_name, title, show_opponent_co
     
     # 2. Add scatter plots (main data layer) - Player stats
     add_scatter_trace(fig, x_positions, df['player_ace_rate'], 
-                     f'{player_label} - Ace Rate (%)', 
-                     '#10B981', 'Player - Ace Rate', hoverdata, use_lines=False)  # green-500
+                     'Ace Rate', 
+                     '#10B981',' Ace Rate', hoverdata, use_lines=False)  # green-500
     add_scatter_trace(fig, x_positions, df['player_df_rate'], 
-                     f'{player_label} - Double Fault Rate (%)', 
-                     '#EF4444', 'Player - Double Fault Rate', hoverdata, use_lines=False)  # red-500
+                     'Double Fault Rate', 
+                     '#EF4444', 'Double Fault Rate', hoverdata, use_lines=False)  # red-500
     
     all_series.extend([df['player_ace_rate'], df['player_df_rate']])
     
@@ -193,8 +194,8 @@ def create_ace_df_timeline_chart(player_df, player_name, title, show_opponent_co
     add_vertical_lines(fig, series_for_lines)
     
     # 5. Add trend lines (overlay layer) - Player trends
-    add_trend_line(fig, df['player_ace_rate'], f'{player_label} - Ace Rate', '#10B981')
-    add_trend_line(fig, df['player_df_rate'], f'{player_label} - Double Fault Rate', '#EF4444')
+    add_trend_line(fig, df['player_ace_rate'], 'Ace Rate', '#10B981')
+    add_trend_line(fig, df['player_df_rate'], 'Double Fault Rate', '#EF4444')
     
     # Calculate appropriate y-axis range (0 to max value + 15% padding, but cap at 30%)
     max_values = []
