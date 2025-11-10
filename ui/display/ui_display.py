@@ -201,10 +201,51 @@ class UIDisplay:
         )
         
         # =============================================================================
-        # YEAR SELECTION
+        # YEAR SELECTION (Range Slider)
         # =============================================================================
-        year_options = ["All Years"] + [str(year) for year in range(2024, 1968, -1)]
-        selected_year = st.selectbox("Select Year:", year_options, key="year_select")
+        # Initialize year range in session state if not exists
+        if 'year_range' not in st.session_state:
+            st.session_state.year_range = (1968, 2025)
+        
+        # Checkbox for "All Years" option
+        use_all_years = st.checkbox(
+            "All Years",
+            value=False,
+            key="year_all_years_checkbox",
+            help="Select all available years (1968-2025)"
+        )
+        
+        if use_all_years:
+            # Use full range when "All Years" is selected
+            selected_year = None  # None represents "All Years"
+            # Display the range but disable slider
+            st.info(f"Year Range: 1968 - 2025 (All Years)")
+        else:
+            # Year range slider
+            year_range = st.slider(
+                "Select Year Range:",
+                min_value=1968,
+                max_value=2025,
+                value=st.session_state.year_range,
+                key="year_range_slider",
+                help="Drag handles to select start and end year. Drag both to same position for single year."
+            )
+            # Store the range in session state
+            st.session_state.year_range = year_range
+            
+            # Convert range to appropriate format for database query
+            if year_range[0] == year_range[1]:
+                # Single year selected
+                selected_year = year_range[0]
+            else:
+                # Year range selected - store as tuple for BETWEEN query
+                selected_year = (year_range[0], year_range[1])
+            
+            # Display selected range
+            if year_range[0] == year_range[1]:
+                st.caption(f"Selected: {year_range[0]}")
+            else:
+                st.caption(f"Selected: {year_range[0]} - {year_range[1]} ({year_range[1] - year_range[0] + 1} years)")
         
         # =============================================================================
         # SURFACE SELECTION
@@ -414,7 +455,11 @@ class UIDisplay:
                 opponent = filters['opponent'] if filters['opponent'] != 'All Opponents' else None
                 tournament = filters['tournament'] if filters['tournament'] != 'All Tournaments' else None
                 surfaces = filters['surfaces'] if filters['surfaces'] else None
-                year = filters['year'] if filters['year'] != 'All Years' else None
+                # Handle year: None, int, tuple, or string (backward compatibility)
+                year = filters.get('year')
+                if year == 'All Years' or year is None:
+                    year = None
+                # year is already in correct format (int, tuple, or None)
                 
                 # Create and display serve charts using pre-loaded DataFrame
                 timeline_fig, ace_df_timeline_fig, radar_fig = create_combined_serve_charts(
@@ -453,6 +498,36 @@ class UIDisplay:
         st.info("🚧 Return statistics visualization coming soon...")
     
     @staticmethod
+    def _format_year_for_filename(year):
+        """
+        Format year value for CSV filename.
+        
+        Args:
+            year: Year value (None, int, tuple, list, or str)
+            
+        Returns:
+            str: Formatted year string for filename
+        """
+        if year is None or year == 'All Years':
+            return 'all'
+        elif isinstance(year, tuple) and len(year) == 2:
+            # Year range tuple
+            start_year, end_year = year[0], year[1]
+            if start_year == end_year:
+                return str(start_year)
+            else:
+                return f"{start_year}-{end_year}"
+        elif isinstance(year, list):
+            # List of years
+            if len(year) == 1:
+                return str(year[0])
+            else:
+                return f"{min(year)}-{max(year)}"
+        else:
+            # Single year (int or str)
+            return str(year)
+    
+    @staticmethod
     def _render_raw_tab(df_matches, filters):
         """
         Render the RAW tab displaying full DataFrame and CSV download.
@@ -464,10 +539,11 @@ class UIDisplay:
         st.dataframe(df_matches, width='stretch')
         # Download button for CSV export
         csv_data = df_matches.to_csv(index=False)
+        year_str = UIDisplay._format_year_for_filename(filters.get('year'))
         st.download_button(
             label="📥 Download CSV",
             data=csv_data,
-            file_name=f"tennis_matches_{filters.get('year', 'all')}.csv",
+            file_name=f"tennis_matches_{year_str}.csv",
             mime="text/csv",
             key="download_raw_csv"
         )

@@ -17,20 +17,29 @@ def build_year_suffix(year):
     Args:
         year: Year(s) for the chart. Can be:
             - int or str: Single year (e.g., 2024)
+            - tuple: Year range (e.g., (2020, 2024)) for consecutive years
             - list: Multiple years (e.g., [2022, 2023, 2024])
             - None: Career view (all years)
     
     Returns:
-        str: Year suffix string (e.g., "2024 Season", "2022-2024 Seasons", "Career")
+        str: Year suffix string (e.g., "2024 Season", "2020-2024 Seasons", "Career")
     """
     if year is None:
         return "Career"
+    elif isinstance(year, tuple) and len(year) == 2:
+        # Year range tuple (start_year, end_year)
+        start_year, end_year = year[0], year[1]
+        if start_year == end_year:
+            return f"{start_year} Season"
+        else:
+            return f"{start_year}-{end_year} Seasons"
     elif isinstance(year, list):
         if len(year) == 1:
             return f"{year[0]} Season"
         else:
             return f"{min(year)}-{max(year)} Seasons"
     else:
+        # Single year (int or str)
         return f"{year} Season"
 
 

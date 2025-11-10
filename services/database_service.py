@@ -5,7 +5,7 @@ Provides dynamic data for dropdowns and analysis
 
 import sqlite3
 import pandas as pd
-from typing import List, Optional
+from typing import List, Optional, Union, Tuple
 import streamlit as st
 from constants import DEFAULT_DB_PATH
 
@@ -130,7 +130,7 @@ class DatabaseService:
     def get_matches_with_filters(self, player: Optional[str] = None, 
                                 opponent: Optional[str] = None, 
                                 tournament: Optional[str] = None, 
-                                year: Optional[str] = None, 
+                                year: Optional[Union[int, str, Tuple[int, int], List[int]]] = None, 
                                 surfaces: Optional[List[str]] = None,
                                 return_all_columns: bool = False,
                                 _cache_bust: int = 0) -> pd.DataFrame:
@@ -140,10 +140,15 @@ class DatabaseService:
             player = self._sanitize_string(player)
             opponent = self._sanitize_string(opponent)
             tournament = self._sanitize_string(tournament)
-            year = self._sanitize_string(year)
+            # Don't sanitize year - it can be int, tuple, list, or str
             
-            # Debug logging
-            st.write(f"🔍 Querying: player='{player}', year='{year}', tournament='{tournament}', surfaces='{surfaces}'")
+            # Debug logging - format year for display
+            year_display = year
+            if isinstance(year, tuple):
+                year_display = f"{year[0]}-{year[1]}"
+            elif isinstance(year, list):
+                year_display = f"{min(year)}-{max(year)}" if len(year) > 1 else str(year[0])
+            st.write(f"🔍 Querying: player='{player}', year={year_display}, tournament='{tournament}', surfaces='{surfaces}'")
             
             # Build WHERE clause
             where_conditions = []
@@ -169,17 +174,64 @@ class DatabaseService:
                 where_conditions.append("tourney_name = ?")
                 params.append(tournament)
             
-            if year and year != self.ALL_YEARS:
+            # Handle year filtering: supports None, int, tuple (range), or list
+            if year is not None and year != self.ALL_YEARS:
                 try:
-                    year_int = int(year)
-                    # Validate reasonable year range
-                    if self.MIN_YEAR <= year_int <= self.MAX_YEAR:
-                        where_conditions.append("event_year = ?")
-                        params.append(year_int)
+                    # Handle tuple (year range) - use BETWEEN for efficiency
+                    if isinstance(year, tuple) and len(year) == 2:
+                        start_year, end_year = int(year[0]), int(year[1])
+                        # Ensure start <= end
+                        if start_year > end_year:
+                            start_year, end_year = end_year, start_year
+                        
+                        # Validate year range
+                        if (self.MIN_YEAR <= start_year <= self.MAX_YEAR and 
+                            self.MIN_YEAR <= end_year <= self.MAX_YEAR):
+                            where_conditions.append("event_year BETWEEN ? AND ?")
+                            params.extend([start_year, end_year])
+                        else:
+                            st.warning(f"Invalid year range: {start_year}-{end_year}. Skipping year filter.")
+                    
+                    # Handle list (multiple specific years) - use IN
+                    elif isinstance(year, list) and len(year) > 0:
+                        year_list = [int(y) for y in year if isinstance(y, (int, str)) and str(y).isdigit()]
+                        # Validate all years
+                        valid_years = [y for y in year_list if self.MIN_YEAR <= y <= self.MAX_YEAR]
+                        
+                        if valid_years:
+                            if len(valid_years) == 1:
+                                # Single year in list - use equality
+                                where_conditions.append("event_year = ?")
+                                params.append(valid_years[0])
+                            else:
+                                # Multiple years - use IN
+                                placeholders = ','.join(['?' for _ in valid_years])
+                                where_conditions.append(f"event_year IN ({placeholders})")
+                                params.extend(valid_years)
+                        else:
+                            st.warning(f"Invalid year values in list. Skipping year filter.")
+                    
+                    # Handle single integer year
+                    elif isinstance(year, int):
+                        if self.MIN_YEAR <= year <= self.MAX_YEAR:
+                            where_conditions.append("event_year = ?")
+                            params.append(year)
+                        else:
+                            st.warning(f"Invalid year range: {year}. Skipping year filter.")
+                    
+                    # Handle string (backward compatibility)
+                    elif isinstance(year, str):
+                        year_int = int(year)
+                        if self.MIN_YEAR <= year_int <= self.MAX_YEAR:
+                            where_conditions.append("event_year = ?")
+                            params.append(year_int)
+                        else:
+                            st.warning(f"Invalid year range: {year_int}. Skipping year filter.")
                     else:
-                        st.warning(f"Invalid year range: {year_int}. Skipping year filter.")
-                except (ValueError, TypeError):
-                    st.warning(f"Invalid year format: {year}. Skipping year filter.")
+                        st.warning(f"Invalid year format: {type(year)}. Expected int, tuple, list, or str. Skipping year filter.")
+                        
+                except (ValueError, TypeError) as e:
+                    st.warning(f"Invalid year format: {year}. Error: {e}. Skipping year filter.")
             
             if surfaces:
                 # Filter and validate surfaces: remove empty strings, None values, and strip whitespace
