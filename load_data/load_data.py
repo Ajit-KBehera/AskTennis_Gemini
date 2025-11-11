@@ -25,6 +25,11 @@ try:
         load_doubles_data
     )
     from .data_transformers import (
+        enrich_players_data,
+        enrich_rankings_data,
+        categorize_match_types,
+        enrich_matches_data,
+        filter_matches_by_switches,
         parse_date_components,
         parse_score_data,
         fix_missing_surface_data,
@@ -47,6 +52,11 @@ except ImportError:
         load_doubles_data
     )
     from load_data.data_transformers import (
+        enrich_players_data,
+        enrich_rankings_data,
+        categorize_match_types,
+        enrich_matches_data,
+        filter_matches_by_switches,
         parse_date_components,
         parse_score_data,
         fix_missing_surface_data,
@@ -71,26 +81,47 @@ def create_database_with_players():
     print("=== Enhanced Data Loading with COMPLETE Tournament Coverage (1877-2024) ===")
     
     # Initialize progress tracker for main steps
-    main_steps = 9  # players, rankings, matches, doubles, surface_fix, date_parsing, score_parsing, tourney_level_standardization, database_creation
+    main_steps = 12  # players_load, rankings_load, matches_load, doubles_load, players_enrich, rankings_enrich, matches_enrich, doubles_enrich, surface_fix, date_parsing, score_parsing, tourney_level_standardization, database_creation
     progress = ProgressTracker(main_steps, "Database Creation")
     
-    # Load player data
+    # 1. Load raw data
     progress.update(1, "Loading player data...")
     players_df = load_players_data()
     
-    # Load rankings data
     progress.update(1, "Loading rankings data...")
     rankings_df = load_rankings_data()
     
-    # Load match data
     progress.update(1, "Loading match data...")
     matches_df = load_matches_data()
     
-    # Load doubles data
     progress.update(1, "Loading doubles data...")
     doubles_df = load_doubles_data()
     
-    # Fix missing surface data
+    # 2. Transform/enrich data
+    progress.update(1, "Enriching player data...")
+    if not players_df.empty:
+        players_df = enrich_players_data(players_df)
+    
+    progress.update(1, "Enriching rankings data...")
+    if not rankings_df.empty:
+        rankings_df = enrich_rankings_data(rankings_df)
+        if 'ranking_date' in rankings_df.columns:
+            print(f"Date range: {rankings_df['ranking_date'].min()} to {rankings_df['ranking_date'].max()}")
+    
+    progress.update(1, "Enriching match data...")
+    if not matches_df.empty:
+        # First, enrich with tour, era, etc. (creates 'tour' column from '_tour_hint')
+        matches_df = enrich_matches_data(matches_df)
+        # Then categorize matches into tournament types (needs 'tour' column)
+        matches_df = categorize_match_types(matches_df)
+        # Filter based on switches
+        matches_df = filter_matches_by_switches(matches_df)
+    
+    progress.update(1, "Enriching doubles data...")
+    if not doubles_df.empty:
+        doubles_df = enrich_matches_data(doubles_df, match_type='Doubles')
+    
+    # 3. Continue with existing transformations
     progress.update(1, "Fixing surface data...")
     matches_df = fix_missing_surface_data(matches_df)
     

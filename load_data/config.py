@@ -13,7 +13,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIRS = [os.path.join(PROJECT_ROOT, "data/tennis_atp"), os.path.join(PROJECT_ROOT, "data/tennis_wta")]
 YEARS_MAIN_TOUR = list(range(1968, 2026))  # Years for main tour matches (Open Era: 1968-2024)
                                               # Note: Amateur matches (1877-1967) are loaded separately from atp_matches_amateur.csv
-DB_FILE = os.path.join(PROJECT_ROOT, "tennis_data_OE_Singles_Rankings_Players.db")
+DB_FILE = os.path.join(PROJECT_ROOT, "tennis_data_OE_Singles_Rankings_Player_test.db")
 
 # --- Data Loading Switches ---
 # Control which data sources are loaded into the database

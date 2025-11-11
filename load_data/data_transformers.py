@@ -13,6 +13,346 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from tennis.tennis_mappings import TOURNEY_LEVEL_MAPPINGS
 
+# Import configuration for switches
+try:
+    from .config import (
+        LOAD_DAVIS_CUP, LOAD_FED_CUP,
+        LOAD_ATP_QUALIFYING, LOAD_ATP_CHALLENGER, LOAD_ATP_CHALLENGER_QUAL,
+        LOAD_ATP_FUTURES, LOAD_WTA_QUALIFYING, LOAD_WTA_ITF
+    )
+except ImportError:
+    # Fallback for direct execution
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from load_data.config import (
+        LOAD_DAVIS_CUP, LOAD_FED_CUP,
+        LOAD_ATP_QUALIFYING, LOAD_ATP_CHALLENGER, LOAD_ATP_CHALLENGER_QUAL,
+        LOAD_ATP_FUTURES, LOAD_WTA_QUALIFYING, LOAD_WTA_ITF
+    )
+
+
+# ============================================================================
+# Data Enrichment Functions (moved from data_loaders.py)
+# ============================================================================
+
+def enrich_players_data(df, tour=None):
+    """
+    Enrich player data with tour information and derived columns.
+    
+    Args:
+        df: DataFrame with player data (may have _source column from loader)
+        tour: Tour name ('ATP' or 'WTA') if not already in DataFrame or _source column
+    
+    Returns:
+        DataFrame with enriched columns
+    """
+    if df.empty:
+        return df
+    
+    df = df.copy()
+    
+    # Determine tour from _source column if available, otherwise use provided tour
+    if '_source' in df.columns:
+        df['tour'] = df['_source']
+        df = df.drop(columns=['_source'])
+    elif tour and 'tour' not in df.columns:
+        df['tour'] = tour
+    
+    # Standardize data types
+    if 'dob' in df.columns:
+        df['dob'] = pd.to_datetime(df['dob'], format='%Y%m%d', errors='coerce')
+    if 'height' in df.columns:
+        df['height'] = pd.to_numeric(df['height'], errors='coerce')
+    
+    # Create full name for easier searching
+    if 'name_first' in df.columns and 'name_last' in df.columns:
+        df['full_name'] = df['name_first'] + ' ' + df['name_last']
+    
+    return df
+
+
+def enrich_rankings_data(df, tour=None):
+    """
+    Enrich rankings data with tour information and standardize columns.
+    
+    Args:
+        df: DataFrame with rankings data (may have _source_file column from loader)
+        tour: Tour name ('ATP' or 'WTA') if not determinable from _source_file
+    
+    Returns:
+        DataFrame with enriched columns
+    """
+    if df.empty:
+        return df
+    
+    df = df.copy()
+    
+    # Determine tour from _source_file column if available
+    if '_source_file' in df.columns:
+        df['tour'] = df['_source_file'].apply(
+            lambda x: 'ATP' if 'atp' in str(x).lower() else ('WTA' if 'wta' in str(x).lower() else 'Unknown')
+        )
+        df = df.drop(columns=['_source_file'])
+    elif tour and 'tour' not in df.columns:
+        df['tour'] = tour
+    
+    # Standardize column names (WTA files have 'tours' column)
+    if 'tours' in df.columns:
+        df = df.rename(columns={'tours': 'tournaments'})
+    
+    # Standardize data types
+    if 'ranking_date' in df.columns:
+        df['ranking_date'] = pd.to_datetime(df['ranking_date'], format='%Y%m%d', errors='coerce')
+    if 'rank' in df.columns:
+        df['rank'] = pd.to_numeric(df['rank'], errors='coerce')
+    if 'points' in df.columns:
+        df['points'] = pd.to_numeric(df['points'], errors='coerce')
+    if 'player' in df.columns:
+        df['player'] = pd.to_numeric(df['player'], errors='coerce')
+    
+    # Remove invalid data
+    required_cols = ['ranking_date', 'rank', 'player']
+    if all(col in df.columns for col in required_cols):
+        df = df.dropna(subset=required_cols)
+    
+    return df
+
+
+def classify_era(row):
+    """
+    Classify match era based on year: 1968+ = Open Era, <1968 = Closed Era.
+    
+    Args:
+        row: DataFrame row with tourney_date column
+    
+    Returns:
+        'Open Era', 'Closed Era', or 'Unknown'
+    """
+    if pd.isna(row.get('tourney_date')):
+        return 'Unknown'
+    year = row['tourney_date'].year
+    if year >= 1968:
+        return 'Open Era'
+    else:
+        return 'Closed Era'
+
+
+def categorize_match_types(df):
+    """
+    Categorize matches into tournament types based on file source and match characteristics.
+    This handles ATP Qualifying/Challenger/Futures and WTA Qualifying/ITF categorization.
+    
+    Args:
+        df: DataFrame with match data (should already have tour column)
+    
+    Returns:
+        DataFrame with tournament_type column added
+    """
+    if df.empty:
+        return df
+    
+    df = df.copy()
+    
+    # Ensure required columns exist
+    if 'round' not in df.columns:
+        df['round'] = ''
+    df['round'] = df['round'].astype(str)
+    
+    if 'tourney_level' not in df.columns:
+        df['tourney_level'] = ''
+    df['tourney_level'] = df['tourney_level'].astype(str)
+    
+    # Initialize tournament_type column if it doesn't exist
+    if 'tournament_type' not in df.columns:
+        df['tournament_type'] = None
+    
+    # ATP Qualifying/Challenger categorization
+    # Files contain: ATP Qualifying, ATP Challenger, and ATP Challenger Qualifying
+    atp_mask = df['tour'] == 'ATP'
+    if atp_mask.sum() > 0:
+        # Pattern: Q followed by digits (not QF which is quarterfinal)
+        is_qualifying_round = df['round'].str.match(r'^Q\d+', na=False)
+        is_challenger_level = (df['tourney_level'] == 'C')
+        
+        # ATP Challenger Qualifying
+        chall_qual_mask = atp_mask & is_challenger_level & is_qualifying_round
+        df.loc[chall_qual_mask, 'tournament_type'] = 'ATP_Challenger_Qualifying'
+        
+        # ATP Challenger
+        chall_mask = atp_mask & is_challenger_level & ~is_qualifying_round
+        df.loc[chall_mask, 'tournament_type'] = 'ATP_Challenger'
+        
+        # ATP Qualifying
+        qual_mask = atp_mask & ~is_challenger_level & is_qualifying_round
+        df.loc[qual_mask, 'tournament_type'] = 'ATP_Qualifying'
+    
+    # WTA Qualifying/ITF categorization
+    wta_mask = df['tour'] == 'WTA'
+    if wta_mask.sum() > 0:
+        # Pattern: Q followed by digits (not QF which is quarterfinal)
+        is_qualifying_round = df['round'].str.match(r'^Q\d+', na=False)
+        
+        # WTA Qualifying
+        qual_mask = wta_mask & is_qualifying_round
+        df.loc[qual_mask, 'tournament_type'] = 'WTA_Qualifying'
+        
+        # WTA ITF
+        itf_mask = wta_mask & ~is_qualifying_round
+        df.loc[itf_mask, 'tournament_type'] = 'WTA_ITF'
+    
+    return df
+
+
+def enrich_matches_data(df, tour=None, tournament_type=None, match_type=None):
+    """
+    Enrich match data with tour, tournament_type, era, and other metadata.
+    
+    Args:
+        df: DataFrame with match data (may have _tour_hint, _tournament_type_hint, _match_type_hint columns)
+        tour: Tour name ('ATP' or 'WTA') if not already in DataFrame or _tour_hint
+        tournament_type: Tournament type if known (e.g., 'ATP_Futures', 'Main Tour')
+        match_type: Match type (e.g., 'Doubles')
+    
+    Returns:
+        DataFrame with enriched columns
+    """
+    if df.empty:
+        return df
+    
+    df = df.copy()
+    
+    # Use hints from loader if available
+    if '_tour_hint' in df.columns:
+        df['tour'] = df['_tour_hint']
+        df = df.drop(columns=['_tour_hint'])
+    elif tour and 'tour' not in df.columns:
+        df['tour'] = tour
+    
+    if '_tournament_type_hint' in df.columns:
+        df['tournament_type'] = df['_tournament_type_hint']
+        df = df.drop(columns=['_tournament_type_hint'])
+    elif tournament_type and 'tournament_type' not in df.columns:
+        df['tournament_type'] = tournament_type
+    
+    if '_match_type_hint' in df.columns:
+        df['match_type'] = df['_match_type_hint']
+        df = df.drop(columns=['_match_type_hint'])
+    elif match_type and 'match_type' not in df.columns:
+        df['match_type'] = match_type
+    
+    # Remove _source_file column if present (used for debugging but not needed in final data)
+    if '_source_file' in df.columns:
+        df = df.drop(columns=['_source_file'])
+    
+    # Convert tourney_date to datetime if it exists
+    if 'tourney_date' in df.columns:
+        df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
+    
+    # Apply era classification
+    if 'tourney_date' in df.columns:
+        df['era'] = df.apply(classify_era, axis=1)
+    
+    # Reclassify Davis Cup and Fed Cup matches from main tour data
+    if 'tourney_name' in df.columns:
+        df['tourney_name'] = df['tourney_name'].astype(str)
+        
+        # Reclassify Davis Cup matches (from ATP main tour files)
+        if LOAD_DAVIS_CUP:
+            davis_cup_mask = df['tourney_name'].str.contains('Davis Cup', case=False, na=False)
+            if davis_cup_mask.sum() > 0:
+                df.loc[davis_cup_mask, 'tournament_type'] = 'Davis_Cup'
+        
+        # Reclassify Fed Cup/BJK Cup matches (from WTA main tour files)
+        if LOAD_FED_CUP:
+            fed_cup_mask = df['tourney_name'].str.contains('Fed Cup|BJK Cup|Billie Jean King', case=False, na=False)
+            if fed_cup_mask.sum() > 0:
+                df.loc[fed_cup_mask, 'tournament_type'] = 'Fed_Cup'
+    
+    # Fill missing tournament_type for main tour matches
+    if 'tournament_type' in df.columns:
+        df['tournament_type'] = df['tournament_type'].fillna('Main Tour')
+    
+    # Fill missing tour
+    if 'tour' in df.columns:
+        df['tour'] = df['tour'].fillna('Unknown')
+    
+    return df
+
+
+def filter_matches_by_switches(df):
+    """
+    Filter matches based on configuration switches.
+    This ensures only matches for enabled tournament types are kept.
+    
+    Args:
+        df: DataFrame with tournament_type column
+    
+    Returns:
+        Filtered DataFrame
+    """
+    if df.empty or 'tournament_type' not in df.columns:
+        return df
+    
+    df = df.copy()
+    
+    # Build filter mask based on switches
+    filter_mask = pd.Series([False] * len(df), index=df.index)
+    
+    # Always include Main Tour matches
+    filter_mask |= (df['tournament_type'] == 'Main Tour')
+    
+    # Include Davis Cup/Fed Cup if enabled
+    if LOAD_DAVIS_CUP:
+        filter_mask |= (df['tournament_type'] == 'Davis_Cup')
+    if LOAD_FED_CUP:
+        filter_mask |= (df['tournament_type'] == 'Fed_Cup')
+    
+    # Include ATP tournament types if enabled
+    if LOAD_ATP_QUALIFYING:
+        filter_mask |= (df['tournament_type'] == 'ATP_Qualifying')
+    if LOAD_ATP_CHALLENGER:
+        filter_mask |= (df['tournament_type'] == 'ATP_Challenger')
+    if LOAD_ATP_CHALLENGER_QUAL:
+        filter_mask |= (df['tournament_type'] == 'ATP_Challenger_Qualifying')
+    if LOAD_ATP_FUTURES:
+        filter_mask |= (df['tournament_type'] == 'ATP_Futures')
+    
+    # Include WTA tournament types if enabled
+    if LOAD_WTA_QUALIFYING:
+        filter_mask |= (df['tournament_type'] == 'WTA_Qualifying')
+    if LOAD_WTA_ITF:
+        filter_mask |= (df['tournament_type'] == 'WTA_ITF')
+    
+    # Apply filter
+    filtered_df = df[filter_mask].copy()
+    
+    return filtered_df
+
+
+def combine_and_enrich_matches(master_df_list):
+    """
+    Combine multiple match DataFrames and apply final enrichment.
+    
+    Args:
+        master_df_list: List of DataFrames to combine
+    
+    Returns:
+        Combined and enriched DataFrame
+    """
+    if not master_df_list:
+        return pd.DataFrame()
+    
+    # Combine all dataframes
+    matches_df = pd.concat(master_df_list, ignore_index=True)
+    
+    # Apply final enrichment
+    matches_df = enrich_matches_data(matches_df)
+    
+    return matches_df
+
+
+# ============================================================================
+# Existing Transformation Functions
+# ============================================================================
 
 def parse_date_components(df):
     """
@@ -426,46 +766,6 @@ def fix_missing_surface_data(matches_df):
             print(f"  {surface}: {count:,} matches")
     
     return df
-
-
-def standardize_tourney_level(level, tour=None, era=None):
-    """
-    Replace old tourney levels with new standardized levels.
-    Uses TOURNEY_LEVEL_MAPPINGS to convert historical and variant level codes
-    to standardized values.
-    
-    Args:
-        level: The original tourney_level value
-        tour: The tour (ATP or WTA) for context
-        era: The era for historical context (optional)
-    
-    Returns:
-        Standardized tourney_level value
-    
-    Examples:
-        >>> standardize_tourney_level('T1', tour='WTA')
-        'PM'
-        >>> standardize_tourney_level('G', tour='ATP')
-        'G'
-        >>> standardize_tourney_level('D', tour='WTA')
-        'BJK_Cup'
-    """
-    if pd.isna(level) or level == '':
-        return level
-    
-    level_str = str(level).strip()
-    
-    # Special case: WTA D level → BJK_Cup
-    if level_str == 'D' and tour == 'WTA':
-        return 'BJK_Cup'
-    
-    # Direct mapping using TOURNEY_LEVEL_MAPPINGS
-    if level_str in TOURNEY_LEVEL_MAPPINGS:
-        return TOURNEY_LEVEL_MAPPINGS[level_str]
-    
-    # Handle unknown levels
-    print(f"Warning: Unknown tourney_level '{level_str}' for tour '{tour}'")
-    return level_str  # Keep as-is if unknown
 
 
 def standardize_tourney_levels(df, tour_name):
