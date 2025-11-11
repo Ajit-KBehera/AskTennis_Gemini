@@ -19,20 +19,6 @@ This document analyzes the available data fields in the matches dataset and reco
   - Calculated metrics: 1st Serve In Rate, 1st Serve Win Rate, 2nd Serve Win Rate
 
 #### Visualizations:
-- **First Serve Performance Over Time** (Line Chart)
-  - X-axis: Match number or Date
-  - Y-axis: 1st Serve In % and 1st Serve Won %
-  - Multiple series: Different years or surfaces
-  - Example: Current `1stServe.py` implementation
-
-- **Serve Statistics Radar Chart**
-  - Dimensions: 1st Serve %, 1st Serve Won %, 2nd Serve Won %, Ace Rate, Double Fault Rate
-  - Compare multiple players or same player across surfaces
-
-- **Serve Performance by Surface** (Grouped Bar Chart)
-  - X-axis: Surface (Hard, Clay, Grass)
-  - Y-axis: Percentage
-  - Multiple bars: 1st Serve In %, 1st Serve Won %, 2nd Serve Won %
 
 - **Aces vs Double Faults Scatter Plot**
   - X-axis: Aces per match
