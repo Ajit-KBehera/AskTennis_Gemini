@@ -198,7 +198,6 @@ def load_matches_data():
         # Loop through each data directory (ATP and WTA)
         for data_dir in DATA_DIRS:
             print(f"\n--- Processing directory: {data_dir} ---")
-            all_files = glob.glob(os.path.join(data_dir, "*_matches_*.csv"))
             
             # Determine tour based on directory
             if 'atp' in data_dir.lower():
@@ -369,127 +368,73 @@ def load_matches_data():
     else:
         print("Skipping ATP Futures (LOAD_ATP_FUTURES = False)")
     
-    # WTA Qualifying data
-    if LOAD_WTA_QUALIFYING:
-        wta_qual_files = glob.glob(os.path.join(PROJECT_ROOT, "data/tennis_wta/wta_matches_qual_itf_*.csv"))
-        if wta_qual_files:
-            print(f"Loading WTA Qualifying data ({len(wta_qual_files)} files)...")
+    # WTA Qualifying/ITF data
+    # Files are named: wta_matches_qual_itf_*.csv
+    # They contain: WTA Qualifying and WTA ITF matches
+    # Categorize based on round column:
+    #   - round matches pattern Q1, Q2, Q3 (qualifying rounds): WTA_Qualifying
+    #   - round is R64, R32, R16, QF, SF, F (main draw): WTA_ITF
+    if LOAD_WTA_QUALIFYING or LOAD_WTA_ITF:
+        wta_qual_itf_files = glob.glob(os.path.join(PROJECT_ROOT, "data/tennis_wta/wta_matches_qual_itf_*.csv"))
+        if wta_qual_itf_files:
+            print(f"Loading WTA Qualifying/ITF data ({len(wta_qual_itf_files)} files)...")
             wta_qual_dfs = []
+            wta_itf_dfs = []
             
-            # Initialize progress tracker for WTA qualifying files
-            progress = ProgressTracker(len(wta_qual_files), "WTA Qualifying Loading")
+            # Initialize progress tracker for WTA qual/itf files
+            progress = ProgressTracker(len(wta_qual_itf_files), "WTA Qual/ITF Loading")
             
-            for i, file_path in enumerate(sorted(wta_qual_files), 1):
+            for i, file_path in enumerate(sorted(wta_qual_itf_files), 1):
                 try:
                     progress.update(1, f"Loading {os.path.basename(file_path)}...")
                     df = pd.read_csv(file_path, low_memory=False, index_col=False)
                     df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
-                    df['tournament_type'] = 'WTA_Qualifying'
                     df['tour'] = 'WTA'  # Add tour column
-                    wta_qual_dfs.append(df)
+                    
+                    # Categorize matches based on round
+                    # Ensure round column exists and is string type for checking
+                    if 'round' not in df.columns:
+                        df['round'] = ''
+                    df['round'] = df['round'].astype(str)
+                    
+                    # Identify qualifying rounds (Q1, Q2, Q3, etc.)
+                    # Pattern: Q followed by digits (not QF which is quarterfinal)
+                    is_qualifying_round = df['round'].str.match(r'^Q\d+', na=False)
+                    
+                    # Split into categories
+                    if LOAD_WTA_QUALIFYING:
+                        qual_mask = is_qualifying_round
+                        if qual_mask.sum() > 0:
+                            qual_df = df[qual_mask].copy()
+                            qual_df['tournament_type'] = 'WTA_Qualifying'
+                            wta_qual_dfs.append(qual_df)
+                    
+                    if LOAD_WTA_ITF:
+                        itf_mask = ~is_qualifying_round
+                        if itf_mask.sum() > 0:
+                            itf_df = df[itf_mask].copy()
+                            itf_df['tournament_type'] = 'WTA_ITF'
+                            wta_itf_dfs.append(itf_df)
+                    
                 except Exception as e:
                     print(f"  Error loading {file_path}: {e}")
             
             progress.complete()
             
-            if wta_qual_dfs:
+            # Combine and add to master list
+            if LOAD_WTA_QUALIFYING and wta_qual_dfs:
                 wta_qual_df = pd.concat(wta_qual_dfs, ignore_index=True)
                 master_df_list.append(wta_qual_df)
                 print(f"  WTA Qualifying matches loaded: {len(wta_qual_df)}")
-    else:
-        print("Skipping WTA Qualifying (LOAD_WTA_QUALIFYING = False)")
-    
-    # WTA ITF data
-    if LOAD_WTA_ITF:
-        wta_itf_files = glob.glob(os.path.join(PROJECT_ROOT, "data/tennis_wta/wta_matches_itf_*.csv"))
-        if wta_itf_files:
-            print(f"Loading WTA ITF data ({len(wta_itf_files)} files)...")
-            wta_itf_dfs = []
             
-            # Initialize progress tracker for WTA ITF files
-            progress = ProgressTracker(len(wta_itf_files), "WTA ITF Loading")
-            
-            for i, file_path in enumerate(sorted(wta_itf_files), 1):
-                try:
-                    progress.update(1, f"Loading {os.path.basename(file_path)}...")
-                    df = pd.read_csv(file_path, low_memory=False, index_col=False)
-                    df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
-                    df['tournament_type'] = 'WTA_ITF'
-                    df['tour'] = 'WTA'  # Add tour column
-                    wta_itf_dfs.append(df)
-                except Exception as e:
-                    print(f"  Error loading {file_path}: {e}")
-            
-            progress.complete()
-            
-            if wta_itf_dfs:
+            if LOAD_WTA_ITF and wta_itf_dfs:
                 wta_itf_df = pd.concat(wta_itf_dfs, ignore_index=True)
                 master_df_list.append(wta_itf_df)
                 print(f"  WTA ITF matches loaded: {len(wta_itf_df)}")
+        else:
+            print("  No WTA Qualifying/ITF files found (wta_matches_qual_itf_*.csv)")
     else:
-        print("Skipping WTA ITF (LOAD_WTA_ITF = False)")
-    
-    # Load Davis Cup data
-    if LOAD_DAVIS_CUP:
-        print(f"\n--- Loading Davis Cup Data ---")
-        davis_cup_files = glob.glob(os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_matches_davis_cup_*.csv"))
-        if davis_cup_files:
-            print(f"Loading Davis Cup data ({len(davis_cup_files)} files)...")
-            davis_cup_dfs = []
-            
-            # Initialize progress tracker for Davis Cup files
-            progress = ProgressTracker(len(davis_cup_files), "Davis Cup Loading")
-            
-            for i, file_path in enumerate(sorted(davis_cup_files), 1):
-                try:
-                    progress.update(1, f"Loading {os.path.basename(file_path)}...")
-                    df = pd.read_csv(file_path, low_memory=False, index_col=False)
-                    df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
-                    df['tournament_type'] = 'Davis_Cup'
-                    df['tour'] = 'ATP'  # Davis Cup is men's competition
-                    davis_cup_dfs.append(df)
-                except Exception as e:
-                    print(f"  Error loading {file_path}: {e}")
-            
-            progress.complete()
-            
-            if davis_cup_dfs:
-                davis_cup_df = pd.concat(davis_cup_dfs, ignore_index=True)
-                master_df_list.append(davis_cup_df)
-                print(f"  Davis Cup matches loaded: {len(davis_cup_df)}")
-    else:
-        print("\nSkipping Davis Cup (LOAD_DAVIS_CUP = False)")
-    
-    # Load Fed Cup (BJK Cup) data
-    if LOAD_FED_CUP:
-        print(f"\n--- Loading Fed Cup (BJK Cup) Data ---")
-        fed_cup_files = glob.glob(os.path.join(PROJECT_ROOT, "data/tennis_wta/wta_matches_fed_cup_*.csv"))
-        if fed_cup_files:
-            print(f"Loading Fed Cup (BJK Cup) data ({len(fed_cup_files)} files)...")
-            fed_cup_dfs = []
-            
-            # Initialize progress tracker for Fed Cup files
-            progress = ProgressTracker(len(fed_cup_files), "Fed Cup Loading")
-            
-            for i, file_path in enumerate(sorted(fed_cup_files), 1):
-                try:
-                    progress.update(1, f"Loading {os.path.basename(file_path)}...")
-                    df = pd.read_csv(file_path, low_memory=False, index_col=False)
-                    df['tourney_date'] = pd.to_datetime(df['tourney_date'], format='%Y%m%d', errors='coerce')
-                    df['tournament_type'] = 'Fed_Cup'
-                    df['tour'] = 'WTA'  # Fed Cup is women's competition
-                    fed_cup_dfs.append(df)
-                except Exception as e:
-                    print(f"  Error loading {file_path}: {e}")
-            
-            progress.complete()
-            
-            if fed_cup_dfs:
-                fed_cup_df = pd.concat(fed_cup_dfs, ignore_index=True)
-                master_df_list.append(fed_cup_df)
-                print(f"  Fed Cup (BJK Cup) matches loaded: {len(fed_cup_df)}")
-    else:
-        print("\nSkipping Fed Cup (LOAD_FED_CUP = False)")
+        print("Skipping WTA Qualifying/ITF data (all switches set to False)")
     
     # Check if any data was loaded
     if not master_df_list:
@@ -501,6 +446,26 @@ def load_matches_data():
     
     # Apply era classification
     matches_df['era'] = matches_df.apply(classify_era, axis=1)
+    
+    # Reclassify Davis Cup and Fed Cup matches from main tour data
+    # These are included in the main tour files but should be classified separately
+    if 'tourney_name' in matches_df.columns:
+        # Ensure tourney_name is string type
+        matches_df['tourney_name'] = matches_df['tourney_name'].astype(str)
+        
+        # Reclassify Davis Cup matches (from ATP main tour files)
+        if LOAD_DAVIS_CUP:
+            davis_cup_mask = matches_df['tourney_name'].str.contains('Davis Cup', case=False, na=False)
+            if davis_cup_mask.sum() > 0:
+                matches_df.loc[davis_cup_mask, 'tournament_type'] = 'Davis_Cup'
+                print(f"\n  Davis Cup matches reclassified: {davis_cup_mask.sum()}")
+        
+        # Reclassify Fed Cup/BJK Cup matches (from WTA main tour files)
+        if LOAD_FED_CUP:
+            fed_cup_mask = matches_df['tourney_name'].str.contains('Fed Cup|BJK Cup|Billie Jean King', case=False, na=False)
+            if fed_cup_mask.sum() > 0:
+                matches_df.loc[fed_cup_mask, 'tournament_type'] = 'Fed_Cup'
+                print(f"  Fed Cup (BJK Cup) matches reclassified: {fed_cup_mask.sum()}")
     
     # Add tournament type classification for all matches
     # Set main tour matches (currently NULL) to "Main Tour"
