@@ -18,14 +18,6 @@ This document analyzes the available data fields in the matches dataset and reco
   - Columns: Player, Total Serve Points, 1st Serve %, Points Won on 1st Serve, Points Won on 2nd Serve, Overall Serve Win %
   - Calculated metrics: 1st Serve In Rate, 1st Serve Win Rate, 2nd Serve Win Rate
 
-#### Visualizations:
-
-- **Aces vs Double Faults Scatter Plot**
-  - X-axis: Aces per match
-  - Y-axis: Double Faults per match
-  - Color by: Surface or Tournament Level
-  - Size by: Match importance
-
 ### 1.2 Return Performance Tables & Visualizations
 
 #### Tables:
