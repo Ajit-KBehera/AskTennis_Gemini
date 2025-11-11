@@ -499,17 +499,6 @@ def load_matches_data():
     # Combine the ATP, WTA, and amateur dataframes into one master dataframe
     matches_df = pd.concat(master_df_list, ignore_index=True)
     
-    # Add era classification for all matches
-    # Classify based on year: 1968+ = Open Era, <1968 = Closed Era
-    def classify_era(row):
-        if pd.isna(row.get('tourney_date')):
-            return 'Unknown'
-        year = row['tourney_date'].year
-        if year >= 1968:
-            return 'Open Era'
-        else:
-            return 'Closed Era'
-    
     # Apply era classification
     matches_df['era'] = matches_df.apply(classify_era, axis=1)
     
@@ -570,4 +559,13 @@ def load_doubles_data():
         print("  No doubles data could be loaded.")
         return pd.DataFrame()
 
-# Transformation functions are now imported from data_transformers module
+# Add era classification for all matches
+# Classify based on year: 1968+ = Open Era, <1968 = Closed Era
+def classify_era(row):
+    if pd.isna(row.get('tourney_date')):
+        return 'Unknown'
+    year = row['tourney_date'].year
+    if year >= 1968:
+        return 'Open Era'
+    else:
+        return 'Closed Era'
