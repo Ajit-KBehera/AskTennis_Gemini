@@ -10,7 +10,7 @@ import streamlit as st
 # Local application imports
 from tennis_logging.simplified_factory import log_error
 from serve.combined_serve_charts import create_combined_serve_charts
-from serve.ranking_timeline_chart import create_ranking_timeline_chart
+from rankings.ranking_timeline_chart import create_ranking_timeline_chart
 from serve.serve_stats import build_year_suffix
 
 
