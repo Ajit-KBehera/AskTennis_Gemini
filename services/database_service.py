@@ -339,3 +339,131 @@ class DatabaseService:
         except Exception as e:
             st.error(f"Error fetching matches: {e}")
             return pd.DataFrame()
+    
+    @st.cache_data(ttl=300)  # Cache for 5 minutes
+    def get_player_ranking_timeline(_self, player_name: str, year: Optional[Union[int, str, Tuple[int, int], List[int]]] = None) -> pd.DataFrame:
+        """
+        Get ranking timeline data for a specific player from both ATP and WTA rankings.
+        
+        Args:
+            player_name: Name of the player
+            year: Optional year filter. Can be:
+                - None: All years
+                - int: Single year
+                - tuple: Year range (start_year, end_year)
+                - list: Multiple specific years
+            
+        Returns:
+            DataFrame with columns: ranking_date, rank, tour (ATP/WTA)
+        """
+        player_name = _self._sanitize_string(player_name)
+        if not player_name or player_name == DatabaseService.ALL_PLAYERS:
+            return pd.DataFrame()
+        
+        try:
+            with sqlite3.connect(_self.db_path) as conn:
+                # Build year filter clause for ranking_date
+                year_filter_clause = ""
+                year_params = []
+                
+                if year is not None and year != _self.ALL_YEARS:
+                    try:
+                        # Handle tuple (year range) - use BETWEEN for efficiency
+                        if isinstance(year, tuple) and len(year) == 2:
+                            start_year, end_year = int(year[0]), int(year[1])
+                            # Ensure start <= end
+                            if start_year > end_year:
+                                start_year, end_year = end_year, start_year
+                            
+                            # Validate year range
+                            if (_self.MIN_YEAR <= start_year <= _self.MAX_YEAR and 
+                                _self.MIN_YEAR <= end_year <= _self.MAX_YEAR):
+                                year_filter_clause = "AND CAST(strftime('%Y', ranking_date) AS INTEGER) BETWEEN ? AND ?"
+                                year_params = [start_year, end_year]
+                        
+                        # Handle list (multiple specific years) - use IN
+                        elif isinstance(year, list) and len(year) > 0:
+                            year_list = [int(y) for y in year if isinstance(y, (int, str)) and str(y).isdigit()]
+                            # Validate all years
+                            valid_years = [y for y in year_list if _self.MIN_YEAR <= y <= _self.MAX_YEAR]
+                            
+                            if valid_years:
+                                if len(valid_years) == 1:
+                                    # Single year in list - use equality
+                                    year_filter_clause = "AND CAST(strftime('%Y', ranking_date) AS INTEGER) = ?"
+                                    year_params = [valid_years[0]]
+                                else:
+                                    # Multiple years - use IN
+                                    placeholders = ','.join(['?' for _ in valid_years])
+                                    year_filter_clause = f"AND CAST(strftime('%Y', ranking_date) AS INTEGER) IN ({placeholders})"
+                                    year_params = valid_years
+                        
+                        # Handle single integer year
+                        elif isinstance(year, int):
+                            if _self.MIN_YEAR <= year <= _self.MAX_YEAR:
+                                year_filter_clause = "AND CAST(strftime('%Y', ranking_date) AS INTEGER) = ?"
+                                year_params = [year]
+                        
+                        # Handle string (backward compatibility)
+                        elif isinstance(year, str):
+                            year_int = int(year)
+                            if _self.MIN_YEAR <= year_int <= _self.MAX_YEAR:
+                                year_filter_clause = "AND CAST(strftime('%Y', ranking_date) AS INTEGER) = ?"
+                                year_params = [year_int]
+                                
+                    except (ValueError, TypeError) as e:
+                        # If year filtering fails, just continue without year filter
+                        pass
+                
+                # Query ATP rankings - join with atp_players to get player name
+                atp_query = f"""
+                SELECT ar.ranking_date, ar.rank, 'ATP' as tour
+                FROM atp_rankings ar
+                JOIN atp_players ap ON ar.player = ap.player_id
+                WHERE (COALESCE(ap.full_name, ap.name_first || ' ' || ap.name_last) COLLATE NOCASE = ?
+                    OR ap.full_name COLLATE NOCASE = ?
+                    OR (ap.name_first || ' ' || ap.name_last) COLLATE NOCASE = ?)
+                  AND ar.ranking_date IS NOT NULL
+                  AND ar.rank IS NOT NULL
+                  {year_filter_clause}
+                ORDER BY ar.ranking_date ASC
+                """
+                
+                # Query WTA rankings - join with wta_players to get player name
+                wta_query = f"""
+                SELECT wr.ranking_date, wr.rank, 'WTA' as tour
+                FROM wta_rankings wr
+                JOIN wta_players wp ON wr.player = wp.player_id
+                WHERE (COALESCE(wp.full_name, wp.name_first || ' ' || wp.name_last) COLLATE NOCASE = ?
+                    OR wp.full_name COLLATE NOCASE = ?
+                    OR (wp.name_first || ' ' || wp.name_last) COLLATE NOCASE = ?)
+                  AND wr.ranking_date IS NOT NULL
+                  AND wr.rank IS NOT NULL
+                  {year_filter_clause}
+                ORDER BY wr.ranking_date ASC
+                """
+                
+                # Execute both queries with player name params + year params
+                player_params = [player_name, player_name, player_name]
+                atp_df = pd.read_sql_query(atp_query, conn, params=player_params + year_params)
+                wta_df = pd.read_sql_query(wta_query, conn, params=player_params + year_params)
+                
+                # Combine results
+                if not atp_df.empty and not wta_df.empty:
+                    combined_df = pd.concat([atp_df, wta_df], ignore_index=True)
+                elif not atp_df.empty:
+                    combined_df = atp_df
+                elif not wta_df.empty:
+                    combined_df = wta_df
+                else:
+                    return pd.DataFrame()
+                
+                # Sort by date
+                combined_df['ranking_date'] = pd.to_datetime(combined_df['ranking_date'])
+                combined_df = combined_df.sort_values('ranking_date').reset_index(drop=True)
+                
+                return combined_df
+                
+        except Exception as e:
+            st.warning(f"Error fetching ranking timeline for {player_name}: {e}")
+            return pd.DataFrame()

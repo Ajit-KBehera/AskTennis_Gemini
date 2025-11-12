@@ -10,6 +10,8 @@ import streamlit as st
 # Local application imports
 from tennis_logging.simplified_factory import log_error
 from serve.combined_serve_charts import create_combined_serve_charts
+from serve.ranking_timeline_chart import create_ranking_timeline_chart
+from serve.serve_stats import build_year_suffix
 
 
 class UIDisplay:
@@ -345,7 +347,7 @@ class UIDisplay:
                               'round', 'winner_name', 'loser_name', 'surface', 'score']
             
             # Create tabs for different views
-            tab_matches, tab_serve, tab_return, tab_raw = UIDisplay._create_analysis_tabs()
+            tab_matches, tab_serve, tab_return, tab_ranking, tab_raw = UIDisplay._create_analysis_tabs()
             
             # Render each tab using dedicated methods
             with tab_matches:
@@ -356,6 +358,9 @@ class UIDisplay:
             
             with tab_return:
                 UIDisplay._render_return_tab()
+            
+            with tab_ranking:
+                UIDisplay._render_ranking_tab(db_service, filters)
             
             with tab_raw:
                 UIDisplay._render_raw_tab(df_matches, filters)
@@ -436,12 +441,13 @@ class UIDisplay:
         Create tabs for different analysis views.
         
         Returns:
-            tuple: Tuple of tab objects (tab_matches, tab_serve, tab_return, tab_raw)
+            tuple: Tuple of tab objects (tab_matches, tab_serve, tab_return, tab_ranking, tab_raw)
         """
         return st.tabs([
             "📊 Matches", 
             "🎾 Serve", 
-            "🏓 Return", 
+            "🏓 Return",
+            "📈 Ranking",
             "📋 RAW"
         ])
     
@@ -516,6 +522,87 @@ class UIDisplay:
         Render the Return Statistics tab (placeholder for future implementation).
         """
         st.info("🚧 Return statistics visualization coming soon...")
+    
+    @staticmethod
+    def _render_ranking_tab(db_service, filters):
+        """
+        Render the Ranking Timeline tab.
+        
+        Shows ranking timeline chart if:
+        - 1 player is selected (not "All Players")
+        - Opponent is "All Opponents"
+        - All surfaces are selected (Hard, Clay, Grass, Carpet)
+        - Tournament is "All Tournaments"
+        
+        Otherwise shows "Ranking timeline chart not available".
+        
+        Args:
+            db_service: DatabaseService instance for querying ranking data
+            filters: Dictionary containing filter values
+        """
+        # Check conditions for showing ranking timeline
+        player = filters.get('player')
+        opponent = filters.get('opponent')
+        tournament = filters.get('tournament')
+        surfaces = filters.get('surfaces', [])
+        
+        # Define all surfaces
+        all_surfaces = ["Hard", "Clay", "Grass", "Carpet"]
+        
+        # Check if conditions are met
+        conditions_met = (
+            player and 
+            player != db_service.ALL_PLAYERS and
+            opponent == db_service.ALL_OPPONENTS and
+            tournament == db_service.ALL_TOURNAMENTS and
+            set(surfaces) == set(all_surfaces)  # All surfaces selected
+        )
+        
+        if conditions_met:
+            try:
+                # Get year filter
+                year = filters.get('year')
+                
+                # Get ranking timeline data with year filter
+                ranking_df = db_service.get_player_ranking_timeline(player, year=year)
+                
+                if ranking_df.empty:
+                    st.warning(f"No ranking data found for {player}.")
+                    st.info("Ranking timeline chart not available.")
+                else:
+                    # Build chart title with year information
+                    year_suffix = build_year_suffix(year)
+                    title = f"{player} - Ranking Timeline - {year_suffix}"
+                    
+                    # Create ranking timeline chart
+                    ranking_fig = create_ranking_timeline_chart(player, ranking_df, title=title)
+                    
+                    if ranking_fig:
+                        # Display chart
+                        plotly_config = {'displayModeBar': True, 'width': 'stretch'}
+                        st.plotly_chart(ranking_fig, config=plotly_config)
+                    else:
+                        st.info("Ranking timeline chart not available.")
+                        
+            except Exception as e:
+                log_error(e, f"Error generating ranking timeline chart for {player}", component="ui_display")
+                st.error(f"Error generating ranking timeline chart: {e}")
+                st.info("Ranking timeline chart not available.")
+        else:
+            st.info("Ranking timeline chart not available.")
+            # Show why it's not available
+            reasons = []
+            if not player or player == db_service.ALL_PLAYERS:
+                reasons.append("Please select exactly 1 player")
+            if opponent != db_service.ALL_OPPONENTS:
+                reasons.append("Opponent must be 'All Opponents'")
+            if tournament != db_service.ALL_TOURNAMENTS:
+                reasons.append("Tournament must be 'All Tournaments'")
+            if set(surfaces) != set(all_surfaces):
+                reasons.append("All surfaces must be selected (Hard, Clay, Grass, Carpet)")
+            
+            if reasons:
+                st.caption("Requirements: " + " | ".join(reasons))
     
     @staticmethod
     def _format_year_for_filename(year):
