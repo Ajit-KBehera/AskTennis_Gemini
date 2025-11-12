@@ -357,10 +357,17 @@ def verify_enhancement():
     
     # Sample qualifying/challenger query
     print("\n--- Sample Qualifying/Challenger Query Test ---")
+    # Try tournament_type first, then fallback to tourney_level and round patterns
     qualifying_query = """
-        SELECT winner_name, loser_name, tourney_name, event_year, event_month, event_date, tournament_type, tourney_level
+        SELECT winner_name, loser_name, tourney_name, event_year, event_month, event_date, 
+               COALESCE(tournament_type, 'N/A') as tournament_type, tourney_level, round
         FROM matches 
-        WHERE tournament_type IN ('ATP_Qualifying', 'ATP_Challenger', 'ATP_Challenger_Qualifying')
+        WHERE (tournament_type IN ('ATP_Qualifying', 'ATP_Challenger', 'ATP_Challenger_Qualifying', 
+                                   'WTA_Qualifying', 'WTA_ITF'))
+           OR (tour = 'ATP' AND tourney_level = 'C')
+           OR (tour = 'ATP' AND round LIKE 'Q%' AND round != 'QF')
+           OR (tour = 'WTA' AND round LIKE 'Q%' AND round != 'QF')
+           OR (tour = 'WTA' AND tourney_level LIKE 'ITF_%')
         ORDER BY event_year DESC, event_month DESC, event_date DESC
         LIMIT 5
     """
@@ -368,11 +375,32 @@ def verify_enhancement():
     try:
         qualifying_results = conn.execute(qualifying_query).fetchall()
         if qualifying_results:
-            print("Sample ATP Qualifying/Challenger matches:")
+            print("Sample Qualifying/Challenger/ITF matches:")
             for row in qualifying_results:
-                print(f"  {row[0]} vs {row[1]} - {row[2]} ({row[3]}-{row[4]:02d}-{row[5]:02d}) - {row[6]} - {row[7]}")
+                print(f"  {row[0]} vs {row[1]} - {row[2]} ({row[3]}-{row[4]:02d}-{row[5]:02d}) - Type: {row[6]}, Level: {row[7]}, Round: {row[8]}")
         else:
             print("No qualifying/challenger results found")
+            # Check if tournament_type column exists and has any values
+            try:
+                type_check = conn.execute("SELECT COUNT(*) FROM matches WHERE tournament_type IS NOT NULL AND tournament_type != ''").fetchone()[0]
+                if type_check == 0:
+                    print("  Note: tournament_type column appears to be empty. Checking tourney_level and round patterns...")
+                    # Try a simpler query using just tourney_level and round
+                    simple_query = """
+                        SELECT winner_name, loser_name, tourney_name, event_year, tourney_level, round
+                        FROM matches 
+                        WHERE (tour = 'ATP' AND tourney_level = 'C')
+                           OR (round LIKE 'Q%' AND round != 'QF')
+                        ORDER BY event_year DESC
+                        LIMIT 3
+                    """
+                    simple_results = conn.execute(simple_query).fetchall()
+                    if simple_results:
+                        print("  Found matches using tourney_level/round patterns:")
+                        for row in simple_results:
+                            print(f"    {row[0]} vs {row[1]} - {row[2]} ({row[3]}) - Level: {row[4]}, Round: {row[5]}")
+            except:
+                pass
     except Exception as e:
         print(f"Qualifying/challenger query error: {e}")
     
