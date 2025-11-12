@@ -17,28 +17,70 @@ def verify_enhancement():
     print("\n--- Verifying Complete Historical Integration ---")
     conn = sqlite3.connect(DB_FILE)
     
-    # Check player count
-    player_count = conn.execute("SELECT COUNT(*) FROM players").fetchone()[0]
-    print(f"Players in database: {player_count}")
-    
-    # Check rankings count
+    # Check player count (separate ATP and WTA tables)
+    atp_player_count = 0
+    wta_player_count = 0
     try:
-        rankings_count = conn.execute("SELECT COUNT(*) FROM rankings").fetchone()[0]
-        print(f"Rankings in database: {rankings_count}")
+        atp_player_count = conn.execute("SELECT COUNT(*) FROM atp_players").fetchone()[0]
+        print(f"ATP players in database: {atp_player_count}")
     except:
-        print("No rankings table found")
-        rankings_count = 0
+        print("No ATP players table found")
     
-    # Check matches with player info
-    matches_with_winner_info = conn.execute("""
-        SELECT COUNT(*) FROM matches_with_full_info 
-        WHERE winner_first_name IS NOT NULL
-    """).fetchone()[0]
+    try:
+        wta_player_count = conn.execute("SELECT COUNT(*) FROM wta_players").fetchone()[0]
+        print(f"WTA players in database: {wta_player_count}")
+    except:
+        print("No WTA players table found")
     
-    matches_with_loser_info = conn.execute("""
-        SELECT COUNT(*) FROM matches_with_full_info 
-        WHERE loser_first_name IS NOT NULL
-    """).fetchone()[0]
+    player_count = atp_player_count + wta_player_count
+    print(f"Total players in database: {player_count}")
+    
+    # Check rankings count (ATP and WTA separately)
+    atp_rankings_count = 0
+    wta_rankings_count = 0
+    try:
+        atp_rankings_count = conn.execute("SELECT COUNT(*) FROM atp_rankings").fetchone()[0]
+        print(f"ATP rankings in database: {atp_rankings_count}")
+    except:
+        print("No ATP rankings table found")
+    
+    try:
+        wta_rankings_count = conn.execute("SELECT COUNT(*) FROM wta_rankings").fetchone()[0]
+        print(f"WTA rankings in database: {wta_rankings_count}")
+    except:
+        print("No WTA rankings table found")
+    
+    rankings_count = atp_rankings_count + wta_rankings_count
+    
+    # Check matches with player info (skip if views don't exist)
+    matches_with_winner_info = 0
+    matches_with_loser_info = 0
+    try:
+        matches_with_winner_info = conn.execute("""
+            SELECT COUNT(*) FROM matches_with_full_info 
+            WHERE winner_first_name IS NOT NULL
+        """).fetchone()[0]
+        
+        matches_with_loser_info = conn.execute("""
+            SELECT COUNT(*) FROM matches_with_full_info 
+            WHERE loser_first_name IS NOT NULL
+        """).fetchone()[0]
+    except:
+        # Views don't exist, check directly from matches and players tables
+        # Use tour-specific players tables based on matches.tour column
+        matches_with_winner_info = conn.execute("""
+            SELECT COUNT(*) FROM matches m
+            LEFT JOIN atp_players ap ON m.winner_id = ap.player_id AND m.tour = 'ATP'
+            LEFT JOIN wta_players wp ON m.winner_id = wp.player_id AND m.tour = 'WTA'
+            WHERE (ap.name_first IS NOT NULL OR wp.name_first IS NOT NULL)
+        """).fetchone()[0]
+        
+        matches_with_loser_info = conn.execute("""
+            SELECT COUNT(*) FROM matches m
+            LEFT JOIN atp_players ap ON m.loser_id = ap.player_id AND m.tour = 'ATP'
+            LEFT JOIN wta_players wp ON m.loser_id = wp.player_id AND m.tour = 'WTA'
+            WHERE (ap.name_first IS NOT NULL OR wp.name_first IS NOT NULL)
+        """).fetchone()[0]
     
     total_matches = conn.execute("SELECT COUNT(*) FROM matches").fetchone()[0]
     
@@ -123,16 +165,17 @@ def verify_enhancement():
     print(f"Matches with winner info: {matches_with_winner_info}/{total_matches} ({matches_with_winner_info/total_matches*100:.1f}%)")
     print(f"Matches with loser info: {matches_with_loser_info}/{total_matches} ({matches_with_loser_info/total_matches*100:.1f}%)")
     
-    # Check rankings integration
+    # Check rankings integration (skip if views don't exist)
     if rankings_count > 0:
         try:
             matches_with_rankings = conn.execute("""
                 SELECT COUNT(*) FROM matches_with_rankings 
-                WHERE winner_rank_at_time IS NOT NULL
+                WHERE winner_current_rank IS NOT NULL
             """).fetchone()[0]
             print(f"Matches with rankings data: {matches_with_rankings}/{total_matches} ({matches_with_rankings/total_matches*100:.1f}%)")
         except:
-            print("Rankings view not available")
+            # View doesn't exist, skip this check
+            print("Rankings view not available (skipping rankings integration check)")
     
     # Check surface data quality
     missing_surface = conn.execute("""
@@ -182,18 +225,43 @@ def verify_enhancement():
     
     # Sample query to test functionality
     print("\n--- Sample Player Query Test ---")
-    sample_query = """
-        SELECT winner_name, winner_hand, winner_ioc, winner_height,
-               loser_name, loser_hand, loser_ioc, loser_height,
-               tourney_name, event_year, event_month, event_date, surface,
-               set1, set2, set3, set4, set5
-        FROM matches_with_full_info 
-        WHERE winner_name LIKE '%Federer%' OR loser_name LIKE '%Federer%'
-        ORDER BY event_year DESC, event_month DESC, event_date DESC
-        LIMIT 3
-    """
+    try:
+        # Try using view first
+        sample_query = """
+            SELECT winner_name, winner_hand, winner_ioc, winner_height,
+                   loser_name, loser_hand, loser_ioc, loser_height,
+                   tourney_name, event_year, event_month, event_date, surface,
+                   set1, set2, set3, set4, set5
+            FROM matches_with_full_info 
+            WHERE winner_name LIKE '%Federer%' OR loser_name LIKE '%Federer%'
+            ORDER BY event_year DESC, event_month DESC, event_date DESC
+            LIMIT 3
+        """
+        results = conn.execute(sample_query).fetchall()
+    except:
+        # View doesn't exist, use direct table joins with tour-specific players tables
+        sample_query = """
+            SELECT m.winner_name, 
+                   COALESCE(aw.hand, ww.hand) as winner_hand, 
+                   COALESCE(aw.ioc, ww.ioc) as winner_ioc, 
+                   COALESCE(aw.height, ww.height) as winner_height,
+                   m.loser_name, 
+                   COALESCE(al.hand, wl.hand) as loser_hand, 
+                   COALESCE(al.ioc, wl.ioc) as loser_ioc, 
+                   COALESCE(al.height, wl.height) as loser_height,
+                   m.tourney_name, m.event_year, m.event_month, m.event_date, m.surface,
+                   m.set1, m.set2, m.set3, m.set4, m.set5
+            FROM matches m
+            LEFT JOIN atp_players aw ON m.winner_id = aw.player_id AND m.tour = 'ATP'
+            LEFT JOIN wta_players ww ON m.winner_id = ww.player_id AND m.tour = 'WTA'
+            LEFT JOIN atp_players al ON m.loser_id = al.player_id AND m.tour = 'ATP'
+            LEFT JOIN wta_players wl ON m.loser_id = wl.player_id AND m.tour = 'WTA'
+            WHERE m.winner_name LIKE '%Federer%' OR m.loser_name LIKE '%Federer%'
+            ORDER BY m.event_year DESC, m.event_month DESC, m.event_date DESC
+            LIMIT 3
+        """
+        results = conn.execute(sample_query).fetchall()
     
-    results = conn.execute(sample_query).fetchall()
     if results:
         print("Sample query results (Federer matches):")
         for row in results:
@@ -206,24 +274,44 @@ def verify_enhancement():
     # Sample rankings query
     if rankings_count > 0:
         print("\n--- Sample Rankings Query Test ---")
-        rankings_query = """
-            SELECT name_first, name_last, rank, points, ranking_date, tour
-            FROM player_rankings_history 
-            WHERE rank <= 5
-            ORDER BY ranking_date DESC, rank ASC
-            LIMIT 10
-        """
         
-        try:
-            rankings_results = conn.execute(rankings_query).fetchall()
-            if rankings_results:
-                print("Top 5 rankings sample:")
-                for row in rankings_results:
-                    print(f"  #{row[2]} {row[0]} {row[1]} - {row[3]} points ({row[4]}) - {row[5]}")
-            else:
-                print("No rankings results found")
-        except Exception as e:
-            print(f"Rankings query error: {e}")
+        # ATP rankings sample
+        if atp_rankings_count > 0:
+            try:
+                atp_rankings_query = """
+                    SELECT p.name_first, p.name_last, r.rank, r.points, r.ranking_date
+                    FROM atp_rankings r
+                    JOIN atp_players p ON r.player = p.player_id
+                    WHERE r.rank <= 5
+                    ORDER BY r.ranking_date DESC, r.rank ASC
+                    LIMIT 5
+                """
+                atp_results = conn.execute(atp_rankings_query).fetchall()
+                if atp_results:
+                    print("Top 5 ATP rankings sample:")
+                    for row in atp_results:
+                        print(f"  #{row[2]} {row[0]} {row[1]} - {row[3]} points ({row[4]})")
+            except Exception as e:
+                print(f"ATP rankings query error: {e}")
+        
+        # WTA rankings sample
+        if wta_rankings_count > 0:
+            try:
+                wta_rankings_query = """
+                    SELECT p.name_first, p.name_last, r.rank, r.points, r.ranking_date
+                    FROM wta_rankings r
+                    JOIN wta_players p ON r.player = p.player_id
+                    WHERE r.rank <= 5
+                    ORDER BY r.ranking_date DESC, r.rank ASC
+                    LIMIT 5
+                """
+                wta_results = conn.execute(wta_rankings_query).fetchall()
+                if wta_results:
+                    print("Top 5 WTA rankings sample:")
+                    for row in wta_results:
+                        print(f"  #{row[2]} {row[0]} {row[1]} - {row[3]} points ({row[4]})")
+            except Exception as e:
+                print(f"WTA rankings query error: {e}")
     
     # Sample historical query
     print("\n--- Sample Historical Query Test ---")

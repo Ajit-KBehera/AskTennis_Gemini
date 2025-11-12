@@ -65,80 +65,102 @@ RANKING_PATTERNS = {
 # Data source mapping for different ranking question types
 RANKING_DATA_SOURCES = {
     RankingQuestionType.OFFICIAL_RANKINGS: {
-        "primary_table": "player_rankings_history",
-        "backup_table": "rankings", 
-        "key_fields": ["ranking_date", "rank", "player", "tour"],
+        "primary_table": "atp_rankings/wta_rankings",
+        "backup_table": "matches", 
+        "key_fields": ["ranking_date", "rank", "player", "player_name"],
         "join_required": True,
         "tour_separation": True,
-        "description": "Official ATP/WTA rankings"
+        "description": "Official ATP/WTA rankings (use UNION for both tours)"
     },
     RankingQuestionType.MATCH_TIME_RANKINGS: {
         "primary_table": "matches",
-        "backup_table": "matches_with_rankings",
-        "key_fields": ["winner_rank", "loser_rank", "event_year", "tourney_name"],
+        "backup_table": "matches",
+        "key_fields": ["winner_rank", "loser_rank", "event_year", "tourney_name", "winner_name", "loser_name"],
         "join_required": False,
         "tour_separation": False,
         "description": "Match-specific rankings at time of match"
     },
     RankingQuestionType.CAREER_HIGH_RANKINGS: {
-        "primary_table": "player_rankings_history",
-        "backup_table": "rankings",
-        "key_fields": ["rank", "player", "tour"],
+        "primary_table": "atp_rankings/wta_rankings",
+        "backup_table": "matches",
+        "key_fields": ["rank", "player", "player_name"],
         "join_required": True,
         "tour_separation": True,
-        "description": "Career high rankings"
+        "description": "Career high rankings (use UNION for both tours)"
     },
     RankingQuestionType.RANKING_PROGRESSION: {
-        "primary_table": "player_rankings_history",
-        "backup_table": "rankings",
-        "key_fields": ["ranking_date", "rank", "player", "tour"],
+        "primary_table": "atp_rankings/wta_rankings",
+        "backup_table": "matches",
+        "key_fields": ["ranking_date", "rank", "player", "player_name"],
         "join_required": True,
         "tour_separation": True,
-        "description": "Ranking progression over time"
+        "description": "Ranking progression over time (use UNION for both tours)"
     },
     RankingQuestionType.RANKING_COMPARISON: {
-        "primary_table": "player_rankings_history",
-        "backup_table": "rankings",
-        "key_fields": ["ranking_date", "rank", "player", "tour"],
+        "primary_table": "atp_rankings/wta_rankings",
+        "backup_table": "matches",
+        "key_fields": ["ranking_date", "rank", "player", "player_name"],
         "join_required": True,
         "tour_separation": True,
-        "description": "Ranking comparisons between players"
+        "description": "Ranking comparisons between players (use UNION for both tours)"
     }
 }
 
 
 # SQL templates for different ranking question types
+# Note: For queries requiring player names, use UNION to combine ATP and WTA rankings
+# and join with respective players tables (atp_players/wta_players)
 RANKING_SQL_TEMPLATES = {
     RankingQuestionType.OFFICIAL_RANKINGS: {
         "top_players_year": """
-            SELECT name_first || ' ' || name_last as player_name, rank
-            FROM player_rankings_history 
-            WHERE ranking_date = '{year}-12-30 00:00:00' 
-              AND rank <= {limit} 
-              AND tour = '{tour}' 
+            SELECT COALESCE(ap.full_name, ap.name_first || ' ' || ap.name_last) as player_name, ar.rank
+            FROM atp_rankings ar
+            JOIN atp_players ap ON ar.player = ap.player_id
+            WHERE DATE(ar.ranking_date) = DATE('{year}-12-30')
+              AND ar.rank <= {limit}
+            UNION ALL
+            SELECT COALESCE(wp.full_name, wp.name_first || ' ' || wp.name_last) as player_name, wr.rank
+            FROM wta_rankings wr
+            JOIN wta_players wp ON wr.player = wp.player_id
+            WHERE DATE(wr.ranking_date) = DATE('{year}-12-30')
+              AND wr.rank <= {limit}
             ORDER BY rank
+            LIMIT {limit}
         """,
         "top_players_week": """
-            SELECT name_first || ' ' || name_last as player_name, rank
-            FROM player_rankings_history 
-            WHERE ranking_date = '{date}' 
-              AND rank <= {limit} 
-              AND tour = '{tour}' 
+            SELECT COALESCE(ap.full_name, ap.name_first || ' ' || ap.name_last) as player_name, ar.rank
+            FROM atp_rankings ar
+            JOIN atp_players ap ON ar.player = ap.player_id
+            WHERE DATE(ar.ranking_date) = DATE('{date}')
+              AND ar.rank <= {limit}
+            UNION ALL
+            SELECT COALESCE(wp.full_name, wp.name_first || ' ' || wp.name_last) as player_name, wr.rank
+            FROM wta_rankings wr
+            JOIN wta_players wp ON wr.player = wp.player_id
+            WHERE DATE(wr.ranking_date) = DATE('{date}')
+              AND wr.rank <= {limit}
             ORDER BY rank
+            LIMIT {limit}
         """,
         "specific_rank": """
-            SELECT name_first || ' ' || name_last as player_name, rank
-            FROM player_rankings_history 
-            WHERE ranking_date = '{date}' 
-              AND rank = {rank} 
-              AND tour = '{tour}'
+            SELECT COALESCE(ap.full_name, ap.name_first || ' ' || ap.name_last) as player_name, ar.rank
+            FROM atp_rankings ar
+            JOIN atp_players ap ON ar.player = ap.player_id
+            WHERE DATE(ar.ranking_date) = DATE('{date}')
+              AND ar.rank = {rank}
+            UNION ALL
+            SELECT COALESCE(wp.full_name, wp.name_first || ' ' || wp.name_last) as player_name, wr.rank
+            FROM wta_rankings wr
+            JOIN wta_players wp ON wr.player = wp.player_id
+            WHERE DATE(wr.ranking_date) = DATE('{date}')
+              AND wr.rank = {rank}
         """
     },
     RankingQuestionType.MATCH_TIME_RANKINGS: {
         "winner_rank_at_match": """
             SELECT winner_name, winner_rank, event_year, tourney_name
             FROM matches 
-            WHERE winner_name = '{player}' 
+            WHERE winner_name COLLATE NOCASE = '{player}' 
               AND event_year = {year}
               AND winner_rank IS NOT NULL
             ORDER BY event_year, tourney_name
@@ -146,7 +168,7 @@ RANKING_SQL_TEMPLATES = {
         "loser_rank_at_match": """
             SELECT loser_name, loser_rank, event_year, tourney_name
             FROM matches 
-            WHERE loser_name = '{player}' 
+            WHERE loser_name COLLATE NOCASE = '{player}' 
               AND event_year = {year}
               AND loser_rank IS NOT NULL
             ORDER BY event_year, tourney_name
@@ -154,26 +176,40 @@ RANKING_SQL_TEMPLATES = {
         "rank_during_match": """
             SELECT winner_name, loser_name, winner_rank, loser_rank, event_year, tourney_name
             FROM matches 
-            WHERE (winner_name = '{player1}' AND loser_name = '{player2}')
-               OR (winner_name = '{player2}' AND loser_name = '{player1}')
+            WHERE ((winner_name COLLATE NOCASE = '{player1}' AND loser_name COLLATE NOCASE = '{player2}')
+               OR (winner_name COLLATE NOCASE = '{player2}' AND loser_name COLLATE NOCASE = '{player1}'))
               AND event_year = {year}
               AND (winner_rank IS NOT NULL OR loser_rank IS NOT NULL)
         """
     },
     RankingQuestionType.CAREER_HIGH_RANKINGS: {
         "career_high_rank": """
-            SELECT name_first || ' ' || name_last as player_name, MIN(rank) as career_high_rank
-            FROM player_rankings_history 
-            WHERE name_first || ' ' || name_last = '{player}'
-              AND tour = '{tour}'
-            GROUP BY name_first, name_last
+            SELECT COALESCE(ap.full_name, ap.name_first || ' ' || ap.name_last) as player_name, MIN(ar.rank) as career_high_rank
+            FROM atp_rankings ar
+            JOIN atp_players ap ON ar.player = ap.player_id
+            WHERE COALESCE(ap.full_name, ap.name_first || ' ' || ap.name_last) COLLATE NOCASE = '{player}'
+            GROUP BY ap.player_id, ap.full_name, ap.name_first, ap.name_last
+            UNION ALL
+            SELECT COALESCE(wp.full_name, wp.name_first || ' ' || wp.name_last) as player_name, MIN(wr.rank) as career_high_rank
+            FROM wta_rankings wr
+            JOIN wta_players wp ON wr.player = wp.player_id
+            WHERE COALESCE(wp.full_name, wp.name_first || ' ' || wp.name_last) COLLATE NOCASE = '{player}'
+            GROUP BY wp.player_id, wp.full_name, wp.name_first, wp.name_last
+            ORDER BY career_high_rank
+            LIMIT 1
         """,
         "multiple_players_career_high": """
-            SELECT name_first || ' ' || name_last as player_name, MIN(rank) as career_high_rank
-            FROM player_rankings_history 
-            WHERE name_first || ' ' || name_last IN ({players})
-              AND tour = '{tour}'
-            GROUP BY name_first, name_last
+            SELECT COALESCE(ap.full_name, ap.name_first || ' ' || ap.name_last) as player_name, MIN(ar.rank) as career_high_rank
+            FROM atp_rankings ar
+            JOIN atp_players ap ON ar.player = ap.player_id
+            WHERE COALESCE(ap.full_name, ap.name_first || ' ' || ap.name_last) COLLATE NOCASE IN ({players})
+            GROUP BY ap.player_id, ap.full_name, ap.name_first, ap.name_last
+            UNION ALL
+            SELECT COALESCE(wp.full_name, wp.name_first || ' ' || wp.name_last) as player_name, MIN(wr.rank) as career_high_rank
+            FROM wta_rankings wr
+            JOIN wta_players wp ON wr.player = wp.player_id
+            WHERE COALESCE(wp.full_name, wp.name_first || ' ' || wp.name_last) COLLATE NOCASE IN ({players})
+            GROUP BY wp.player_id, wp.full_name, wp.name_first, wp.name_last
             ORDER BY career_high_rank
         """
     }

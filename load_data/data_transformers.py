@@ -70,16 +70,17 @@ def enrich_players_data(df, tour=None):
     return df
 
 
-def enrich_rankings_data(df, tour=None):
+def enrich_rankings_data(df, tour=None, players_df=None):
     """
-    Enrich rankings data with tour information and standardize columns.
+    Enrich rankings data with tour information, standardize columns, and add player names.
     
     Args:
         df: DataFrame with rankings data (may have _source_file column from loader)
         tour: Tour name ('ATP' or 'WTA') if not determinable from _source_file
+        players_df: Optional DataFrame with player data to join player names
     
     Returns:
-        DataFrame with enriched columns
+        DataFrame with enriched columns including player names if players_df provided
     """
     if df.empty:
         return df
@@ -95,9 +96,9 @@ def enrich_rankings_data(df, tour=None):
     elif tour and 'tour' not in df.columns:
         df['tour'] = tour
     
-    # Standardize column names (WTA files have 'tours' column)
+    # Drop 'tours' column from WTA rankings (unnecessary column)
     if 'tours' in df.columns:
-        df = df.rename(columns={'tours': 'tournaments'})
+        df = df.drop(columns=['tours'])
     
     # Standardize data types
     if 'ranking_date' in df.columns:
@@ -113,6 +114,19 @@ def enrich_rankings_data(df, tour=None):
     required_cols = ['ranking_date', 'rank', 'player']
     if all(col in df.columns for col in required_cols):
         df = df.dropna(subset=required_cols)
+    
+    # Add player names if players_df is provided
+    if players_df is not None and not players_df.empty and 'player' in df.columns:
+        # Create a lookup dictionary for player names
+        if 'full_name' in players_df.columns and 'player_id' in players_df.columns:
+            player_names = players_df.set_index('player_id')['full_name'].to_dict()
+            df['player_name'] = df['player'].map(player_names)
+        elif 'name_first' in players_df.columns and 'name_last' in players_df.columns and 'player_id' in players_df.columns:
+            # Create full_name if not present
+            players_df = players_df.copy()
+            players_df['full_name'] = players_df['name_first'] + ' ' + players_df['name_last']
+            player_names = players_df.set_index('player_id')['full_name'].to_dict()
+            df['player_name'] = df['player'].map(player_names)
     
     return df
 
@@ -141,6 +155,8 @@ def categorize_match_types(df):
     Categorize matches into tournament types based on file source and match characteristics.
     This handles ATP Qualifying/Challenger/Futures and WTA Qualifying/ITF categorization.
     
+    Optimized to avoid unnecessary copies and type conversions.
+    
     Args:
         df: DataFrame with match data (should already have tour column)
     
@@ -152,14 +168,16 @@ def categorize_match_types(df):
     
     df = df.copy()
     
-    # Ensure required columns exist
+    # Ensure required columns exist and convert to string efficiently
     if 'round' not in df.columns:
         df['round'] = ''
-    df['round'] = df['round'].astype(str)
+    else:
+        df['round'] = df['round'].astype(str)
     
     if 'tourney_level' not in df.columns:
         df['tourney_level'] = ''
-    df['tourney_level'] = df['tourney_level'].astype(str)
+    else:
+        df['tourney_level'] = df['tourney_level'].astype(str)
     
     # Initialize tournament_type column if it doesn't exist
     if 'tournament_type' not in df.columns:
@@ -191,29 +209,34 @@ def categorize_match_types(df):
         # Pattern: Q followed by digits (not QF which is quarterfinal)
         is_qualifying_round = df['round'].str.match(r'^Q\d+', na=False)
         
+        # Identify ITF tournament levels (ITF_15K, ITF_25K, etc.)
+        is_itf_level = df['tourney_level'].str.startswith('ITF_', na=False)
+        
         # WTA Qualifying
         qual_mask = wta_mask & is_qualifying_round
         df.loc[qual_mask, 'tournament_type'] = 'WTA_Qualifying'
         
-        # WTA ITF
-        itf_mask = wta_mask & ~is_qualifying_round
+        # WTA ITF (only matches with ITF tourney_level, not main tour matches)
+        itf_mask = wta_mask & ~is_qualifying_round & is_itf_level
         df.loc[itf_mask, 'tournament_type'] = 'WTA_ITF'
+        
+        # WTA main tour matches (G, P, PM, I, etc.) are left as None/empty
+        # They will be filled with 'Main Tour' in enrich_matches_data()
     
     return df
 
 
-def enrich_matches_data(df, tour=None, tournament_type=None, match_type=None):
+def set_tour_column(df, tour=None):
     """
-    Enrich match data with tour, tournament_type, era, and other metadata.
+    Set tour column from hints or parameter. This is separated for optimization
+    so categorize_match_types() can run before full enrichment.
     
     Args:
-        df: DataFrame with match data (may have _tour_hint, _tournament_type_hint, _match_type_hint columns)
+        df: DataFrame with match data (may have _tour_hint column)
         tour: Tour name ('ATP' or 'WTA') if not already in DataFrame or _tour_hint
-        tournament_type: Tournament type if known (e.g., 'ATP_Futures', 'Main Tour')
-        match_type: Match type (e.g., 'Doubles')
     
     Returns:
-        DataFrame with enriched columns
+        DataFrame with tour column set
     """
     if df.empty:
         return df
@@ -223,10 +246,46 @@ def enrich_matches_data(df, tour=None, tournament_type=None, match_type=None):
     # Use hints from loader if available
     if '_tour_hint' in df.columns:
         df['tour'] = df['_tour_hint']
-        df = df.drop(columns=['_tour_hint'])
     elif tour and 'tour' not in df.columns:
         df['tour'] = tour
     
+    # Fill missing tour
+    if 'tour' in df.columns:
+        df['tour'] = df['tour'].fillna('Unknown')
+    
+    return df
+
+
+def enrich_matches_data(df, tour=None, tournament_type=None, match_type=None, fill_missing_tournament_type=True):
+    """
+    Enrich match data with tour, tournament_type, era, and other metadata.
+    
+    Args:
+        df: DataFrame with match data (may have _tour_hint, _tournament_type_hint, _match_type_hint columns)
+        tour: Tour name ('ATP' or 'WTA') if not already in DataFrame or _tour_hint
+        tournament_type: Tournament type if known (e.g., 'ATP_Futures', 'Main Tour')
+        match_type: Match type (e.g., 'Doubles')
+        fill_missing_tournament_type: If True, fill missing tournament_type with 'Main Tour' (default: True)
+    
+    Returns:
+        DataFrame with enriched columns
+    """
+    if df.empty:
+        return df
+    
+    df = df.copy()
+    
+    # Set tour column if not already set (for cases where set_tour_column wasn't called)
+    if 'tour' not in df.columns:
+        if '_tour_hint' in df.columns:
+            df['tour'] = df['_tour_hint']
+            df = df.drop(columns=['_tour_hint'])
+        elif tour:
+            df['tour'] = tour
+        if 'tour' in df.columns:
+            df['tour'] = df['tour'].fillna('Unknown')
+    
+    # Handle tournament_type hints (e.g., ATP_Futures)
     if '_tournament_type_hint' in df.columns:
         df['tournament_type'] = df['_tournament_type_hint']
         df = df.drop(columns=['_tournament_type_hint'])
@@ -267,13 +326,9 @@ def enrich_matches_data(df, tour=None, tournament_type=None, match_type=None):
             if fed_cup_mask.sum() > 0:
                 df.loc[fed_cup_mask, 'tournament_type'] = 'Fed_Cup'
     
-    # Fill missing tournament_type for main tour matches
-    if 'tournament_type' in df.columns:
+    # Fill missing tournament_type for main tour matches (only if requested)
+    if fill_missing_tournament_type and 'tournament_type' in df.columns:
         df['tournament_type'] = df['tournament_type'].fillna('Main Tour')
-    
-    # Fill missing tour
-    if 'tour' in df.columns:
-        df['tour'] = df['tour'].fillna('Unknown')
     
     return df
 
@@ -282,6 +337,8 @@ def filter_matches_by_switches(df):
     """
     Filter matches based on configuration switches.
     This ensures only matches for enabled tournament types are kept.
+    
+    Optimized to use isin() instead of multiple OR conditions for better performance.
     
     Args:
         df: DataFrame with tournament_type column
@@ -292,40 +349,33 @@ def filter_matches_by_switches(df):
     if df.empty or 'tournament_type' not in df.columns:
         return df
     
-    df = df.copy()
-    
-    # Build filter mask based on switches
-    filter_mask = pd.Series([False] * len(df), index=df.index)
-    
-    # Always include Main Tour matches
-    filter_mask |= (df['tournament_type'] == 'Main Tour')
+    # Build list of allowed tournament types (more efficient than multiple OR conditions)
+    allowed_types = ['Main Tour']  # Always include Main Tour matches
     
     # Include Davis Cup/Fed Cup if enabled
     if LOAD_DAVIS_CUP:
-        filter_mask |= (df['tournament_type'] == 'Davis_Cup')
+        allowed_types.append('Davis_Cup')
     if LOAD_FED_CUP:
-        filter_mask |= (df['tournament_type'] == 'Fed_Cup')
+        allowed_types.append('Fed_Cup')
     
     # Include ATP tournament types if enabled
     if LOAD_ATP_QUALIFYING:
-        filter_mask |= (df['tournament_type'] == 'ATP_Qualifying')
+        allowed_types.append('ATP_Qualifying')
     if LOAD_ATP_CHALLENGER:
-        filter_mask |= (df['tournament_type'] == 'ATP_Challenger')
+        allowed_types.append('ATP_Challenger')
     if LOAD_ATP_CHALLENGER_QUAL:
-        filter_mask |= (df['tournament_type'] == 'ATP_Challenger_Qualifying')
+        allowed_types.append('ATP_Challenger_Qualifying')
     if LOAD_ATP_FUTURES:
-        filter_mask |= (df['tournament_type'] == 'ATP_Futures')
+        allowed_types.append('ATP_Futures')
     
     # Include WTA tournament types if enabled
     if LOAD_WTA_QUALIFYING:
-        filter_mask |= (df['tournament_type'] == 'WTA_Qualifying')
+        allowed_types.append('WTA_Qualifying')
     if LOAD_WTA_ITF:
-        filter_mask |= (df['tournament_type'] == 'WTA_ITF')
+        allowed_types.append('WTA_ITF')
     
-    # Apply filter
-    filtered_df = df[filter_mask].copy()
-    
-    return filtered_df
+    # Apply filter using isin() which is more efficient than multiple OR conditions
+    return df[df['tournament_type'].isin(allowed_types)].copy()
 
 
 def combine_and_enrich_matches(master_df_list):

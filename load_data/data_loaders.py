@@ -26,8 +26,8 @@ from .utils import ProgressTracker
 
 def load_players_data():
     """
-    Loads player information from ATP and WTA player files.
-    Returns raw DataFrames - enrichment happens in transformers.
+    Loads player information from ATP and WTA player files separately.
+    Returns tuple of (atp_players_df, wta_players_df) - enrichment happens in transformers.
     """
     print("--- Loading Player Information ---")
     
@@ -61,24 +61,14 @@ def load_players_data():
     else:
         print("Skipping WTA players (LOAD_WTA_PLAYERS = False)")
     
-    # Combine ATP and WTA players (raw data only)
-    if not atp_players.empty and not wta_players.empty:
-        all_players = pd.concat([atp_players, wta_players], ignore_index=True)
-    elif not atp_players.empty:
-        all_players = atp_players
-    elif not wta_players.empty:
-        all_players = wta_players
-    else:
-        print("No player data found!")
-        return pd.DataFrame()
-    
-    print(f"Total players loaded: {len(all_players)}")
-    return all_players
+    total_players = len(atp_players) + len(wta_players)
+    print(f"Total players loaded: {total_players} (ATP: {len(atp_players)}, WTA: {len(wta_players)})")
+    return atp_players, wta_players
 
 def load_rankings_data():
     """
-    Loads rankings data from ATP and WTA ranking files.
-    Returns raw DataFrames - enrichment happens in transformers.
+    Loads rankings data from ATP and WTA ranking files separately.
+    Returns tuple of (atp_rankings_df, wta_rankings_df) - enrichment happens in transformers.
     """
     print("--- Loading Rankings Data ---")
     
@@ -102,52 +92,61 @@ def load_rankings_data():
         os.path.join(PROJECT_ROOT, "data/tennis_wta/wta_rankings_current.csv")
     ]
     
-    # Build list of files to load based on switches
-    ranking_files = []
+    # Load ATP rankings
+    atp_rankings = []
     if LOAD_ATP_RANKINGS:
-        ranking_files.extend(atp_ranking_files)
+        existing_atp_files = [f for f in atp_ranking_files if os.path.exists(f)]
+        if existing_atp_files:
+            progress = ProgressTracker(len(existing_atp_files), "ATP Rankings Loading")
+            for file_path in atp_ranking_files:
+                if os.path.exists(file_path):
+                    progress.update(1, f"Loading {os.path.basename(file_path)}...")
+                    try:
+                        df = pd.read_csv(file_path, index_col=False)
+                        df['_source_file'] = file_path
+                        atp_rankings.append(df)
+                        print(f"  Loaded {len(df)} ATP ranking records")
+                    except Exception as e:
+                        print(f"  Error loading {file_path}: {e}")
+        else:
+            print("No ATP ranking files found!")
     else:
         print("Skipping ATP rankings (LOAD_ATP_RANKINGS = False)")
     
+    # Load WTA rankings
+    wta_rankings = []
     if LOAD_WTA_RANKINGS:
-        ranking_files.extend(wta_ranking_files)
+        existing_wta_files = [f for f in wta_ranking_files if os.path.exists(f)]
+        if existing_wta_files:
+            progress = ProgressTracker(len(existing_wta_files), "WTA Rankings Loading")
+            for file_path in wta_ranking_files:
+                if os.path.exists(file_path):
+                    progress.update(1, f"Loading {os.path.basename(file_path)}...")
+                    try:
+                        df = pd.read_csv(file_path, index_col=False)
+                        df['_source_file'] = file_path
+                        wta_rankings.append(df)
+                        print(f"  Loaded {len(df)} WTA ranking records")
+                    except Exception as e:
+                        print(f"  Error loading {file_path}: {e}")
+        else:
+            print("No WTA ranking files found!")
     else:
         print("Skipping WTA rankings (LOAD_WTA_RANKINGS = False)")
     
-    if not ranking_files:
-        print("No rankings files selected for loading!")
-        return pd.DataFrame()
+    # Combine ATP rankings
+    atp_rankings_df = pd.DataFrame()
+    if atp_rankings:
+        atp_rankings_df = pd.concat(atp_rankings, ignore_index=True)
+        print(f"Total ATP rankings loaded: {len(atp_rankings_df)}")
     
-    all_rankings = []
-    existing_files = [f for f in ranking_files if os.path.exists(f)]
+    # Combine WTA rankings
+    wta_rankings_df = pd.DataFrame()
+    if wta_rankings:
+        wta_rankings_df = pd.concat(wta_rankings, ignore_index=True)
+        print(f"Total WTA rankings loaded: {len(wta_rankings_df)}")
     
-    # Initialize progress tracker for ranking files
-    progress = ProgressTracker(len(existing_files), "Rankings Loading")
-    
-    for file_path in ranking_files:
-        if os.path.exists(file_path):
-            progress.update(1, f"Loading {os.path.basename(file_path)}...")
-            try:
-                df = pd.read_csv(file_path, index_col=False)
-                # Store file path info for later enrichment
-                df['_source_file'] = file_path
-                all_rankings.append(df)
-                print(f"  Loaded {len(df)} ranking records")
-                
-            except Exception as e:
-                print(f"  Error loading {file_path}: {e}")
-        else:
-            print(f"  File not found: {file_path}")
-    
-    if not all_rankings:
-        print("No rankings data found!")
-        return pd.DataFrame()
-    
-    # Combine all rankings data (raw)
-    rankings_df = pd.concat(all_rankings, ignore_index=True)
-    
-    print(f"Total rankings loaded: {len(rankings_df)}")
-    return rankings_df
+    return atp_rankings_df, wta_rankings_df
 
 def load_matches_data():
     """

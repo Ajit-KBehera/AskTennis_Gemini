@@ -81,9 +81,11 @@ class TennisPromptBuilder:
         - *_SvGms: Service games won, *_bpSaved: Break points saved, *_bpFaced: Break points faced
 
         ADDITIONAL TABLES:
-        - players: Player metadata (handedness, nationality, height, birth date)
-        - rankings: Historical ranking data (1973-2024, 5.3M+ records)
-        - player_rankings_history: Complete player ranking trajectories
+        - atp_players: ATP player metadata (handedness, nationality, height, birth date)
+        - wta_players: WTA player metadata (handedness, nationality, height, birth date)
+        - atp_rankings: ATP historical ranking data (1973-2024)
+        - wta_rankings: WTA historical ranking data (1973-2024)
+        - Note: For ranking queries, use UNION to combine ATP and WTA data when tour is not specified
 
         CRITICAL: FOCUS ON SINGLES MATCHES ONLY:
         - ALL queries should use ONLY the matches table (singles matches)
@@ -173,13 +175,16 @@ class TennisPromptBuilder:
         RANKING QUESTIONS:
         - Official Rankings ("top 10 in 2019", "ranked number 1", "year-end rankings"):
           → USE: analyze_ranking_question tool FIRST
-          → DATA SOURCE: player_rankings_history table, date: YYYY-12-30 for year-end
-          → TOUR: If unspecified, use UNION to search both ATP and WTA
+          → DATA SOURCE: UNION of atp_rankings and wta_rankings tables (join with atp_players/wta_players for names)
+          → DATE: Use DATE('YYYY-12-30') for year-end rankings
+          → TOUR: If unspecified, use UNION ALL to search both ATP and WTA
+          → PATTERN: SELECT ... FROM atp_rankings JOIN atp_players ... UNION ALL SELECT ... FROM wta_rankings JOIN wta_players ...
         - Match-time Rankings ("rank when he beat", "winner's rank"):
-          → USE: matches table with winner_rank/loser_rank
+          → USE: matches table with winner_rank/loser_rank (names already in matches table)
           → Filter by player, year, tournament
         - Career High Rankings ("highest rank", "best ranking"):
-          → USE: player_rankings_history table, AGGREGATE: MIN(rank)
+          → USE: UNION of atp_rankings and wta_rankings tables, AGGREGATE: MIN(rank)
+          → Join with atp_players/wta_players to get player names
 
         TOURNAMENT WINNER QUERIES:
         - When user asks "Who won X tournament" (without specifying round), assume FINAL (round = 'F')

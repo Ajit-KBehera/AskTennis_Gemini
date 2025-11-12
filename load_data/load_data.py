@@ -4,7 +4,7 @@ Main orchestrator for tennis data loading and database creation.
 This module orchestrates the complete data loading pipeline:
 1. Load data from CSV files (players, rankings, matches, doubles)
 2. Transform data (parse dates, scores, fix surfaces, standardize levels)
-3. Build database (create tables, indexes, views)
+3. Build database (create tables)
 4. Verify database integrity
 
 Usage:
@@ -14,6 +14,8 @@ Usage:
     or
     from load_data.load_data import create_database_with_players, verify_enhancement
 """
+
+import pandas as pd
 
 # Handle imports for both direct execution and module import
 try:
@@ -27,6 +29,7 @@ try:
     from .data_transformers import (
         enrich_players_data,
         enrich_rankings_data,
+        set_tour_column,
         categorize_match_types,
         enrich_matches_data,
         filter_matches_by_switches,
@@ -54,6 +57,7 @@ except ImportError:
     from load_data.data_transformers import (
         enrich_players_data,
         enrich_rankings_data,
+        set_tour_column,
         categorize_match_types,
         enrich_matches_data,
         filter_matches_by_switches,
@@ -76,7 +80,7 @@ def create_database_with_players():
     This is the main orchestrator function that coordinates:
     1. Data loading from CSV files
     2. Data transformation and cleaning
-    3. Database creation with indexes and views
+    3. Database creation with tables
     """
     print("=== Enhanced Data Loading with COMPLETE Tournament Coverage (1877-2024) ===")
     
@@ -86,10 +90,10 @@ def create_database_with_players():
     
     # 1. Load raw data
     progress.update(1, "Loading player data...")
-    players_df = load_players_data()
+    atp_players_df, wta_players_df = load_players_data()
     
     progress.update(1, "Loading rankings data...")
-    rankings_df = load_rankings_data()
+    atp_rankings_df, wta_rankings_df = load_rankings_data()
     
     progress.update(1, "Loading match data...")
     matches_df = load_matches_data()
@@ -99,21 +103,42 @@ def create_database_with_players():
     
     # 2. Transform/enrich data
     progress.update(1, "Enriching player data...")
-    if not players_df.empty:
-        players_df = enrich_players_data(players_df)
+    if not atp_players_df.empty:
+        atp_players_df = enrich_players_data(atp_players_df, tour='ATP')
+    if not wta_players_df.empty:
+        wta_players_df = enrich_players_data(wta_players_df, tour='WTA')
+    
+    # Combine players temporarily for rankings enrichment (for player name lookup)
+    # This is safe because player_id collisions are handled by tour separation in tables
+    combined_players_df = pd.DataFrame()
+    if not atp_players_df.empty and not wta_players_df.empty:
+        combined_players_df = pd.concat([atp_players_df, wta_players_df], ignore_index=True)
+    elif not atp_players_df.empty:
+        combined_players_df = atp_players_df
+    elif not wta_players_df.empty:
+        combined_players_df = wta_players_df
     
     progress.update(1, "Enriching rankings data...")
-    if not rankings_df.empty:
-        rankings_df = enrich_rankings_data(rankings_df)
-        if 'ranking_date' in rankings_df.columns:
-            print(f"Date range: {rankings_df['ranking_date'].min()} to {rankings_df['ranking_date'].max()}")
+    # Enrich ATP rankings (with player names from ATP players)
+    if not atp_rankings_df.empty:
+        atp_rankings_df = enrich_rankings_data(atp_rankings_df, tour='ATP', players_df=atp_players_df)
+        if 'ranking_date' in atp_rankings_df.columns:
+            print(f"ATP rankings date range: {atp_rankings_df['ranking_date'].min()} to {atp_rankings_df['ranking_date'].max()}")
+    
+    # Enrich WTA rankings (with player names from WTA players)
+    if not wta_rankings_df.empty:
+        wta_rankings_df = enrich_rankings_data(wta_rankings_df, tour='WTA', players_df=wta_players_df)
+        if 'ranking_date' in wta_rankings_df.columns:
+            print(f"WTA rankings date range: {wta_rankings_df['ranking_date'].min()} to {wta_rankings_df['ranking_date'].max()}")
     
     progress.update(1, "Enriching match data...")
     if not matches_df.empty:
-        # First, enrich with tour, era, etc. (creates 'tour' column from '_tour_hint')
-        matches_df = enrich_matches_data(matches_df)
-        # Then categorize matches into tournament types (needs 'tour' column)
+        # Optimization: Set tour column first (needed for categorization)
+        matches_df = set_tour_column(matches_df)
+        # Categorize matches into tournament types (needs 'tour' column)
         matches_df = categorize_match_types(matches_df)
+        # Then enrich with era, dates, etc. and fill remaining tournament_type with 'Main Tour'
+        matches_df = enrich_matches_data(matches_df, fill_missing_tournament_type=True)
         # Filter based on switches
         matches_df = filter_matches_by_switches(matches_df)
     
@@ -150,23 +175,26 @@ def create_database_with_players():
     if not doubles_df.empty:
         doubles_df = standardize_tourney_levels(doubles_df, 'ATP')  # ATP doubles data
     
-    if players_df.empty or matches_df.empty:
+    if (atp_players_df.empty and wta_players_df.empty) or matches_df.empty:
         print("Error: Could not load required data. Exiting.")
         return
     
-    # Build database (create tables, indexes, views)
+    # Build database (create tables)
     progress.update(1, "Building database...")
-    build_database(matches_df, players_df, rankings_df, doubles_df)
+    build_database(matches_df, atp_players_df, wta_players_df, atp_rankings_df, wta_rankings_df, doubles_df)
     
     progress.complete("Database creation completed!")
     
+    total_players = len(atp_players_df) + len(wta_players_df)
     print(f"\n✅ Successfully created enhanced database '{DB_FILE}' with:")
     print(f"   - {len(matches_df)} singles matches (COMPLETE tournament coverage: 1877-2024)")
     if not doubles_df.empty:
         print(f"   - {len(doubles_df)} doubles matches (2000-2020)")
-    print(f"   - {len(players_df)} players")
-    if not rankings_df.empty:
-        print(f"   - {len(rankings_df)} ranking records")
+    print(f"   - {total_players} players (ATP: {len(atp_players_df)}, WTA: {len(wta_players_df)})")
+    if not atp_rankings_df.empty:
+        print(f"   - {len(atp_rankings_df)} ATP ranking records")
+    if not wta_rankings_df.empty:
+        print(f"   - {len(wta_rankings_df)} WTA ranking records")
     print(f"   - Player metadata integration")
     print(f"   - Rankings data integration")
     print(f"   - Surface data quality fix (missing surface inference)")
@@ -175,8 +203,6 @@ def create_database_with_players():
     print(f"   - Main tour matches (Grand Slams, Masters, etc.)")
     print(f"   - Qualifying/Challenger/Futures matches")
     print(f"   - Doubles matches (separate table)")
-    print(f"   - Performance indexes")
-    print(f"   - Enhanced views with rankings")
     print(f"   - COMPLETE tennis tournament database (147 years)")
 
 
