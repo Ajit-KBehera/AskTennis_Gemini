@@ -21,7 +21,7 @@ from services.database_service import DatabaseService
 logger, log_file = setup_logging()
 
 # --- Page Configuration ---
-st.set_page_config(page_title="AskTennis AI - Clean UI", layout="wide")
+st.set_page_config(page_title="AskTennis", layout="wide")
 
 # Load custom CSS from external file
 st.markdown(load_css(), unsafe_allow_html=True)
