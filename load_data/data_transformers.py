@@ -187,25 +187,45 @@ def categorize_match_types(df):
     # Files contain: ATP Qualifying, ATP Challenger, and ATP Challenger Qualifying
     atp_mask = df['tour'] == 'ATP'
     if atp_mask.sum() > 0:
+        # Only categorize matches that don't already have a tournament_type set
+        # OR matches with 'Main Tour' (which is a default/fallback that can be recategorized)
+        # This prevents overwriting explicit values from _tournament_type_hint or other sources
+        # but allows fixing incorrectly categorized 'Main Tour' matches
+        unset_mask = (df['tournament_type'].isna() | 
+                     (df['tournament_type'] == '') | 
+                     (df['tournament_type'] == 'None') |
+                     (df['tournament_type'] == 'Main Tour'))
+        atp_unset_mask = atp_mask & unset_mask
+        
         # Pattern: Q followed by digits (not QF which is quarterfinal)
         is_qualifying_round = df['round'].str.match(r'^Q\d+', na=False)
         is_challenger_level = (df['tourney_level'] == 'C')
         
-        # ATP Challenger Qualifying
-        chall_qual_mask = atp_mask & is_challenger_level & is_qualifying_round
+        # ATP Challenger Qualifying (most specific - check first)
+        chall_qual_mask = atp_unset_mask & is_challenger_level & is_qualifying_round
         df.loc[chall_qual_mask, 'tournament_type'] = 'ATP_Challenger_Qualifying'
         
-        # ATP Challenger
-        chall_mask = atp_mask & is_challenger_level & ~is_qualifying_round
+        # ATP Challenger (main draw matches at challenger level)
+        chall_mask = atp_unset_mask & is_challenger_level & ~is_qualifying_round
         df.loc[chall_mask, 'tournament_type'] = 'ATP_Challenger'
         
-        # ATP Qualifying
-        qual_mask = atp_mask & ~is_challenger_level & is_qualifying_round
+        # ATP Qualifying (qualifying rounds at non-challenger level)
+        qual_mask = atp_unset_mask & ~is_challenger_level & is_qualifying_round
         df.loc[qual_mask, 'tournament_type'] = 'ATP_Qualifying'
     
     # WTA Qualifying/ITF categorization
     wta_mask = df['tour'] == 'WTA'
     if wta_mask.sum() > 0:
+        # Only categorize matches that don't already have a tournament_type set
+        # OR matches with 'Main Tour' (which is a default/fallback that can be recategorized)
+        # This prevents overwriting explicit values from _tournament_type_hint or other sources
+        # but allows fixing incorrectly categorized 'Main Tour' matches
+        unset_mask = (df['tournament_type'].isna() | 
+                     (df['tournament_type'] == '') | 
+                     (df['tournament_type'] == 'None') |
+                     (df['tournament_type'] == 'Main Tour'))
+        wta_unset_mask = wta_mask & unset_mask
+        
         # Pattern: Q followed by digits (not QF which is quarterfinal)
         is_qualifying_round = df['round'].str.match(r'^Q\d+', na=False)
         
@@ -213,11 +233,11 @@ def categorize_match_types(df):
         is_itf_level = df['tourney_level'].str.startswith('ITF_', na=False)
         
         # WTA Qualifying
-        qual_mask = wta_mask & is_qualifying_round
+        qual_mask = wta_unset_mask & is_qualifying_round
         df.loc[qual_mask, 'tournament_type'] = 'WTA_Qualifying'
         
         # WTA ITF (only matches with ITF tourney_level, not main tour matches)
-        itf_mask = wta_mask & ~is_qualifying_round & is_itf_level
+        itf_mask = wta_unset_mask & ~is_qualifying_round & is_itf_level
         df.loc[itf_mask, 'tournament_type'] = 'WTA_ITF'
         
         # WTA main tour matches (G, P, PM, I, etc.) are left as None/empty
