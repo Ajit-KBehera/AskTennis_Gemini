@@ -6,8 +6,6 @@ This document outlines 15+ recommended chart types for the Return tab, each with
 **Current Implementation**: Return tab is a placeholder (coming soon)
 
 **Available Data Fields**:
-- `w_bpFaced`, `l_bpFaced`: Break points faced (when serving)
-- `w_bpSaved`, `l_bpSaved`: Break points saved (when serving)
 - `w_bpConverted`, `l_bpConverted`: Break points converted (when returning)
 - `w_SvGms`, `l_SvGms`: Service games won
 - Return Points Won %: Calculated from opponent's serve stats (100 - opponent's serve points won %)

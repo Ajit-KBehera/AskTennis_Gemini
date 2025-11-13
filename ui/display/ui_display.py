@@ -10,6 +10,7 @@ import streamlit as st
 # Local application imports
 from tennis_logging.simplified_factory import log_error
 from serve.combined_serve_charts import create_combined_serve_charts
+from return_stats.combined_return_charts import create_combined_return_charts
 from rankings.ranking_timeline_chart import create_ranking_timeline_chart
 from serve.serve_stats import build_year_suffix
 
@@ -357,7 +358,7 @@ class UIDisplay:
                 UIDisplay._render_serve_tab(df_matches, filters)
             
             with tab_return:
-                UIDisplay._render_return_tab()
+                UIDisplay._render_return_tab(df_matches, filters)
             
             with tab_ranking:
                 UIDisplay._render_ranking_tab(db_service, filters)
@@ -520,11 +521,54 @@ class UIDisplay:
             st.info("ℹ️ Please select a player to view serve statistics.")
     
     @staticmethod
-    def _render_return_tab():
+    def _render_return_tab(df_matches, filters):
         """
-        Render the Return Statistics tab (placeholder for future implementation).
+        Render the Return Statistics tab with charts.
+        
+        Args:
+            df_matches: DataFrame containing match data (already filtered)
+            filters: Dictionary containing filter values
         """
-        st.info("🚧 Return statistics visualization coming soon...")
+        if filters['player'] and filters['player'] != 'All Players':
+            try:
+                # Extract filter values for chart title/display
+                opponent = filters['opponent'] if filters['opponent'] != 'All Opponents' else None
+                tournament = filters['tournament'] if filters['tournament'] != 'All Tournaments' else None
+                surfaces = filters['surfaces'] if filters['surfaces'] else None
+                # Handle year: None, int, tuple, or string (backward compatibility)
+                year = filters.get('year')
+                if year == 'All Years' or year is None:
+                    year = None
+                # year is already in correct format (int, tuple, or None)
+                
+                # Create and display return charts using pre-loaded DataFrame
+                return_points_timeline_fig, bp_conversion_timeline_fig, radar_fig = create_combined_return_charts(
+                    filters['player'],
+                    df_matches,
+                    year=year,
+                    opponent=opponent,
+                    tournament=tournament,
+                    surfaces=surfaces
+                )
+
+                # Use config parameter for Plotly configuration to show the mode bar
+                plotly_config = {'displayModeBar': True, 'width': 'stretch'}
+                
+                # Display return points won % timeline chart
+                st.plotly_chart(return_points_timeline_fig, config=plotly_config)
+                
+                # Display break point conversion timeline chart
+                st.plotly_chart(bp_conversion_timeline_fig, config=plotly_config)
+                
+                # Display radar chart
+                st.plotly_chart(radar_fig, config=plotly_config)
+
+            except Exception as e:
+                log_error(e, f"Error generating return charts for {filters['player']}", component="ui_display")
+                st.error(f"Error generating return charts: {e}")
+                st.info("Please ensure the player name matches exactly and has matches in the selected filters.")
+        else:
+            st.info("ℹ️ Please select a player to view return statistics.")
     
     @staticmethod
     def _render_ranking_tab(db_service, filters):
