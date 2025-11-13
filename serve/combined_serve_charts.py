@@ -14,6 +14,7 @@ from .serve_stats import (
 )
 from .first_serve_timeline import create_timeline_chart
 from .ace_df_timeline import create_ace_df_timeline_chart
+from .break_point_timeline import create_break_point_timeline_chart
 from .serve_radar_chart import create_radar_chart
 
 
@@ -48,7 +49,7 @@ def _build_chart_title_suffixes(year, opponent=None, tournament=None, surfaces=N
 
 def create_combined_serve_charts(player_name, df, year=None, opponent=None, tournament=None, surfaces=None):
     """
-    Create serve charts (timeline, ace/DF timeline, and radar) for a player.
+    Create serve charts (timeline, ace/DF timeline, break point timeline, and radar) for a player.
     
     Args:
         player_name: Name of the player
@@ -60,12 +61,13 @@ def create_combined_serve_charts(player_name, df, year=None, opponent=None, tour
         surfaces: Optional list of surfaces for chart title
         
     Returns:
-        tuple: (timeline_fig, ace_df_timeline_fig, radar_fig) - Three Plotly figures ready for display
+        tuple: (timeline_fig, ace_df_timeline_fig, bp_timeline_fig, radar_fig) - Four Plotly figures ready for display
     """
     # Build chart titles
     year_suffix, filter_suffix = _build_chart_title_suffixes(year, opponent, tournament, surfaces)
     timeline_title = f"{player_name} - First Serve Performance Timeline - {year_suffix}{filter_suffix}"
     ace_df_timeline_title = f"{player_name} - Ace & Double Fault Rate Timeline - {year_suffix}{filter_suffix}"
+    bp_timeline_title = f"{player_name} - Break Point Timeline - {year_suffix}{filter_suffix}"
     radar_title = f"{player_name} - Serve Statistics Radar Chart - {year_suffix}{filter_suffix}"
     
     # Calculate serve statistics
@@ -100,6 +102,14 @@ def create_combined_serve_charts(player_name, df, year=None, opponent=None, tour
         show_opponent_comparison=False,
         opponent_name=None
     )
+    # Break Point Timeline chart: Shows break points faced, saved, and save percentage
+    bp_timeline_fig = create_break_point_timeline_chart(
+        df,  # Use original df, not matches_with_stats (break point stats calculated inside)
+        player_name,
+        title=bp_timeline_title,
+        show_opponent_comparison=False,
+        opponent_name=None
+    )
     # Radar chart: Opponent comparison enabled when specific opponent selected
     radar_fig = create_radar_chart(
         serve_stats, 
@@ -109,5 +119,5 @@ def create_combined_serve_charts(player_name, df, year=None, opponent=None, tour
         opponent_name=opponent if show_comparison else None
     )
     
-    return timeline_fig, ace_df_timeline_fig, radar_fig
+    return timeline_fig, ace_df_timeline_fig, bp_timeline_fig, radar_fig
 

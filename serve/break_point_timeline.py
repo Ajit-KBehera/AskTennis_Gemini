@@ -1,8 +1,8 @@
 """
-Ace and Double Fault timeline chart visualization.
+Break point timeline chart visualization.
 
-This module provides functions to create timeline charts showing ace rate
-and double fault rate over time for both player and opponent.
+This module provides functions to create timeline charts showing break points faced
+and break points saved over time for a player.
 """
 
 # Third-party imports
@@ -17,9 +17,59 @@ from .serve_stats import get_match_hover_data
 # Function Definitions
 # ============================================================================
 
-def add_scatter_trace(fig, x_positions, y_data, name, color, hover_label, customdata, use_lines=True):
+def calculate_match_break_point_stats(df, player_name, case_sensitive=False):
+    """
+    Calculate break point statistics for each match in the dataframe.
+    
+    Args:
+        df: DataFrame containing match data for the player
+        player_name: Name of the player
+        case_sensitive: Whether to use case-sensitive name matching (default: False)
+        
+    Returns:
+        DataFrame: Original dataframe with added columns for break point statistics
+    """
+    df = df.copy()
+    
+    # Determine if player was winner or loser for each match
+    if case_sensitive:
+        is_winner = df['winner_name'] == player_name
+    else:
+        is_winner = df['winner_name'].str.lower() == player_name.lower()
+    
+    # Calculate Break Points Faced (when serving)
+    df['player_bpFaced'] = np.where(
+        is_winner,
+        df['w_bpFaced'],
+        df['l_bpFaced']
+    )
+    
+    # Calculate Break Points Saved (when serving)
+    df['player_bpSaved'] = np.where(
+        is_winner,
+        df['w_bpSaved'],
+        df['l_bpSaved']
+    )
+    
+    # Calculate Break Point Save % (when serving)
+    df['player_bpSavePct'] = np.where(
+        is_winner,
+        np.where(df['w_bpFaced'] > 0, df['w_bpSaved'] / df['w_bpFaced'] * 100, np.nan),
+        np.where(df['l_bpFaced'] > 0, df['l_bpSaved'] / df['l_bpFaced'] * 100, np.nan)
+    )
+    
+    return df
+
+
+def add_scatter_trace(fig, x_positions, y_data, name, color, hover_label, customdata, use_lines=True, secondary_y=False, is_percentage=False):
     """Add a scatter plot trace to the figure with optional lines"""
     mode = 'markers+lines' if use_lines else 'markers'
+    
+    # Format hover value based on whether it's a percentage or count
+    if is_percentage:
+        hover_format = f'{hover_label}: %{{y:.2f}}%<br>'
+    else:
+        hover_format = f'{hover_label}: %{{y:.0f}}<br>'
     
     trace_kwargs = {
         'x': x_positions,
@@ -27,7 +77,7 @@ def add_scatter_trace(fig, x_positions, y_data, name, color, hover_label, custom
         'mode': mode,
         'name': name,
         'marker': dict(color=color, size=8),
-        'hovertemplate': f'{hover_label}: %{{y:.2f}}%<br>' +                  
+        'hovertemplate': hover_format +                  
                       'Year: %{customdata[4]}<br>' +
                       'Tournament: %{customdata[0]}<br>' +
                       'Round: %{customdata[1]}<br>' +
@@ -39,10 +89,13 @@ def add_scatter_trace(fig, x_positions, y_data, name, color, hover_label, custom
     if use_lines:
         trace_kwargs['line'] = dict(color=color, width=2)
     
-    fig.add_trace(go.Scatter(**trace_kwargs))
+    if secondary_y:
+        fig.add_trace(go.Scatter(**trace_kwargs), secondary_y=True)
+    else:
+        fig.add_trace(go.Scatter(**trace_kwargs))
 
 
-def add_trend_line(fig, y_data, name, color):
+def add_trend_line(fig, y_data, name, color, secondary_y=False):
     """Add a linear trend line to the figure"""
     mask = y_data.notna()
     x = np.arange(len(y_data))[mask]
@@ -52,7 +105,7 @@ def add_trend_line(fig, y_data, name, color):
         xc = x - x.mean()
         z = np.polyfit(xc, y, 1)
         p = np.poly1d(z)
-        fig.add_trace(go.Scatter(
+        trend_trace = go.Scatter(
             x=x,
             y=p(xc),
             mode='lines',
@@ -60,7 +113,12 @@ def add_trend_line(fig, y_data, name, color):
             line=dict(color=color, dash='dash', width=2),
             opacity=0.8,
             hoverinfo='skip'
-        ))
+        )
+        
+        if secondary_y:
+            fig.add_trace(trend_trace, secondary_y=True)
+        else:
+            fig.add_trace(trend_trace)
 
 
 def add_vertical_lines(fig, y_data_series, y_min=0, y_max=None, color='gray', width=0.8, opacity=0.3):
@@ -112,45 +170,12 @@ def add_vertical_lines(fig, y_data_series, y_min=0, y_max=None, color='gray', wi
             ))
 
 
-def _add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, hoverdata=None):
+def create_break_point_timeline_chart(player_df, player_name, title, show_opponent_comparison=False, opponent_name=None):
     """
-    Add opponent comparison traces to ace/DF timeline chart.
-    
-    Reserved for future use - adds opponent scatter plots and trend lines.
-    Currently not used in timeline chart as opponent comparison is handled inline
-    in create_ace_df_timeline_chart, but kept for potential future refactoring.
+    Create break point timeline chart showing break points faced, saved, and save percentage.
     
     Args:
-        fig: Plotly figure object
-        x_positions: List of x-axis positions
-        df: DataFrame with opponent stats columns (opponent_ace_rate, opponent_df_rate)
-        opponent_name: Name of opponent for legend
-        hoverdata: Hover data for tooltips
-    """
-    if 'opponent_ace_rate' not in df.columns or 'opponent_df_rate' not in df.columns:
-        return
-    
-    opponent_label = f"{opponent_name}" if opponent_name else "Opponent"
-    
-    # Add opponent scatter traces
-    add_scatter_trace(fig, x_positions, df['opponent_ace_rate'], 
-                     'Ace Rate', 
-                     '#34D399', 'Ace Rate', hoverdata, use_lines=False)  # green-300
-    add_scatter_trace(fig, x_positions, df['opponent_df_rate'], 
-                     'Double Fault Rate', 
-                     '#F87171', 'Double Fault Rate', hoverdata, use_lines=False)  # red-400
-    
-    # Add opponent trend lines
-    add_trend_line(fig, df['opponent_ace_rate'], 'Ace Rate', '#34D399')
-    add_trend_line(fig, df['opponent_df_rate'], 'Double Fault Rate', '#F87171')
-
-
-def create_ace_df_timeline_chart(player_df, player_name, title, show_opponent_comparison=False, opponent_name=None):
-    """
-    Create ace rate and double fault rate timeline chart.
-    
-    Args:
-        player_df: DataFrame with calculated serve statistics
+        player_df: DataFrame with match data (should have w_bpFaced, l_bpFaced, w_bpSaved, l_bpSaved columns)
         player_name: Name of the player
         title: Chart title
         show_opponent_comparison: If True, show opponent stats overlay (default: False)
@@ -159,8 +184,10 @@ def create_ace_df_timeline_chart(player_df, player_name, title, show_opponent_co
     Returns:
         go.Figure: Plotly figure object for timeline chart
     """
+    # Calculate break point statistics
+    df = calculate_match_break_point_stats(player_df, player_name, case_sensitive=True)
+    
     # Sort by date and match number for chronological timeline display
-    df = player_df.copy()
     if 'tourney_date' in df.columns and 'match_num' in df.columns:
         df = df.sort_values(by=['tourney_date', 'match_num']).reset_index(drop=True)
     
@@ -169,6 +196,7 @@ def create_ace_df_timeline_chart(player_df, player_name, title, show_opponent_co
     
     x_positions = list(range(len(df)))
     
+    # Create figure (no secondary y-axis needed since we're not showing percentage)
     fig = go.Figure()
     
     # Collect all series for y-axis range calculation and vertical lines
@@ -178,26 +206,31 @@ def create_ace_df_timeline_chart(player_df, player_name, title, show_opponent_co
     
     # Add elements in order: background first, then main data, then overlays
     # 1. Prepare series list for vertical lines
-    series_for_lines = [df['player_ace_rate'], df['player_df_rate']]
+    series_for_lines = [df['player_bpFaced'], df['player_bpSaved']]
     
-    # 2. Add scatter plots (main data layer) - Player stats
-    add_scatter_trace(fig, x_positions, df['player_ace_rate'], 
-                     'Ace Rate', 
-                     '#10B981',' Ace Rate', hoverdata, use_lines=False)  # green-500
-    add_scatter_trace(fig, x_positions, df['player_df_rate'], 
-                     'DF Rate', 
-                     '#EF4444', 'Double Fault Rate', hoverdata, use_lines=False)  # red-500
+    # 2. Add scatter plots (main data layer) - Player stats (markers only, no lines)
+    # Break Points Faced (count)
+    add_scatter_trace(fig, x_positions, df['player_bpFaced'], 
+                     'BPs Faced', 
+                     '#EF4444', 'Break Points Faced', hoverdata, use_lines=False, secondary_y=False, is_percentage=False)  # red-500
     
-    all_series.extend([df['player_ace_rate'], df['player_df_rate']])
+    # Break Points Saved (count)
+    add_scatter_trace(fig, x_positions, df['player_bpSaved'], 
+                     'BPs Saved', 
+                     '#10B981', 'Break Points Saved', hoverdata, use_lines=False, secondary_y=False, is_percentage=False)  # green-500
     
-    # 4. Draw vertical lines (background layer) - after we know all series
+    # Note: Break Point Save % is calculated but not displayed on the chart
+    
+    all_series.extend([df['player_bpFaced'], df['player_bpSaved']])
+    
+    # 3. Draw vertical lines (background layer) - after we know all series
     add_vertical_lines(fig, series_for_lines)
     
-    # 5. Add trend lines (overlay layer) - Player trends
-    add_trend_line(fig, df['player_ace_rate'], 'Ace Rate', '#10B981')
-    add_trend_line(fig, df['player_df_rate'], 'DF Rate', '#EF4444')
+    # 4. Add trend lines (overlay layer) - Player trends
+    add_trend_line(fig, df['player_bpFaced'], 'BPs Faced', '#EF4444', secondary_y=False)
+    add_trend_line(fig, df['player_bpSaved'], 'BPs Saved', '#10B981', secondary_y=False)
     
-    # Calculate appropriate y-axis range (0 to max value + 15% padding, but cap at 30%)
+    # Calculate appropriate y-axis range for counts
     max_values = []
     for series in all_series:
         if series is not None and len(series) > 0:
@@ -207,17 +240,17 @@ def create_ace_df_timeline_chart(player_df, player_name, title, show_opponent_co
     
     if max_values:
         max_value = max(max_values)
-        # Add 15% padding, but cap at 30% maximum
-        y_max = min(30, max_value * 1.15)
+        # Add 15% padding
+        y_max_count = max_value * 1.15
     else:
-        y_max = 30  # Default to 30% if no valid data
+        y_max_count = 10  # Default to 10 if no valid data
     
     # Configure layout
     fig.update_layout(
         title=title,
         xaxis_title="Matches",
-        yaxis_title="Rate (%)",
-        yaxis=dict(range=[0, y_max]),
+        yaxis_title="Break Points (Count)",
+        yaxis=dict(range=[0, y_max_count]),
         hovermode='closest',
         template='plotly_white',
         showlegend=True,

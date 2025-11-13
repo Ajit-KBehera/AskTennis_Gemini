@@ -488,7 +488,7 @@ class UIDisplay:
                 # year is already in correct format (int, tuple, or None)
                 
                 # Create and display serve charts using pre-loaded DataFrame
-                timeline_fig, ace_df_timeline_fig, radar_fig = create_combined_serve_charts(
+                timeline_fig, ace_df_timeline_fig, bp_timeline_fig, radar_fig = create_combined_serve_charts(
                     filters['player'],
                     df_matches,
                     year=year,
@@ -505,6 +505,9 @@ class UIDisplay:
                 
                 # Display ace/DF timeline chart
                 st.plotly_chart(ace_df_timeline_fig, config=plotly_config)
+                
+                # Display break point timeline chart
+                st.plotly_chart(bp_timeline_fig, config=plotly_config)
                 
                 # Display radar chart
                 st.plotly_chart(radar_fig, config=plotly_config)
