@@ -157,13 +157,13 @@ class UIDisplay:
         # PLAYER SEARCH
         # =============================================================================
         
-        # Get all players for search (skip "All Players" since we'll add it back)
-        all_players = db_service.get_all_players()[1:]  # Skip first element ("All Players")
+        # Get all players for search (already includes "All Players" as first element)
+        all_players = db_service.get_all_players()
         
         # Use selectbox with search functionality
         selected_player = st.selectbox(
             "Search Player:",
-            ["All Players"] + all_players,
+            all_players,
             key="player_select",
             help="Type to search players (e.g., Federer, Nadal)"
         )
@@ -242,6 +242,11 @@ class UIDisplay:
             selected_year = None  # None represents "All Years"
             # Display the range but disable slider
             st.info(f"Year Range: {min_year} - {max_year} (All Years)")
+        elif min_year == max_year:
+            # Only one year available - skip slider and use that year
+            selected_year = min_year
+            st.info(f"Only one year available: {min_year}")
+            st.session_state.year_range = (min_year, max_year)
         else:
             # Year range slider with dynamic min/max values
             year_range = st.slider(

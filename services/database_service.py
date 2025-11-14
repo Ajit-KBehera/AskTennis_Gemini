@@ -63,7 +63,7 @@ class DatabaseService:
         try:
             with sqlite3.connect(_self.db_path) as conn:
                 query = """
-                SELECT DISTINCT player_name
+                SELECT player_name
                 FROM (
                     SELECT winner_name as player_name
                     FROM matches 
