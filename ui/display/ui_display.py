@@ -73,7 +73,7 @@ class UIDisplay:
             The query string if Send button was clicked, None otherwise.
         """
         if column_layout is None:
-            column_layout = [8, 4]  # Search gets 8, buttons column gets 4
+            column_layout = [8.5, 1.5]  # Search gets 8.5, buttons column gets 1.5   
         
         # Use a container to ensure the search panel always renders consistently
         search_container = st.container()
@@ -355,16 +355,12 @@ class UIDisplay:
             if df_matches is None:
                 return
             
-            # Define display columns for table view
-            display_columns = ['event_year', 'tourney_date', 'tourney_name', 
-                              'round', 'winner_name', 'loser_name', 'surface', 'score']
-            
             # Create tabs for different views
             tab_matches, tab_serve, tab_return, tab_ranking, tab_raw = UIDisplay._create_analysis_tabs()
             
             # Render each tab using dedicated methods
             with tab_matches:
-                UIDisplay._render_matches_tab(df_matches, display_columns)
+                UIDisplay._render_matches_tab(df_matches)
             
             with tab_serve:
                 UIDisplay._render_serve_tab(df_matches, filters)
@@ -465,14 +461,17 @@ class UIDisplay:
         ])
     
     @staticmethod
-    def _render_matches_tab(df_matches, display_columns):
+    def _render_matches_tab(df_matches):
         """
         Render the Matches tab displaying filtered match data.
         
         Args:
             df_matches: DataFrame containing match data
-            display_columns: List of column names to display
         """
+        # Define display columns for table view
+        display_columns = ['event_year', 'tourney_date', 'tourney_name', 
+                          'round', 'winner_name', 'loser_name', 'surface', 'score']
+        
         st.dataframe(df_matches[display_columns], width='stretch')
         if st.button("🗑️ Clear Results", key="clear_matches"):
             st.session_state.analysis_generated = False
@@ -590,7 +589,7 @@ class UIDisplay:
         Shows ranking timeline chart if:
         - 1 player is selected (not "All Players")
         - Opponent is "All Opponents"
-        - All surfaces are selected (Hard, Clay, Grass, Carpet)
+        - All available surfaces for the player are selected
         - Tournament is "All Tournaments"
         
         Otherwise shows "Ranking timeline chart not available".
@@ -605,8 +604,9 @@ class UIDisplay:
         tournament = filters.get('tournament')
         surfaces = filters.get('surfaces', [])
         
-        # Define all surfaces
-        all_surfaces = ["Hard", "Clay", "Grass", "Carpet"]
+        # Get available surfaces for the selected player
+        # This handles the case where player may not have played on all surfaces
+        available_surfaces = db_service.get_surfaces_for_player(player) if player else ["Hard", "Clay", "Grass", "Carpet"]
         
         # Check if conditions are met
         conditions_met = (
@@ -614,7 +614,7 @@ class UIDisplay:
             player != db_service.ALL_PLAYERS and
             opponent == db_service.ALL_OPPONENTS and
             tournament == db_service.ALL_TOURNAMENTS and
-            set(surfaces) == set(all_surfaces)  # All surfaces selected
+            set(surfaces) == set(available_surfaces)  # All available surfaces for player selected
         )
         
         if conditions_met:
@@ -657,8 +657,8 @@ class UIDisplay:
                 reasons.append("Opponent must be 'All Opponents'")
             if tournament != db_service.ALL_TOURNAMENTS:
                 reasons.append("Tournament must be 'All Tournaments'")
-            if set(surfaces) != set(all_surfaces):
-                reasons.append("All surfaces must be selected (Hard, Clay, Grass, Carpet)")
+            if set(surfaces) != set(available_surfaces):
+                reasons.append(f"All available surfaces must be selected ({', '.join(available_surfaces)})")
             
             if reasons:
                 st.caption("Requirements: " + " | ".join(reasons))
