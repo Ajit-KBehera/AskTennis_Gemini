@@ -105,7 +105,7 @@ def add_vertical_lines(fig, y_data_series, y_min=0, y_max=None, color='gray', wi
             ))
 
 
-def _add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, hoverdata=None):
+def add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, hoverdata=None):
     """
     Add opponent comparison traces to timeline chart.
     
@@ -181,7 +181,7 @@ def create_timeline_chart(player_df, player_name, title, show_opponent_compariso
     
     # 5. Add opponent comparison traces if enabled
     if show_opponent_comparison:
-        _add_opponent_comparison_traces(fig, x_positions, df, opponent_name, hoverdata)
+        add_opponent_comparison_traces(fig, x_positions, df, opponent_name, hoverdata)
     
     # Configure layout
     fig.update_layout(
