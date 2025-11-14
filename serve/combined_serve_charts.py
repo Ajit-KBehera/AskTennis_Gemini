@@ -15,7 +15,7 @@ from .serve_stats import (
 from .first_serve_timeline import create_timeline_chart
 from .ace_df_timeline import create_ace_df_timeline_chart
 from .break_point_timeline import create_break_point_timeline_chart
-from .serve_radar_chart import create_radar_chart
+from utils.radar_chart_utils import create_radar_chart
 
 
 def _build_chart_title_suffixes(year, opponent=None, tournament=None, surfaces=None):

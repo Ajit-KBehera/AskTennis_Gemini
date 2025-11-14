@@ -14,7 +14,7 @@ from .return_stats import (
 )
 from .return_points_timeline import create_return_points_timeline_chart
 from .break_point_conversion_timeline import create_break_point_conversion_timeline_chart
-from .return_radar_chart import create_radar_chart
+from utils.radar_chart_utils import create_radar_chart
 
 
 def _build_chart_title_suffixes(year, opponent=None, tournament=None, surfaces=None):

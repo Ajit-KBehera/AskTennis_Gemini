@@ -1,37 +1,32 @@
 """
-Serve statistics radar chart visualization.
+Radar chart utility functions for creating consistent visualizations.
 
-This module provides functions to create radar (polar) charts displaying
-comprehensive serve statistics including first serve percentage, first serve won,
-second serve won, ace rate, and double fault rate.
+This module provides shared utility functions for creating radar (polar) charts
+across serve and return statistics modules, eliminating code duplication.
 """
 
 # Third-party imports
 import numpy as np
 import plotly.graph_objects as go
 
-# Local application imports
-# (No imports needed - stats dictionary passed directly)
-
-
-# ============================================================================
-# Function Definitions
-# ============================================================================
-
 
 def create_radar_chart(stats, player_name, title, opponent_stats=None, opponent_name=None):
     """
-    Create a radar chart for serve statistics with optional opponent comparison overlay.
+    Create a radar chart for statistics with optional opponent comparison overlay.
+    
+    This function creates a polar (radar) chart displaying multiple statistics
+    in a circular format. Useful for comparing serve or return statistics across
+    different metrics.
     
     Args:
-        stats: Dictionary containing player serve statistics
+        stats: Dictionary containing player statistics (keys are category names, values are numeric)
         player_name: Name of the player (used in trace name)
         title: Chart title
-        opponent_stats: Optional dictionary containing opponent serve statistics for comparison
-        opponent_name: Optional name of opponent for legend
+        opponent_stats: Optional dictionary containing opponent statistics for comparison
+        opponent_name: Optional name of opponent for legend (default: "Opponent")
         
     Returns:
-        go.Figure: Plotly figure object
+        go.Figure: Plotly figure object with radar chart
     """
     # Prepare data for radar chart
     categories = list(stats.keys())
