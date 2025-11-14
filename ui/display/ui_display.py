@@ -209,25 +209,30 @@ class UIDisplay:
         if selected_player and selected_player != "All Players":
             min_year, max_year = db_service.get_player_year_range(selected_player)
         else:
-            min_year, max_year = (1968, 2025)  # Default range for "All Players"
+            min_year, max_year = (1968, 2024)  # Default range for "All Players"
         
-        # Track previous player to reset year range when player changes
-        if 'previous_player' not in st.session_state:
-            st.session_state.previous_player = selected_player
+        # Check if year range needs to be reset:
+        # 1. Player changed, 2. Year range doesn't exist, 3. Current range is invalid
+        player_changed = (
+            'previous_player' not in st.session_state or 
+            st.session_state.previous_player != selected_player
+        )
+        year_range_missing = 'year_range' not in st.session_state
         
-        # Reset year range if player changed
-        if st.session_state.previous_player != selected_player:
-            st.session_state.year_range = (min_year, max_year)
-            st.session_state.previous_player = selected_player
-        
-        # Initialize year range in session state if not exists or if current range is invalid
-        if 'year_range' not in st.session_state:
-            st.session_state.year_range = (min_year, max_year)
-        else:
-            # Ensure current range is within valid bounds
+        # Validate existing year range (only if it exists)
+        year_range_invalid = False
+        if not year_range_missing:
             current_min, current_max = st.session_state.year_range
-            if current_min < min_year or current_max > max_year or current_min > current_max:
-                st.session_state.year_range = (min_year, max_year)
+            year_range_invalid = (
+                current_min < min_year or 
+                current_max > max_year or 
+                current_min > current_max
+            )
+        
+        # Reset year range if any condition requires it
+        if player_changed or year_range_missing or year_range_invalid:
+            st.session_state.year_range = (min_year, max_year)
+            st.session_state.previous_player = selected_player
         
         # Checkbox for "All Years" option
         use_all_years = st.checkbox(

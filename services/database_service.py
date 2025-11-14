@@ -157,7 +157,7 @@ class DatabaseService:
         """
         player_name = _self._sanitize_string(player_name)
         if not player_name or player_name == DatabaseService.ALL_PLAYERS:
-            return (1968, 2025)  # Default range
+            return (1968, 2024)  # Default range
         
         try:
             with sqlite3.connect(_self.db_path) as conn:
@@ -170,7 +170,7 @@ class DatabaseService:
                 df = pd.read_sql_query(query, conn, params=[player_name, player_name])
             
             if df.empty or df['min_year'].iloc[0] is None or df['max_year'].iloc[0] is None:
-                return (1968, 2025)  # Default range if no matches found
+                return (1968, 2024)  # Default range if no matches found
             
             min_year = int(df['min_year'].iloc[0])
             max_year = int(df['max_year'].iloc[0])
@@ -184,7 +184,7 @@ class DatabaseService:
             return (min_year, max_year)
         except Exception as e:
             st.warning(f"Error fetching year range for player: {e}")
-            return (1968, 2025)  # Default range on error
+            return (1968, 2024)  # Default range on error
     
     @st.cache_data(ttl=60)  # Cache for 1 minute
     def get_opponents_for_player(_self, player_name: str) -> List[str]:
