@@ -351,8 +351,18 @@ class UIDisplay:
             filters = st.session_state.analysis_filters
             
             # Load filtered match data
-            df_matches = UIDisplay._load_filtered_matches(db_service, filters)
-            if df_matches is None:
+            df_matches = db_service.get_matches_with_filters(
+                player=filters['player'],
+                opponent=filters['opponent'],
+                tournament=filters['tournament'],
+                year=filters['year'],
+                surfaces=filters['surfaces'],
+                return_all_columns=True,  # Get all columns for charts/tables Statistics
+                _cache_bust=st.session_state.get('cache_bust', 0)
+            )
+            
+            if df_matches.empty:
+                st.warning("No matches found for the selected criteria.")
                 return
             
             # Create tabs for different views
@@ -415,34 +425,6 @@ class UIDisplay:
         except Exception as e:
             log_error(e, f"Error processing query in UI display: {st.session_state.get('ai_query', 'unknown')}", component="ui_display")
             st.error(f"Error processing query: {e}")
-    
-    @staticmethod
-    def _load_filtered_matches(db_service, filters):
-        """
-        Load match data based on filters and handle empty results.
-        
-        Args:
-            db_service: DatabaseService instance for querying data
-            filters: Dictionary containing filter values
-            
-        Returns:
-            pandas.DataFrame: DataFrame containing filtered matches, or None if empty
-        """
-        df_matches = db_service.get_matches_with_filters(
-            player=filters['player'],
-            opponent=filters['opponent'],
-            tournament=filters['tournament'],
-            year=filters['year'],
-            surfaces=filters['surfaces'],
-            return_all_columns=True,  # Get all columns for charts/tables Statistics
-            _cache_bust=st.session_state.get('cache_bust', 0)
-        )
-        
-        if df_matches.empty:
-            st.warning("No matches found for the selected criteria.")
-            return None
-        
-        return df_matches
     
     @staticmethod
     def _create_analysis_tabs():
@@ -664,36 +646,6 @@ class UIDisplay:
                 st.caption("Requirements: " + " | ".join(reasons))
     
     @staticmethod
-    def _format_year_for_filename(year):
-        """
-        Format year value for CSV filename.
-        
-        Args:
-            year: Year value (None, int, tuple, list, or str)
-            
-        Returns:
-            str: Formatted year string for filename
-        """
-        if year is None or year == 'All Years':
-            return 'all'
-        elif isinstance(year, tuple) and len(year) == 2:
-            # Year range tuple
-            start_year, end_year = year[0], year[1]
-            if start_year == end_year:
-                return str(start_year)
-            else:
-                return f"{start_year}-{end_year}"
-        elif isinstance(year, list):
-            # List of years
-            if len(year) == 1:
-                return str(year[0])
-            else:
-                return f"{min(year)}-{max(year)}"
-        else:
-            # Single year (int or str)
-            return str(year)
-    
-    @staticmethod
     def _render_raw_tab(df_matches, filters):
         """
         Render the RAW tab displaying full DataFrame and CSV download.
@@ -703,13 +655,13 @@ class UIDisplay:
             filters: Dictionary containing filter values (for CSV filename)
         """
         st.dataframe(df_matches, width='stretch')
+        
         # Download button for CSV export
         csv_data = df_matches.to_csv(index=False)
-        year_str = UIDisplay._format_year_for_filename(filters.get('year'))
         st.download_button(
             label="📥 Download CSV",
             data=csv_data,
-            file_name=f"tennis_matches_{year_str}.csv",
+            file_name=f"tennis_matches.csv",
             mime="text/csv",
             key="download_raw_csv"
         )
