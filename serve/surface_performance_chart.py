@@ -11,7 +11,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # Local application imports
-from .serve_stats import calculate_aggregated_serve_stats
+from .serve_stats import calculate_aggregated_player_serve_stats
 
 
 # ============================================================================
@@ -32,7 +32,10 @@ def calculate_surface_stats(df, player_name, case_sensitive=False):
     """
     # Ensure stats are calculated
     if 'player_1stIn' not in df.columns:
+        # Pre-calculate is_winner, opponent, result columns before calling calculate_match_serve_stats
         from .serve_stats import calculate_match_serve_stats
+        from utils.df_utils import add_player_match_columns
+        df = add_player_match_columns(df, player_name, case_sensitive)
         df = calculate_match_serve_stats(df, player_name, case_sensitive)
     
     # Filter out rows with missing surface data
@@ -48,7 +51,7 @@ def calculate_surface_stats(df, player_name, case_sensitive=False):
         surface_df = df_filtered[df_filtered['surface'] == surface]
         
         # Calculate aggregated stats for this surface
-        stats = calculate_aggregated_serve_stats(surface_df, player_name=None, case_sensitive=False)
+        stats = calculate_aggregated_player_serve_stats(surface_df, player_name=None, case_sensitive=False)
         
         # Get match count
         match_count = len(surface_df)

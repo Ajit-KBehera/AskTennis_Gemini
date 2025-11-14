@@ -65,31 +65,20 @@ def build_year_suffix(year):
         return f"{year} Season"
 
 
-def calculate_match_return_stats(df, player_name, case_sensitive=False):
+def _calculate_player_return_stats(df):
     """
-    Calculate return statistics for each match in the dataframe.
+    Calculate player return statistics for each match in the dataframe.
     
     Return statistics are calculated from the opponent's serve perspective:
     - Return Points Won % = 100 - (opponent's serve points won %)
     - Break Point Conversion = break points converted when returning
-    - Return Games Won % = percentage of opponent's service games broken
     
     Args:
-        df: DataFrame containing match data for the player
-        player_name: Name of the player
-        case_sensitive: Whether to use case-sensitive name matching (default: False)
+        df: DataFrame containing match data with 'is_winner' column
         
     Returns:
-        DataFrame: Original dataframe with added columns for return statistics
+        DataFrame: DataFrame with added player return statistics columns
     """
-    df = df.copy()
-    
-    # Determine if player was winner or loser for each match
-    if case_sensitive:
-        is_winner = df['winner_name'] == player_name
-    else:
-        is_winner = df['winner_name'].str.lower() == player_name.lower()
-    
     # =============================================================================
     # RETURN POINTS WON % CALCULATION
     # =============================================================================
@@ -98,11 +87,11 @@ def calculate_match_return_stats(df, player_name, case_sensitive=False):
     # If player was loser, opponent was winner (use w_* columns)
     
     # Opponent's total serve points
-    opponent_svpt = np.where(is_winner, df['l_svpt'], df['w_svpt'])
+    opponent_svpt = np.where(df['is_winner'], df['l_svpt'], df['w_svpt'])
     
     # Opponent's points won on serve (1st serve won + 2nd serve won)
     opponent_points_won_on_serve = np.where(
-        is_winner,
+        df['is_winner'],
         df['l_1stWon'] + df['l_2ndWon'],
         df['w_1stWon'] + df['w_2ndWon']
     )
@@ -130,8 +119,8 @@ def calculate_match_return_stats(df, player_name, case_sensitive=False):
     # If player was loser: They converted break points = w_bpFaced - w_bpSaved
     
     # Break points faced by opponent when serving (break points created by player)
-    opponent_bpFaced = np.where(is_winner, df['l_bpFaced'], df['w_bpFaced'])
-    opponent_bpSaved = np.where(is_winner, df['l_bpSaved'], df['w_bpSaved'])
+    opponent_bpFaced = np.where(df['is_winner'], df['l_bpFaced'], df['w_bpFaced'])
+    opponent_bpSaved = np.where(df['is_winner'], df['l_bpSaved'], df['w_bpSaved'])
     
     # Break points converted = break points faced - break points saved
     df['player_bpConverted'] = opponent_bpFaced - opponent_bpSaved
@@ -150,51 +139,31 @@ def calculate_match_return_stats(df, player_name, case_sensitive=False):
     # RETURN GAMES WON % CALCULATION
     # =============================================================================
     # Return Games Won % = percentage of opponent's service games broken
-    # If player was winner, opponent's service games = l_SvGms
-    # If player was loser, opponent's service games = w_SvGms
-    
-    opponent_sv_gms = np.where(is_winner, df['l_SvGms'], df['w_SvGms'])
-    
-    # Total service games played by opponent
-    # We need to calculate this from the match data
-    # For now, we'll use the service games won as a proxy
-    # Return games won = opponent's service games - opponent's service games won
-    # Actually, return games won = total games - opponent's service games won
-    # But we need total games played
-    
-    # Calculate return games won %
-    # Return games won = opponent's service games lost
-    # If player was winner: opponent lost (total_games - l_SvGms) return games
-    # But we need total games...
-    
-    # For now, let's calculate it differently:
-    # Return Games Won % = (opponent's service games lost) / (opponent's total service games) * 100
-    # We'll need to estimate or use available data
-    
     # Note: This calculation may need adjustment based on available data
     # For now, we'll calculate a simplified version
     df['player_return_games_won_pct'] = np.nan  # Placeholder - needs proper calculation
     
-    # =============================================================================
-    # OPPONENT AND RESULT FOR HOVER TOOLTIPS
-    # =============================================================================
-    df['opponent'] = np.where(
-        is_winner,
-        df['loser_name'],
-        df['winner_name']
-    )
-    df['result'] = np.where(is_winner, 'W', 'L')
+    return df
+
+
+def _calculate_opponent_return_stats(df):
+    """
+    Calculate opponent return statistics for each match in the dataframe.
     
-    # =============================================================================
-    # OPPONENT RETURN STATISTICS CALCULATION (for comparison)
-    # =============================================================================
-    # Opponent return stats are the opposite of player return stats
-    is_opponent_winner = ~is_winner
+    Opponent return stats are the opposite of player return stats:
+    - Opponent's return points won % = 100 - player's serve points won %
+    - Opponent's break point conversion = break points converted when returning against player
     
+    Args:
+        df: DataFrame containing match data with 'is_winner' column
+        
+    Returns:
+        DataFrame: DataFrame with added opponent return statistics columns
+    """
     # Opponent's return points won % = 100 - player's serve points won %
-    player_svpt = np.where(is_winner, df['w_svpt'], df['l_svpt'])
+    player_svpt = np.where(df['is_winner'], df['w_svpt'], df['l_svpt'])
     player_points_won_on_serve = np.where(
-        is_winner,
+        df['is_winner'],
         df['w_1stWon'] + df['w_2ndWon'],
         df['l_1stWon'] + df['l_2ndWon']
     )
@@ -212,8 +181,8 @@ def calculate_match_return_stats(df, player_name, case_sensitive=False):
     
     # Opponent's break point conversion (when returning against player)
     # When opponent is returning, they convert break points that the player faced when serving
-    player_bpFaced_when_serving = np.where(is_winner, df['w_bpFaced'], df['l_bpFaced'])
-    player_bpSaved_when_serving = np.where(is_winner, df['w_bpSaved'], df['l_bpSaved'])
+    player_bpFaced_when_serving = np.where(df['is_winner'], df['w_bpFaced'], df['l_bpFaced'])
+    player_bpSaved_when_serving = np.where(df['is_winner'], df['w_bpSaved'], df['l_bpSaved'])
     
     # Opponent converted break points = player's break points faced - player's break points saved
     df['opponent_bpConverted'] = player_bpFaced_when_serving - player_bpSaved_when_serving
@@ -225,6 +194,34 @@ def calculate_match_return_stats(df, player_name, case_sensitive=False):
         df['opponent_bpConverted'] / df['opponent_bpFaced_when_returning'] * 100,
         np.nan
     )
+    
+    return df
+
+
+def calculate_match_return_stats(df, player_name, case_sensitive=False):
+    """
+    Calculate return statistics for each match in the dataframe.
+    
+    Return statistics are calculated from the opponent's serve perspective:
+    - Return Points Won % = 100 - (opponent's serve points won %)
+    - Break Point Conversion = break points converted when returning
+    - Return Games Won % = percentage of opponent's service games broken
+    
+    Args:
+        df: DataFrame containing match data for the player
+        player_name: Name of the player
+        case_sensitive: Whether to use case-sensitive name matching (default: False)
+        
+    Returns:
+        DataFrame: Original dataframe with added columns for return statistics
+    """
+    df = df.copy()
+    
+    # Calculate player return statistics
+    df = _calculate_player_return_stats(df)
+    
+    # Calculate opponent return statistics
+    df = _calculate_opponent_return_stats(df)
     
     return df
 
@@ -254,6 +251,9 @@ def calculate_aggregated_return_stats(df, player_name=None, case_sensitive=False
         # Calculate match-level stats
         if player_name is None:
             raise ValueError("player_name is required when stats columns are not present in the DataFrame")
+        # Pre-calculate is_winner, opponent, result columns before calling calculate_match_return_stats
+        from utils.df_utils import add_player_match_columns
+        df = add_player_match_columns(df, player_name, case_sensitive)
         df_with_stats = calculate_match_return_stats(df, player_name, case_sensitive)
     
     # Calculate averages across all matches (excluding NaN values)
@@ -339,19 +339,11 @@ def get_match_hover_data(player_df, player_name, case_sensitive=False):
     """
     df = player_df.copy()
     
-    # Determine if player was winner or loser for each match
-    if case_sensitive:
-        is_winner = df['winner_name'] == player_name
-    else:
-        is_winner = df['winner_name'].str.lower() == player_name.lower()
+    # Use pre-calculated columns if available (is_winner, opponent, result should be calculated before calling this function)
+    if 'is_winner' not in df.columns:
+        raise ValueError("is_winner column must be pre-calculated. Use add_player_match_columns() from utils.df_utils before calling this function.")
     
-    # Calculate opponent and result
-    df['opponent'] = np.where(
-        is_winner,
-        df['loser_name'],
-        df['winner_name']
-    )
-    df['result'] = np.where(is_winner, 'W', 'L')
+    # opponent and result should also exist if is_winner exists (they're calculated together)
     
     # Extract year from tourney_date or use event_year if available
     if 'event_year' in df.columns:

@@ -8,8 +8,8 @@ Charts are returned separately for flexible display in the UI.
 # Local application imports
 from .serve_stats import (
     build_year_suffix,
-    calculate_aggregated_serve_stats,
-    calculate_aggregated_opponent_stats,
+    calculate_aggregated_player_serve_stats,
+    calculate_aggregated_opponent_serve_stats,
     calculate_match_serve_stats
 )
 from .first_serve_timeline import create_timeline_chart
@@ -71,8 +71,8 @@ def create_combined_serve_charts(player_name, df, year=None, opponent=None, tour
     radar_title = f"{player_name} - Serve Statistics Radar Chart - {year_suffix}{filter_suffix}"
     
     # Calculate serve statistics
-    matches_with_stats = calculate_match_serve_stats(df, player_name, case_sensitive=True)
-    serve_stats = calculate_aggregated_serve_stats(matches_with_stats)
+    matches_with_stats = calculate_match_serve_stats(df)
+    serve_stats = calculate_aggregated_player_serve_stats(matches_with_stats)
     
     # Determine if comparison mode should be enabled (specific opponent selected)
     show_comparison = opponent and opponent != "All Opponents"
@@ -80,7 +80,7 @@ def create_combined_serve_charts(player_name, df, year=None, opponent=None, tour
     
     if show_comparison:
         # Calculate opponent aggregated stats
-        opponent_stats = calculate_aggregated_opponent_stats(matches_with_stats, opponent_name=opponent)
+        opponent_stats = calculate_aggregated_opponent_serve_stats(matches_with_stats, opponent_name=opponent)
         # If opponent stats not available (multiple opponents), disable comparison
         if opponent_stats is None:
             show_comparison = False

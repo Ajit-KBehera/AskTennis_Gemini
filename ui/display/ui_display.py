@@ -6,6 +6,8 @@ Extracted from ui_components.py for better modularity.
 
 # Third-party imports
 import streamlit as st
+import pandas as pd
+import numpy as np
 
 # Local application imports
 from tennis_logging.simplified_factory import log_error
@@ -13,6 +15,7 @@ from serve.combined_serve_charts import create_combined_serve_charts
 from return_stats.combined_return_charts import create_combined_return_charts
 from rankings.ranking_timeline_chart import create_ranking_timeline_chart
 from serve.serve_stats import build_year_suffix
+from utils.df_utils import add_player_match_columns
 
 
 class UIDisplay:
@@ -365,6 +368,12 @@ class UIDisplay:
                 st.warning("No matches found for the selected criteria.")
                 return
             
+            # Calculate is_winner, opponent, and result columns early if player is selected
+            # This avoids recalculating in serve_stats and return_stats functions
+            player = filters['player']
+            if player and player != 'All Players':
+                df_matches = add_player_match_columns(df_matches, player)
+            
             # Create tabs for different views
             tab_matches, tab_serve, tab_return, tab_ranking, tab_raw = UIDisplay._create_analysis_tabs()
             
@@ -469,22 +478,23 @@ class UIDisplay:
             df_matches: DataFrame containing match data (already filtered)
             filters: Dictionary containing filter values
         """
-        if filters['player'] and filters['player'] != 'All Players':
+        # Extract filter values for chart title/display
+        player = filters['player'] if filters['player'] != 'All Players' else None
+        opponent = filters['opponent'] if filters['opponent'] != 'All Opponents' else None
+        tournament = filters['tournament'] if filters['tournament'] != 'All Tournaments' else None
+        surfaces = filters['surfaces'] if filters['surfaces'] else None
+        # Handle year: None, int, tuple, or string (backward compatibility)
+        year = filters.get('year')
+        if year == 'All Years' or year is None:
+            year = None
+        # year is already in correct format (int, tuple, or None)
+        
+        if player:
             try:
-                # Extract filter values for chart title/display
-                opponent = filters['opponent'] if filters['opponent'] != 'All Opponents' else None
-                tournament = filters['tournament'] if filters['tournament'] != 'All Tournaments' else None
-                surfaces = filters['surfaces'] if filters['surfaces'] else None
-                # Handle year: None, int, tuple, or string (backward compatibility)
-                year = filters.get('year')
-                if year == 'All Years' or year is None:
-                    year = None
-                # year is already in correct format (int, tuple, or None)
-                
                 # Create and display serve charts using pre-loaded DataFrame
                 timeline_fig, ace_df_timeline_fig, bp_timeline_fig, radar_fig = create_combined_serve_charts(
-                    filters['player'],
-                    df_matches,
+                    player_name=player,
+                    df=df_matches,
                     year=year,
                     opponent=opponent,
                     tournament=tournament,
@@ -507,7 +517,7 @@ class UIDisplay:
                 st.plotly_chart(radar_fig, config=plotly_config)
 
             except Exception as e:
-                log_error(e, f"Error generating serve charts for {filters['player']}", component="ui_display")
+                log_error(e, f"Error generating serve charts for {player}", component="ui_display")
                 st.error(f"Error generating serve charts: {e}")
                 st.info("Please ensure the player name matches exactly and has matches in the selected filters.")
         else:
@@ -522,22 +532,23 @@ class UIDisplay:
             df_matches: DataFrame containing match data (already filtered)
             filters: Dictionary containing filter values
         """
-        if filters['player'] and filters['player'] != 'All Players':
+        # Extract filter values for chart title/display
+        player = filters['player'] if filters['player'] != 'All Players' else None
+        opponent = filters['opponent'] if filters['opponent'] != 'All Opponents' else None
+        tournament = filters['tournament'] if filters['tournament'] != 'All Tournaments' else None
+        surfaces = filters['surfaces'] if filters['surfaces'] else None
+        # Handle year: None, int, tuple, or string (backward compatibility)
+        year = filters.get('year')
+        if year == 'All Years' or year is None:
+            year = None
+        # year is already in correct format (int, tuple, or None)
+        
+        if player:
             try:
-                # Extract filter values for chart title/display
-                opponent = filters['opponent'] if filters['opponent'] != 'All Opponents' else None
-                tournament = filters['tournament'] if filters['tournament'] != 'All Tournaments' else None
-                surfaces = filters['surfaces'] if filters['surfaces'] else None
-                # Handle year: None, int, tuple, or string (backward compatibility)
-                year = filters.get('year')
-                if year == 'All Years' or year is None:
-                    year = None
-                # year is already in correct format (int, tuple, or None)
-                
                 # Create and display return charts using pre-loaded DataFrame
                 return_points_timeline_fig, bp_conversion_timeline_fig, radar_fig = create_combined_return_charts(
-                    filters['player'],
-                    df_matches,
+                    player_name=player,
+                    df=df_matches,
                     year=year,
                     opponent=opponent,
                     tournament=tournament,
@@ -557,7 +568,7 @@ class UIDisplay:
                 st.plotly_chart(radar_fig, config=plotly_config)
 
             except Exception as e:
-                log_error(e, f"Error generating return charts for {filters['player']}", component="ui_display")
+                log_error(e, f"Error generating return charts for {player}", component="ui_display")
                 st.error(f"Error generating return charts: {e}")
                 st.info("Please ensure the player name matches exactly and has matches in the selected filters.")
         else:
