@@ -76,7 +76,7 @@ class DatabaseService:
                 ORDER BY player_name
                 """
                 df = pd.read_sql_query(query, conn)
-            if df.empty or 'player_name' not in df.columns:
+            if df.empty:
                 return [DatabaseService.ALL_PLAYERS]
             return [DatabaseService.ALL_PLAYERS] + df['player_name'].tolist()
         except Exception as e:
@@ -94,7 +94,7 @@ class DatabaseService:
                 ORDER BY tourney_name
                 """
                 df = pd.read_sql_query(query, conn)
-            if df.empty or 'tourney_name' not in df.columns:
+            if df.empty:
                 return [DatabaseService.ALL_TOURNAMENTS]
             return [DatabaseService.ALL_TOURNAMENTS] + df['tourney_name'].tolist()
         except Exception as e:
@@ -166,7 +166,7 @@ class DatabaseService:
                 ORDER BY opponent_name
                 """
                 df = pd.read_sql_query(query, conn, params=[player_name, player_name])
-            if df.empty or 'opponent_name' not in df.columns:
+            if df.empty:
                 return [DatabaseService.ALL_OPPONENTS]
             return [DatabaseService.ALL_OPPONENTS] + df['opponent_name'].tolist()
         except Exception as e:

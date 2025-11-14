@@ -181,7 +181,7 @@ class UIDisplay:
         # Use selectbox with search functionality
         selected_opponent = st.selectbox(
             "Search Opponent:",
-            ["All Opponents"] + opponent_options,
+            opponent_options,
             key="opponent_select",
             help="Type to search opponents"
         )
