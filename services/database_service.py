@@ -83,23 +83,67 @@ class DatabaseService:
             st.error(f"Error fetching players: {e}")
             return [DatabaseService.ALL_PLAYERS, "Roger Federer", "Rafael Nadal", "Novak Djokovic"]
     
-    @st.cache_data(ttl=300)
-    def get_all_tournaments(_self) -> List[str]:
-        """Get all unique tournaments from database."""
+    @st.cache_data(ttl=60)  # Cache for 1 minute (shorter TTL since it depends on player selection)
+    def get_all_tournaments(_self, player_name: Optional[str] = None) -> List[str]:
+        """Get tournaments from database, optionally filtered by player.
+        
+        Args:
+            player_name: Optional player name to filter tournaments. If None or "All Players", 
+                        returns all tournaments.
+        
+        Returns:
+            List[str]: List of tournaments with "All Tournaments" as first element
+        """
+        # Sanitize input: trim whitespace and handle empty strings
+        player_name = _self._sanitize_string(player_name)
+        
+        # If no player specified or "All Players", return all tournaments
+        if not player_name or player_name == DatabaseService.ALL_PLAYERS:
+            try:
+                with sqlite3.connect(_self.db_path) as conn:
+                    query = """
+                    SELECT DISTINCT tourney_name FROM matches 
+                    WHERE tourney_name IS NOT NULL AND tourney_name != ''
+                    ORDER BY tourney_name
+                    """
+                    df = pd.read_sql_query(query, conn)
+                if df.empty:
+                    return [DatabaseService.ALL_TOURNAMENTS]
+                return [DatabaseService.ALL_TOURNAMENTS] + df['tourney_name'].tolist()
+            except Exception as e:
+                st.error(f"Error fetching tournaments: {e}")
+                return [DatabaseService.ALL_TOURNAMENTS, "Wimbledon", "French Open", "US Open", "Australian Open"]
+        
+        # Filter tournaments for specific player
         try:
             with sqlite3.connect(_self.db_path) as conn:
                 query = """
-                SELECT DISTINCT tourney_name FROM matches 
-                WHERE tourney_name IS NOT NULL AND tourney_name != ''
+                SELECT DISTINCT tourney_name
+                FROM matches 
+                WHERE (winner_name COLLATE NOCASE = ? OR loser_name COLLATE NOCASE = ?)
+                  AND tourney_name IS NOT NULL AND tourney_name != ''
                 ORDER BY tourney_name
                 """
-                df = pd.read_sql_query(query, conn)
+                df = pd.read_sql_query(query, conn, params=[player_name, player_name])
             if df.empty:
                 return [DatabaseService.ALL_TOURNAMENTS]
             return [DatabaseService.ALL_TOURNAMENTS] + df['tourney_name'].tolist()
         except Exception as e:
-            st.error(f"Error fetching tournaments: {e}")
-            return [DatabaseService.ALL_TOURNAMENTS, "Wimbledon", "French Open", "US Open", "Australian Open"]
+            st.error(f"Error fetching tournaments for player: {e}")
+            # Fallback to all tournaments on error
+            try:
+                with sqlite3.connect(_self.db_path) as conn:
+                    query = """
+                    SELECT DISTINCT tourney_name FROM matches 
+                    WHERE tourney_name IS NOT NULL AND tourney_name != ''
+                    ORDER BY tourney_name
+                    """
+                    df = pd.read_sql_query(query, conn)
+                if df.empty:
+                    return [DatabaseService.ALL_TOURNAMENTS]
+                return [DatabaseService.ALL_TOURNAMENTS] + df['tourney_name'].tolist()
+            except Exception:
+                return [DatabaseService.ALL_TOURNAMENTS, "Wimbledon", "French Open", "US Open", "Australian Open"]
     
     @st.cache_data(ttl=300)  # Cache for 5 minutes
     def get_player_year_range(_self, player_name: str) -> Tuple[int, int]:

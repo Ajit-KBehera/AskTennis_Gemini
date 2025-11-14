@@ -190,14 +190,14 @@ class UIDisplay:
         # TOURNAMENT SEARCH
         # =============================================================================
         
-        # Get all tournaments for search
-        all_tournaments = db_service.get_all_tournaments()
-        all_tournaments = [t for t in all_tournaments if t != "All Tournaments"]
+        # Get tournament options based on selected player
+        # get_all_tournaments handles "All Players" case and returns all tournaments when player is None
+        tournament_options = db_service.get_all_tournaments(selected_player)
         
         # Use selectbox with search functionality
         selected_tournament = st.selectbox(
             "Search Tournament:",
-            ["All Tournaments"] + all_tournaments,
+            tournament_options,
             key="tournament_select",
             help="Type to search tournaments (e.g., Wimbledon, French Open)"
         )
