@@ -11,56 +11,12 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # Local application imports
-from .serve_stats import get_match_hover_data
+from .serve_stats import get_match_hover_data, calculate_match_serve_stats
 
 
 # ============================================================================
 # Function Definitions
 # ============================================================================
-
-def calculate_match_break_point_stats(df, player_name, case_sensitive=False):
-    """
-    Calculate break point statistics for each match in the dataframe.
-    
-    Args:
-        df: DataFrame containing match data for the player
-        player_name: Name of the player
-        case_sensitive: Whether to use case-sensitive name matching (default: False)
-        
-    Returns:
-        DataFrame: Original dataframe with added columns for break point statistics
-    """
-    df = df.copy()
-    
-    # Determine if player was winner or loser for each match
-    if case_sensitive:
-        is_winner = df['winner_name'] == player_name
-    else:
-        is_winner = df['winner_name'].str.lower() == player_name.lower()
-    
-    # Calculate Break Points Faced (when serving)
-    df['player_bpFaced'] = np.where(
-        is_winner,
-        df['w_bpFaced'],
-        df['l_bpFaced']
-    )
-    
-    # Calculate Break Points Saved (when serving)
-    df['player_bpSaved'] = np.where(
-        is_winner,
-        df['w_bpSaved'],
-        df['l_bpSaved']
-    )
-    
-    # Calculate Break Point Save % (when serving)
-    df['player_bpSavePct'] = np.where(
-        is_winner,
-        np.where(df['w_bpFaced'] > 0, df['w_bpSaved'] / df['w_bpFaced'] * 100, np.nan),
-        np.where(df['l_bpFaced'] > 0, df['l_bpSaved'] / df['l_bpFaced'] * 100, np.nan)
-    )
-    
-    return df
-
 
 def add_scatter_trace(fig, x_positions, y_data, name, color, hover_label, customdata, use_lines=True, secondary_y=False, is_percentage=False):
     """Add a scatter plot trace to the figure with optional lines"""
@@ -171,7 +127,7 @@ def add_vertical_lines(fig, y_data_series, y_min=0, y_max=None, color='gray', wi
             ))
 
 
-def _add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, hoverdata=None):
+def add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, hoverdata=None):
     """
     Add opponent comparison traces to break point timeline chart.
     
@@ -224,8 +180,8 @@ def create_break_point_timeline_chart(player_df, player_name, title, show_oppone
     Returns:
         go.Figure: Plotly figure object for timeline chart
     """
-    # Calculate break point statistics
-    df = calculate_match_break_point_stats(player_df, player_name, case_sensitive=True)
+    # Calculate serve statistics (includes break point stats)
+    df = calculate_match_serve_stats(player_df)
     
     # Sort by date and match number for chronological timeline display
     if 'tourney_date' in df.columns and 'match_num' in df.columns:
@@ -270,7 +226,7 @@ def create_break_point_timeline_chart(player_df, player_name, title, show_oppone
     
     # 5. Add opponent comparison traces if enabled
     if show_opponent_comparison:
-        _add_opponent_comparison_traces(fig, x_positions, df, opponent_name, hoverdata)
+        add_opponent_comparison_traces(fig, x_positions, df, opponent_name, hoverdata)
         # Calculate opponent stats for y-axis range
         if 'is_winner' in df.columns:
             opponent_bpFaced = np.where(~df['is_winner'], df['w_bpFaced'], df['l_bpFaced'])

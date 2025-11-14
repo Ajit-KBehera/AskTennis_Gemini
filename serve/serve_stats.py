@@ -50,6 +50,16 @@ def _calculate_player_serve_stats(df):
     """
     Calculate player serve statistics for each match in the dataframe.
     
+    Calculates:
+    - 1st Serve % (player_1stIn)
+    - 1st Serve Won % (player_1stWon)
+    - 2nd Serve Won % (player_2ndWon)
+    - Ace Rate (player_ace_rate)
+    - Double Fault Rate (player_df_rate)
+    - Break Points Faced (player_bpFaced)
+    - Break Points Saved (player_bpSaved)
+    - Break Point Save % (player_bpSavePct)
+    
     Args:
         df: DataFrame containing match data with 'is_winner' column
         
@@ -97,6 +107,27 @@ def _calculate_player_serve_stats(df):
     # Calculate Double Fault Rate (double faults per total serve points)
     player_double_faults = np.where(df['is_winner'], df['w_df'], df['l_df'])
     df['player_df_rate'] = np.divide(player_double_faults, player_serve_points, out=np.full_like(player_double_faults, np.nan, dtype=float), where=player_serve_points > 0) * 100
+    
+    # Calculate Break Points Faced (when serving)
+    df['player_bpFaced'] = np.where(
+        df['is_winner'],
+        df['w_bpFaced'],
+        df['l_bpFaced']
+    )
+    
+    # Calculate Break Points Saved (when serving)
+    df['player_bpSaved'] = np.where(
+        df['is_winner'],
+        df['w_bpSaved'],
+        df['l_bpSaved']
+    )
+    
+    # Calculate Break Point Save % (when serving)
+    df['player_bpSavePct'] = np.where(
+        df['is_winner'],
+        np.where(df['w_bpFaced'] > 0, df['w_bpSaved'] / df['w_bpFaced'] * 100, np.nan),
+        np.where(df['l_bpFaced'] > 0, df['l_bpSaved'] / df['l_bpFaced'] * 100, np.nan)
+    )
     
     return df
 
