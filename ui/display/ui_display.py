@@ -157,9 +157,8 @@ class UIDisplay:
         # PLAYER SEARCH
         # =============================================================================
         
-        # Get all players for search
-        all_players = db_service.get_all_players()
-        all_players = [p for p in all_players if p != "All Players"]
+        # Get all players for search (skip "All Players" since we'll add it back)
+        all_players = db_service.get_all_players()[1:]  # Skip first element ("All Players")
         
         # Use selectbox with search functionality
         selected_player = st.selectbox(
