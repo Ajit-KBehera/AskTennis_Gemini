@@ -6,103 +6,16 @@ performance over time, including first serves in percentage and first serves won
 """
 
 # Third-party imports
-import numpy as np
 import plotly.graph_objects as go
 
 # Local application imports
 from .serve_stats import get_match_hover_data
+from utils.timeline_chart_utils import add_scatter_trace, add_trend_line, add_vertical_lines
 
 
 # ============================================================================
 # Function Definitions
 # ============================================================================
-
-def add_scatter_trace(fig, x_positions, y_data, name, color, hover_label, customdata):
-    """Add a scatter plot trace to the figure"""
-    fig.add_trace(go.Scatter(
-        x=x_positions,
-        y=y_data,
-        mode='markers',
-        name=name,
-        marker=dict(color=color, size=8),
-        hovertemplate=f'{hover_label}: %{{y:.2f}}%<br>' +                  
-                      'Year: %{customdata[4]}<br>' +
-                      'Tournament: %{customdata[0]}<br>' +
-                      'Round: %{customdata[1]}<br>' +
-                      'Opponent: %{customdata[2]}<br>' +
-                      'Result: %{customdata[3]}<extra></extra>',
-        customdata=customdata
-    ))
-
-
-def add_trend_line(fig, y_data, name, color):
-    """Add a linear trend line to the figure"""
-    mask = y_data.notna()
-    x = np.arange(len(y_data))[mask]
-    y = y_data.loc[mask].values
-    
-    if len(x) >= 2:
-        xc = x - x.mean()
-        z = np.polyfit(xc, y, 1)
-        p = np.poly1d(z)
-        fig.add_trace(go.Scatter(
-            x=x,
-            y=p(xc),
-            mode='lines',
-            name=f'{name}',
-            line=dict(color=color, dash='dash', width=2),
-            opacity=0.8,
-            hoverinfo='skip'
-        ))
-
-
-def add_vertical_lines(fig, y_data_series, y_min=0, y_max=None, color='gray', width=0.8, opacity=0.3):
-    """
-    Draw vertical lines from y_min to the highest value between the two series at each x position.
-    
-    Args:
-        fig (go.Figure): Plotly figure object to add lines to
-        y_data_series (list): List of pandas Series containing y-values (e.g., [series1, series2])
-        y_min (float): Starting y-value for vertical lines (default: 0)
-        y_max (float): Ending y-value for vertical lines. If None, uses max of both series per match (default: None)
-        color (str): Line color (default: 'gray')
-        width (float): Line width (default: 0.8)
-        opacity (float): Line opacity between 0 and 1 (default: 0.3)
-    """
-    series1 = y_data_series[0]
-    series2 = y_data_series[1] if len(y_data_series) > 1 else series1
-    series3 = y_data_series[2] if len(y_data_series) > 2 else series1
-    
-    # Find valid indices (where at least one series has valid data)
-    valid_indices = ~(np.isnan(series1) & np.isnan(series2))
-    
-    if np.any(valid_indices):
-        x_vals = np.arange(len(series1))[valid_indices]
-        
-        for i in x_vals:
-            # Get values from both series at this index
-            val1 = series1.iloc[i] if hasattr(series1, 'iloc') else series1[i]
-            val2 = series2.iloc[i] if hasattr(series2, 'iloc') else series2[i]            
-            val3 = series3.iloc[i] if hasattr(series3, 'iloc') else series3[i]
-            # Calculate the maximum value between the two series (ignoring NaN)
-            values = [v for v in [val1, val2, val3] if not np.isnan(v)]
-            if values:
-                line_max = max(values)
-            else:
-                # If all values are NaN, skip this line
-                continue
-            
-            # Use y_max if provided, otherwise use calculated maximum
-            line_end = y_max if y_max is not None else line_max
-            
-            fig.add_trace(go.Scatter(
-                x=[i, i], y=[y_min, line_end],
-                mode='lines',
-                line=dict(color=color, width=width),
-                opacity=opacity,
-                showlegend=False,
-                hoverinfo='skip'
-            ))
 
 
 def add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, hoverdata=None):
@@ -126,13 +39,16 @@ def add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, hov
     # Add opponent scatter traces with lighter colors (using opacity/markersize to differentiate)
     add_scatter_trace(fig, x_positions, df['opponent_1stIn'], 
                      f'Opponent 1stIn', 
-                     '#93C5FD', f'Opponent 1stIn', hoverdata)  # light blue
+                     '#93C5FD', f'Opponent 1stIn', hoverdata,
+                     use_lines=False, secondary_y=False, is_percentage=True)  # light blue
     add_scatter_trace(fig, x_positions, df['opponent_1stWon'], 
                      f'Opponent 1stWon', 
-                     '#FCD34D', f'Opponent 1stWon', hoverdata)  # light orange
+                     '#FCD34D', f'Opponent 1stWon', hoverdata,
+                     use_lines=False, secondary_y=False, is_percentage=True)  # light orange
     add_scatter_trace(fig, x_positions, df['opponent_2ndWon'], 
                      f'Opponent 2ndWon', 
-                     '#86EFAC', f'Opponent 2ndWon', hoverdata)  # light green
+                     '#86EFAC', f'Opponent 2ndWon', hoverdata,
+                     use_lines=False, secondary_y=False, is_percentage=True)  # light green
     
     # Add opponent trend lines with lighter colors
     add_trend_line(fig, df['opponent_1stIn'], f'Opponent 1stIn', '#93C5FD')
@@ -170,9 +86,12 @@ def create_timeline_chart(player_df, player_name, title, show_opponent_compariso
     add_vertical_lines(fig, [df['player_1stIn'], df['player_1stWon'], df['player_2ndWon']])
     
     # 2. Add scatter plots (main data layer) - Player stats
-    add_scatter_trace(fig, x_positions, df['player_1stIn'], '1stIn', '#2563EB', '1stIn', hoverdata)  # blue
-    add_scatter_trace(fig, x_positions, df['player_1stWon'], '1stWon', '#F97316', '1stWon', hoverdata)  # orange
-    add_scatter_trace(fig, x_positions, df['player_2ndWon'], '2ndWon', '#10B981', '2ndWon', hoverdata)  # green
+    add_scatter_trace(fig, x_positions, df['player_1stIn'], '1stIn', '#2563EB', '1stIn', hoverdata,
+                     use_lines=False, secondary_y=False, is_percentage=True)  # blue
+    add_scatter_trace(fig, x_positions, df['player_1stWon'], '1stWon', '#F97316', '1stWon', hoverdata,
+                     use_lines=False, secondary_y=False, is_percentage=True)  # orange
+    add_scatter_trace(fig, x_positions, df['player_2ndWon'], '2ndWon', '#10B981', '2ndWon', hoverdata,
+                     use_lines=False, secondary_y=False, is_percentage=True)  # green
     
     # 4. Add trend lines (overlay layer) - Player trends (same colors, dashed)
     add_trend_line(fig, df['player_1stIn'], '1stIn', '#2563EB')
