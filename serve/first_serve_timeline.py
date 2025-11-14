@@ -109,8 +109,7 @@ def _add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, ho
     """
     Add opponent comparison traces to timeline chart.
     
-    Reserved for future use - adds opponent scatter plots and trend lines.
-    Currently not used in timeline chart to avoid clutter (8 parameters total).
+    Adds opponent scatter plots and trend lines with lighter colors for comparison.
     
     Args:
         fig: Plotly figure object
@@ -119,26 +118,26 @@ def _add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, ho
         opponent_name: Name of opponent for legend
         hoverdata: Hover data for tooltips
     """
-    if 'opponent_1stIn' not in df.columns or 'opponent_1stWon' not in df.columns:
+    if 'opponent_1stIn' not in df.columns or 'opponent_1stWon' not in df.columns or 'opponent_2ndWon' not in df.columns:
         return
     
     opponent_label = f"{opponent_name}" if opponent_name else "Opponent"
     
-    # Add opponent scatter traces
+    # Add opponent scatter traces with lighter colors (using opacity/markersize to differentiate)
     add_scatter_trace(fig, x_positions, df['opponent_1stIn'], 
-                     '1stIn', 
-                     '#DC2626', '1stIn', hoverdata)  # red-600
+                     f'Opponent 1stIn', 
+                     '#93C5FD', f'Opponent 1stIn', hoverdata)  # light blue
     add_scatter_trace(fig, x_positions, df['opponent_1stWon'], 
-                     '1stWon', 
-                     '#F87171', '1stWon', hoverdata)  # red-400
+                     f'Opponent 1stWon', 
+                     '#FCD34D', f'Opponent 1stWon', hoverdata)  # light orange
     add_scatter_trace(fig, x_positions, df['opponent_2ndWon'], 
-                     '2ndWon', 
-                     '#854D3D', '2ndWon', hoverdata)  # brown-600
+                     f'Opponent 2ndWon', 
+                     '#86EFAC', f'Opponent 2ndWon', hoverdata)  # light green
     
-    # Add opponent trend lines
-    add_trend_line(fig, df['opponent_1stIn'], '1stIn', '#DC2626')
-    add_trend_line(fig, df['opponent_1stWon'], '1stWon', '#F87171')
-    add_trend_line(fig, df['opponent_2ndWon'], '2ndWon', '#854D3D')
+    # Add opponent trend lines with lighter colors
+    add_trend_line(fig, df['opponent_1stIn'], f'Opponent 1stIn', '#93C5FD')
+    add_trend_line(fig, df['opponent_1stWon'], f'Opponent 1stWon', '#FCD34D')
+    add_trend_line(fig, df['opponent_2ndWon'], f'Opponent 2ndWon', '#86EFAC')
 
 def create_timeline_chart(player_df, player_name, title, show_opponent_comparison=False, opponent_name=None):
     """
@@ -171,7 +170,6 @@ def create_timeline_chart(player_df, player_name, title, show_opponent_compariso
     add_vertical_lines(fig, [df['player_1stIn'], df['player_1stWon'], df['player_2ndWon']])
     
     # 2. Add scatter plots (main data layer) - Player stats
-    player_label = f"{player_name}" if player_name else "Player"
     add_scatter_trace(fig, x_positions, df['player_1stIn'], '1stIn', '#2563EB', '1stIn', hoverdata)  # blue
     add_scatter_trace(fig, x_positions, df['player_1stWon'], '1stWon', '#F97316', '1stWon', hoverdata)  # orange
     add_scatter_trace(fig, x_positions, df['player_2ndWon'], '2ndWon', '#10B981', '2ndWon', hoverdata)  # green
@@ -180,6 +178,10 @@ def create_timeline_chart(player_df, player_name, title, show_opponent_compariso
     add_trend_line(fig, df['player_1stIn'], '1stIn', '#2563EB')
     add_trend_line(fig, df['player_1stWon'], '1stWon', '#F97316')
     add_trend_line(fig, df['player_2ndWon'], '2ndWon', '#10B981')
+    
+    # 5. Add opponent comparison traces if enabled
+    if show_opponent_comparison:
+        _add_opponent_comparison_traces(fig, x_positions, df, opponent_name, hoverdata)
     
     # Configure layout
     fig.update_layout(

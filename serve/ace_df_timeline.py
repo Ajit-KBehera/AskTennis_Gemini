@@ -132,17 +132,17 @@ def _add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, ho
     
     opponent_label = f"{opponent_name}" if opponent_name else "Opponent"
     
-    # Add opponent scatter traces
+    # Add opponent scatter traces with lighter colors
     add_scatter_trace(fig, x_positions, df['opponent_ace_rate'], 
-                     'Ace Rate', 
-                     '#34D399', 'Ace Rate', hoverdata, use_lines=False)  # green-300
+                     'Opponent Ace Rate', 
+                     '#86EFAC', 'Opponent Ace Rate', hoverdata, use_lines=False)  # light green
     add_scatter_trace(fig, x_positions, df['opponent_df_rate'], 
-                     'Double Fault Rate', 
-                     '#F87171', 'Double Fault Rate', hoverdata, use_lines=False)  # red-400
+                     'Opponent DF Rate', 
+                     '#FCA5A5', 'Opponent Double Fault Rate', hoverdata, use_lines=False)  # light red
     
-    # Add opponent trend lines
-    add_trend_line(fig, df['opponent_ace_rate'], 'Ace Rate', '#34D399')
-    add_trend_line(fig, df['opponent_df_rate'], 'Double Fault Rate', '#F87171')
+    # Add opponent trend lines with lighter colors
+    add_trend_line(fig, df['opponent_ace_rate'], 'Opponent Ace Rate', '#86EFAC')
+    add_trend_line(fig, df['opponent_df_rate'], 'Opponent DF Rate', '#FCA5A5')
 
 
 def create_ace_df_timeline_chart(player_df, player_name, title, show_opponent_comparison=False, opponent_name=None):
@@ -174,8 +174,6 @@ def create_ace_df_timeline_chart(player_df, player_name, title, show_opponent_co
     # Collect all series for y-axis range calculation and vertical lines
     all_series = []
     
-    player_label = f"{player_name}" if player_name else "Player"
-    
     # Add elements in order: background first, then main data, then overlays
     # 1. Prepare series list for vertical lines
     series_for_lines = [df['player_ace_rate'], df['player_df_rate']]
@@ -196,6 +194,15 @@ def create_ace_df_timeline_chart(player_df, player_name, title, show_opponent_co
     # 5. Add trend lines (overlay layer) - Player trends
     add_trend_line(fig, df['player_ace_rate'], 'Ace Rate', '#10B981')
     add_trend_line(fig, df['player_df_rate'], 'DF Rate', '#EF4444')
+    
+    # 6. Add opponent comparison traces if enabled
+    if show_opponent_comparison:
+        _add_opponent_comparison_traces(fig, x_positions, df, opponent_name, hoverdata)
+        # Update all_series to include opponent stats for y-axis range calculation
+        if 'opponent_ace_rate' in df.columns:
+            all_series.append(df['opponent_ace_rate'])
+        if 'opponent_df_rate' in df.columns:
+            all_series.append(df['opponent_df_rate'])
     
     # Calculate appropriate y-axis range (0 to max value + 15% padding, but cap at 30%)
     max_values = []

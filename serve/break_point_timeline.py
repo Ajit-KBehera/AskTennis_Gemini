@@ -7,6 +7,7 @@ and break points saved over time for a player.
 
 # Third-party imports
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 
 # Local application imports
@@ -170,6 +171,45 @@ def add_vertical_lines(fig, y_data_series, y_min=0, y_max=None, color='gray', wi
             ))
 
 
+def _add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, hoverdata=None):
+    """
+    Add opponent comparison traces to break point timeline chart.
+    
+    Adds opponent break point stats when they were serving.
+    
+    Args:
+        fig: Plotly figure object
+        x_positions: List of x-axis positions
+        df: DataFrame with match data (needs is_winner column and w_bpFaced, l_bpFaced, w_bpSaved, l_bpSaved)
+        opponent_name: Name of opponent for legend
+        hoverdata: Hover data for tooltips
+    """
+    if 'is_winner' not in df.columns:
+        return
+    
+    # Calculate opponent break points when serving
+    # If player was winner, opponent was loser (use l_* columns)
+    # If player was loser, opponent was winner (use w_* columns)
+    opponent_bpFaced = np.where(~df['is_winner'], df['w_bpFaced'], df['l_bpFaced'])
+    opponent_bpSaved = np.where(~df['is_winner'], df['w_bpSaved'], df['l_bpSaved'])
+    
+    opponent_label = f"{opponent_name}" if opponent_name else "Opponent"
+    
+    # Add opponent scatter traces with lighter colors
+    add_scatter_trace(fig, x_positions, opponent_bpFaced, 
+                     'Opponent BPs Faced', 
+                     '#FCA5A5', 'Opponent Break Points Faced', hoverdata, 
+                     use_lines=False, secondary_y=False, is_percentage=False)  # light red
+    add_scatter_trace(fig, x_positions, opponent_bpSaved, 
+                     'Opponent BPs Saved', 
+                     '#86EFAC', 'Opponent Break Points Saved', hoverdata, 
+                     use_lines=False, secondary_y=False, is_percentage=False)  # light green
+    
+    # Add opponent trend lines with lighter colors
+    add_trend_line(fig, pd.Series(opponent_bpFaced), 'Opponent BPs Faced', '#FCA5A5', secondary_y=False)
+    add_trend_line(fig, pd.Series(opponent_bpSaved), 'Opponent BPs Saved', '#86EFAC', secondary_y=False)
+
+
 def create_break_point_timeline_chart(player_df, player_name, title, show_opponent_comparison=False, opponent_name=None):
     """
     Create break point timeline chart showing break points faced, saved, and save percentage.
@@ -202,8 +242,6 @@ def create_break_point_timeline_chart(player_df, player_name, title, show_oppone
     # Collect all series for y-axis range calculation and vertical lines
     all_series = []
     
-    player_label = f"{player_name}" if player_name else "Player"
-    
     # Add elements in order: background first, then main data, then overlays
     # 1. Prepare series list for vertical lines
     series_for_lines = [df['player_bpFaced'], df['player_bpSaved']]
@@ -229,6 +267,15 @@ def create_break_point_timeline_chart(player_df, player_name, title, show_oppone
     # 4. Add trend lines (overlay layer) - Player trends
     add_trend_line(fig, df['player_bpFaced'], 'BPs Faced', '#EF4444', secondary_y=False)
     add_trend_line(fig, df['player_bpSaved'], 'BPs Saved', '#10B981', secondary_y=False)
+    
+    # 5. Add opponent comparison traces if enabled
+    if show_opponent_comparison:
+        _add_opponent_comparison_traces(fig, x_positions, df, opponent_name, hoverdata)
+        # Calculate opponent stats for y-axis range
+        if 'is_winner' in df.columns:
+            opponent_bpFaced = np.where(~df['is_winner'], df['w_bpFaced'], df['l_bpFaced'])
+            opponent_bpSaved = np.where(~df['is_winner'], df['w_bpSaved'], df['l_bpSaved'])
+            all_series.extend([pd.Series(opponent_bpFaced), pd.Series(opponent_bpSaved)])
     
     # Calculate appropriate y-axis range for counts
     max_values = []

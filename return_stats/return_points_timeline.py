@@ -124,14 +124,14 @@ def _add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, ho
     
     opponent_label = f"{opponent_name}" if opponent_name else "Opponent"
     
-    # Add opponent scatter trace
+    # Add opponent scatter trace with lighter color
     add_scatter_trace(fig, x_positions, df['opponent_return_points_won_pct'], 
-                     f'{opponent_label} Return Points Won %', '#DC2626', 
-                     'Opponent Return Points Won %', hoverdata)  # red
+                     'Opponent Return Points Won %', '#93C5FD', 
+                     'Opponent Return Points Won %', hoverdata)  # light blue
     
-    # Add opponent trend line
+    # Add opponent trend line with lighter color
     add_trend_line(fig, df['opponent_return_points_won_pct'], 
-                  f'{opponent_label} Return Points Won %', '#DC2626')
+                  'Opponent Return Points Won %', '#93C5FD')
 
 
 def create_return_points_timeline_chart(player_df, player_name, title, show_opponent_comparison=False, opponent_name=None):
@@ -165,12 +165,15 @@ def create_return_points_timeline_chart(player_df, player_name, title, show_oppo
     add_vertical_lines(fig, [df['player_return_points_won_pct']])
     
     # 2. Add scatter plots (main data layer) - Player stats
-    player_label = f"{player_name}" if player_name else "Player"
     add_scatter_trace(fig, x_positions, df['player_return_points_won_pct'], 
                      'Return Points Won %', '#2563EB', 'Return Points Won %', hoverdata)  # blue
     
     # 4. Add trend lines (overlay layer) - Player trends
     add_trend_line(fig, df['player_return_points_won_pct'], 'Return Points Won %', '#2563EB')
+    
+    # 5. Add opponent comparison traces if enabled
+    if show_opponent_comparison:
+        _add_opponent_comparison_traces(fig, x_positions, df, opponent_name, hoverdata)
     
     # Configure layout
     fig.update_layout(

@@ -142,20 +142,20 @@ def _add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, ho
     
     opponent_label = f"{opponent_name}" if opponent_name else "Opponent"
     
-    # Add opponent scatter traces
+    # Add opponent scatter traces with lighter colors
     add_scatter_trace(fig, x_positions, df['opponent_bpConverted'], 
-                     f'{opponent_label} BPs Converted', 
-                     '#DC2626', 'Opponent Break Points Converted', hoverdata, 
-                     use_lines=False, secondary_y=False, is_percentage=False)  # red
+                     'Opponent BPs Converted', 
+                     '#86EFAC', 'Opponent Break Points Converted', hoverdata, 
+                     use_lines=False, secondary_y=False, is_percentage=False)  # light green
     
     add_scatter_trace(fig, x_positions, df['opponent_bpConversion_pct'], 
-                     f'{opponent_label} BP Conversion %', 
-                     '#F87171', 'Opponent Break Point Conversion %', hoverdata, 
-                     use_lines=False, secondary_y=True, is_percentage=True)  # red-400
+                     'Opponent BP Conversion %', 
+                     '#93C5FD', 'Opponent Break Point Conversion %', hoverdata, 
+                     use_lines=False, secondary_y=True, is_percentage=True)  # light blue
     
-    # Add opponent trend lines
-    add_trend_line(fig, df['opponent_bpConverted'], f'{opponent_label} BPs Converted', '#DC2626', secondary_y=False)
-    add_trend_line(fig, df['opponent_bpConversion_pct'], f'{opponent_label} BP Conversion %', '#F87171', secondary_y=True)
+    # Add opponent trend lines with lighter colors
+    add_trend_line(fig, df['opponent_bpConverted'], 'Opponent BPs Converted', '#86EFAC', secondary_y=False)
+    add_trend_line(fig, df['opponent_bpConversion_pct'], 'Opponent BP Conversion %', '#93C5FD', secondary_y=True)
 
 
 def create_break_point_conversion_timeline_chart(player_df, player_name, title, show_opponent_comparison=False, opponent_name=None):
@@ -173,7 +173,8 @@ def create_break_point_conversion_timeline_chart(player_df, player_name, title, 
         go.Figure: Plotly figure object for timeline chart
     """
     # Calculate return statistics (includes break point conversion stats)
-    df = calculate_match_return_stats(player_df, player_name, case_sensitive=True)
+    # Note: player_df should already have is_winner column pre-calculated
+    df = calculate_match_return_stats(player_df)
     
     # Sort by date and match number for chronological timeline display
     if 'tourney_date' in df.columns and 'match_num' in df.columns:
@@ -189,8 +190,6 @@ def create_break_point_conversion_timeline_chart(player_df, player_name, title, 
     
     # Collect all series for y-axis range calculation and vertical lines
     all_series = []
-    
-    player_label = f"{player_name}" if player_name else "Player"
     
     # Add elements in order: background first, then main data, then overlays
     # 1. Prepare series list for vertical lines
@@ -217,6 +216,15 @@ def create_break_point_conversion_timeline_chart(player_df, player_name, title, 
     # 4. Add trend lines (overlay layer) - Player trends
     add_trend_line(fig, df['player_bpConverted'], 'BPs Converted', '#10B981', secondary_y=False)
     add_trend_line(fig, df['player_bpConversion_pct'], 'BP Conversion %', '#3B82F6', secondary_y=True)
+    
+    # 5. Add opponent comparison traces if enabled
+    if show_opponent_comparison:
+        _add_opponent_comparison_traces(fig, x_positions, df, opponent_name, hoverdata)
+        # Update all_series to include opponent stats for y-axis range calculation
+        if 'opponent_bpConverted' in df.columns:
+            all_series.append(df['opponent_bpConverted'])
+        if 'opponent_bpConversion_pct' in df.columns:
+            all_series.append(df['opponent_bpConversion_pct'])
     
     # Calculate appropriate y-axis ranges
     # Primary y-axis (counts)

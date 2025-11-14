@@ -8,7 +8,7 @@ Charts are returned separately for flexible display in the UI.
 # Local application imports
 from .return_stats import (
     build_year_suffix,
-    calculate_aggregated_return_stats,
+    calculate_aggregated_player_return_stats,
     calculate_aggregated_opponent_return_stats,
     calculate_match_return_stats
 )
@@ -69,8 +69,8 @@ def create_combined_return_charts(player_name, df, year=None, opponent=None, tou
     radar_title = f"{player_name} - Return Statistics Radar Chart - {year_suffix}{filter_suffix}"
     
     # Calculate return statistics
-    matches_with_stats = calculate_match_return_stats(df, player_name, case_sensitive=True)
-    return_stats = calculate_aggregated_return_stats(matches_with_stats)
+    matches_with_stats = calculate_match_return_stats(df)
+    return_stats = calculate_aggregated_player_return_stats(matches_with_stats)
     
     # Determine if comparison mode should be enabled (specific opponent selected)
     show_comparison = opponent and opponent != "All Opponents"

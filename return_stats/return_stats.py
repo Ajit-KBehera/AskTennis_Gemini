@@ -198,9 +198,10 @@ def _calculate_opponent_return_stats(df):
     return df
 
 
-def calculate_match_return_stats(df, player_name, case_sensitive=False):
+def calculate_match_return_stats(df):
     """
     Calculate return statistics for each match in the dataframe.
+    This function assumes 'is_winner' column is already present in the DataFrame.
     
     Return statistics are calculated from the opponent's serve perspective:
     - Return Points Won % = 100 - (opponent's serve points won %)
@@ -208,14 +209,18 @@ def calculate_match_return_stats(df, player_name, case_sensitive=False):
     - Return Games Won % = percentage of opponent's service games broken
     
     Args:
-        df: DataFrame containing match data for the player
-        player_name: Name of the player
-        case_sensitive: Whether to use case-sensitive name matching (default: False)
+        df: DataFrame containing match data with 'is_winner' column pre-calculated
         
     Returns:
         DataFrame: Original dataframe with added columns for return statistics
+        
+    Raises:
+        ValueError: If 'is_winner' column is missing from the DataFrame
     """
     df = df.copy()
+    
+    if 'is_winner' not in df.columns:
+        raise ValueError("is_winner column must be pre-calculated. Use add_player_match_columns() from utils.df_utils before calling this function.")
     
     # Calculate player return statistics
     df = _calculate_player_return_stats(df)
@@ -226,9 +231,9 @@ def calculate_match_return_stats(df, player_name, case_sensitive=False):
     return df
 
 
-def calculate_aggregated_return_stats(df, player_name=None, case_sensitive=False):
+def calculate_aggregated_player_return_stats(df, player_name=None, case_sensitive=False):
     """
-    Calculate aggregated return statistics across all matches.
+    Calculate aggregated player return statistics across all matches.
     
     Args:
         df: DataFrame containing match data. If stats columns already exist
@@ -239,7 +244,7 @@ def calculate_aggregated_return_stats(df, player_name=None, case_sensitive=False
         case_sensitive: Whether to use case-sensitive name matching (default: False)
         
     Returns:
-        dict: Dictionary containing aggregated return statistics
+        dict: Dictionary containing aggregated player return statistics
     """
     # Check if stats columns already exist
     required_stats_columns = ['player_return_points_won_pct', 'player_bpConversion_pct']
@@ -254,7 +259,7 @@ def calculate_aggregated_return_stats(df, player_name=None, case_sensitive=False
         # Pre-calculate is_winner, opponent, result columns before calling calculate_match_return_stats
         from utils.df_utils import add_player_match_columns
         df = add_player_match_columns(df, player_name, case_sensitive)
-        df_with_stats = calculate_match_return_stats(df, player_name, case_sensitive)
+        df_with_stats = calculate_match_return_stats(df)
     
     # Calculate averages across all matches (excluding NaN values)
     stats = {
