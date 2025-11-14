@@ -282,12 +282,15 @@ class UIDisplay:
         # =============================================================================
         # SURFACE SELECTION
         # =============================================================================
+        # Get surface options based on selected player
+        # get_surfaces_for_player returns all surfaces if no player selected
+        surface_options = db_service.get_surfaces_for_player(selected_player)
+        
         # Multi-select surface options
-        surface_options = ["Hard", "Clay", "Grass", "Carpet"]
         selected_surfaces = st.multiselect(
             "Select Surfaces:",
             surface_options,
-            default=surface_options,  # All surfaces selected by default
+            default=surface_options,  # All available surfaces selected by default
             key="surface_multiselect",
             help="Select one or more surfaces to filter matches"
         )

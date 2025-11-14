@@ -187,6 +187,51 @@ class DatabaseService:
             return (1968, 2024)  # Default range on error
     
     @st.cache_data(ttl=60)  # Cache for 1 minute
+    def get_surfaces_for_player(_self, player_name: Optional[str] = None) -> List[str]:
+        """Get surfaces from database, optionally filtered by player.
+        
+        Args:
+            player_name: Optional player name to filter surfaces. If None or "All Players", 
+                        returns all surfaces.
+        
+        Returns:
+            List[str]: List of surfaces (Hard, Clay, Grass, Carpet)
+        """
+        # Sanitize input: trim whitespace and handle empty strings
+        player_name = _self._sanitize_string(player_name)
+        
+        # Standard surface list
+        all_surfaces = ["Hard", "Clay", "Grass", "Carpet"]
+        
+        # If no player specified or "All Players", return all surfaces
+        if not player_name or player_name == DatabaseService.ALL_PLAYERS:
+            return all_surfaces
+        
+        # Filter surfaces for specific player
+        try:
+            with sqlite3.connect(_self.db_path) as conn:
+                query = """
+                SELECT DISTINCT surface
+                FROM matches 
+                WHERE (winner_name COLLATE NOCASE = ? OR loser_name COLLATE NOCASE = ?)
+                  AND surface IS NOT NULL AND surface != ''
+                ORDER BY surface
+                """
+                df = pd.read_sql_query(query, conn, params=[player_name, player_name])
+            
+            if df.empty:
+                return all_surfaces  # Return all surfaces if player has no matches
+            
+            player_surfaces = df['surface'].tolist()
+            # Filter to only include surfaces that exist in our standard list
+            # This ensures we don't return unexpected surface types
+            filtered_surfaces = [s for s in all_surfaces if s in player_surfaces]
+            return filtered_surfaces if filtered_surfaces else all_surfaces
+        except Exception as e:
+            st.error(f"Error fetching surfaces for player: {e}")
+            return all_surfaces  # Fallback to all surfaces on error
+    
+    @st.cache_data(ttl=60)  # Cache for 1 minute
     def get_opponents_for_player(_self, player_name: str) -> List[str]:
         """Get opponents for a specific player."""
         # Sanitize input: trim whitespace and handle empty strings
