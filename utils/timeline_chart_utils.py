@@ -46,11 +46,11 @@ def add_scatter_trace(fig, x_positions, y_data, name, color, hover_label, custom
         'name': name,
         'marker': dict(color=color, size=8),
         'hovertemplate': hover_format +                  
-                      'Year: %{customdata[4]}<br>' +
-                      'Tournament: %{customdata[0]}<br>' +
-                      'Round: %{customdata[1]}<br>' +
-                      'Opponent: %{customdata[2]}<br>' +
-                      'Result: %{customdata[3]}<extra></extra>',
+                      'Year: %{customdata[0]}<br>' +
+                      'Tournament: %{customdata[1]}<br>' +
+                      'Round: %{customdata[2]}<br>' +
+                      'Opponent: %{customdata[3]}<br>' +
+                      'Result: %{customdata[4]}<extra></extra>',
         'customdata': customdata
     }
     
@@ -171,7 +171,8 @@ def get_match_hover_data(player_df, player_name, case_sensitive=False):
         
     Returns:
         numpy.ndarray: Array of hover data for each match with columns:
-            [tourney_name, round, opponent, result, year]
+            [year, tourney_name, round, opponent, result]
+            where result is "W" for wins and "L" for losses
             
     Raises:
         ValueError: If 'is_winner' column is missing from the DataFrame
@@ -197,5 +198,5 @@ def get_match_hover_data(player_df, player_name, case_sensitive=False):
     # Replace string representations of NaN/None with empty string
     df['year'] = df['year'].replace('nan', '').replace('None', '')
     
-    return df[['tourney_name', 'round', 'opponent', 'result', 'year']].values
+    return df[['year', 'tourney_name', 'round', 'opponent', 'result']].values
 
