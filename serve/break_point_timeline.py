@@ -11,8 +11,8 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # Local application imports
-from .serve_stats import get_match_hover_data, calculate_match_serve_stats
-from utils.timeline_chart_utils import add_scatter_trace, add_trend_line, add_vertical_lines
+from .serve_stats import calculate_match_serve_stats
+from utils.timeline_chart_utils import add_scatter_trace, add_trend_line, add_vertical_lines, get_match_hover_data
 
 
 # ============================================================================

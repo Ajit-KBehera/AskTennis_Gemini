@@ -9,8 +9,7 @@ performance over time, including first serves in percentage and first serves won
 import plotly.graph_objects as go
 
 # Local application imports
-from .serve_stats import get_match_hover_data
-from utils.timeline_chart_utils import add_scatter_trace, add_trend_line, add_vertical_lines
+from utils.timeline_chart_utils import add_scatter_trace, add_trend_line, add_vertical_lines, get_match_hover_data
 
 
 # ============================================================================

@@ -311,33 +311,3 @@ def calculate_aggregated_opponent_serve_stats(df, opponent_name=None):
     
     return stats
 
-
-def get_match_hover_data(player_df, player_name, case_sensitive=False):
-    """
-    Get hover data for match tooltips (tournament, round, opponent, result, year).
-    
-    Args:
-        player_df: DataFrame containing match data for the player
-        player_name: Name of the player
-        case_sensitive: Whether to use case-sensitive name matching (default: False)
-        
-    Returns:
-        numpy.ndarray: Array of hover data for each match
-    """
-    df = player_df.copy()
-    
-    # Extract year from tourney_date or use event_year if available
-    if 'event_year' in df.columns:
-        df['year'] = df['event_year'].fillna('')
-    elif 'tourney_date' in df.columns:
-        df['year'] = pd.to_datetime(df['tourney_date'], errors='coerce').dt.year.fillna('')
-    else:
-        df['year'] = ''
-    
-    # Convert to string for display
-    df['year'] = df['year'].astype(str)
-    # Replace string representations of NaN/None with empty string
-    df['year'] = df['year'].replace('nan', '').replace('None', '')
-    
-    return df[['tourney_name', 'round', 'opponent', 'result', 'year']].values
-

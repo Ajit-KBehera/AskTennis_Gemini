@@ -7,6 +7,7 @@ across serve and return statistics modules, eliminating code duplication.
 
 # Third-party imports
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 
 
@@ -154,4 +155,47 @@ def add_vertical_lines(fig, y_data_series, y_min=0, y_max=None, color='gray', wi
                 showlegend=False,
                 hoverinfo='skip'
             ))
+
+
+def get_match_hover_data(player_df, player_name, case_sensitive=False):
+    """
+    Get hover data for match tooltips (tournament, round, opponent, result, year).
+    
+    This function extracts match metadata for use in timeline chart tooltips.
+    It expects the DataFrame to have pre-calculated 'is_winner', 'opponent', and 'result' columns.
+    
+    Args:
+        player_df: DataFrame containing match data for the player
+        player_name: Name of the player (for backward compatibility, not currently used)
+        case_sensitive: Whether to use case-sensitive name matching (for backward compatibility, not currently used)
+        
+    Returns:
+        numpy.ndarray: Array of hover data for each match with columns:
+            [tourney_name, round, opponent, result, year]
+            
+    Raises:
+        ValueError: If 'is_winner' column is missing from the DataFrame
+    """
+    df = player_df.copy()
+    
+    # Use pre-calculated columns if available (is_winner, opponent, result should be calculated before calling this function)
+    if 'is_winner' not in df.columns:
+        raise ValueError("is_winner column must be pre-calculated. Use add_player_match_columns() from utils.df_utils before calling this function.")
+    
+    # opponent and result should also exist if is_winner exists (they're calculated together)
+    
+    # Extract year from tourney_date or use event_year if available
+    if 'event_year' in df.columns:
+        df['year'] = df['event_year'].fillna('')
+    elif 'tourney_date' in df.columns:
+        df['year'] = pd.to_datetime(df['tourney_date'], errors='coerce').dt.year.fillna('')
+    else:
+        df['year'] = ''
+    
+    # Convert to string for display
+    df['year'] = df['year'].astype(str)
+    # Replace string representations of NaN/None with empty string
+    df['year'] = df['year'].replace('nan', '').replace('None', '')
+    
+    return df[['tourney_name', 'round', 'opponent', 'result', 'year']].values
 

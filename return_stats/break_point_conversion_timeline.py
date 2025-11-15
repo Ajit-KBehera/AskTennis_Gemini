@@ -10,8 +10,8 @@ import numpy as np
 from plotly.subplots import make_subplots
 
 # Local application imports
-from .return_stats import get_match_hover_data, calculate_match_return_stats
-from utils.timeline_chart_utils import add_scatter_trace, add_trend_line, add_vertical_lines
+from .return_stats import calculate_match_return_stats
+from utils.timeline_chart_utils import add_scatter_trace, add_trend_line, add_vertical_lines, get_match_hover_data
 
 
 def add_opponent_comparison_traces(fig, x_positions, df, opponent_name=None, hoverdata=None):
