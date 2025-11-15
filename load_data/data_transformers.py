@@ -199,6 +199,14 @@ def categorize_match_types(df):
         # Pattern: Q followed by digits (not QF which is quarterfinal)
         is_qualifying_round = df['round'].str.match(r'^Q\d+', na=False)
         is_challenger_level = (df['tourney_level'] == 'C')
+        is_satellite_level = (df['tourney_level'] == 'S')  # Level S = Satellites/ITFs
+        
+        # ATP ITF Futures/Satellites (Level S = Satellites/ITFs, predecessor to Futures)
+        # These are ITF tournaments, so categorize as ITF_Futures
+        # IMPORTANT: Recategorize Level S matches even if they already have tournament_type set
+        # (e.g., from Futures files that set ATP_Futures during loading)
+        satellite_mask = atp_mask & is_satellite_level
+        df.loc[satellite_mask, 'tournament_type'] = 'ITF_Futures'
         
         # ATP Challenger Qualifying (most specific - check first)
         chall_qual_mask = atp_unset_mask & is_challenger_level & is_qualifying_round
@@ -208,8 +216,8 @@ def categorize_match_types(df):
         chall_mask = atp_unset_mask & is_challenger_level & ~is_qualifying_round
         df.loc[chall_mask, 'tournament_type'] = 'ATP_Challenger'
         
-        # ATP Qualifying (qualifying rounds at non-challenger level)
-        qual_mask = atp_unset_mask & ~is_challenger_level & is_qualifying_round
+        # ATP Qualifying (qualifying rounds at non-challenger, non-satellite level)
+        qual_mask = atp_unset_mask & ~is_challenger_level & ~is_satellite_level & is_qualifying_round
         df.loc[qual_mask, 'tournament_type'] = 'ATP_Qualifying'
     
     # WTA Qualifying/ITF categorization
@@ -382,6 +390,8 @@ def filter_matches_by_switches(df):
         allowed_types.append('ATP_Challenger_Qualifying')
     if LOAD_ATP_FUTURES:
         allowed_types.append('ATP_Futures')
+        # Also include ITF_Futures (Level S = Satellites/ITFs, predecessor to Futures)
+        allowed_types.append('ITF_Futures')
     
     # Include WTA tournament types if enabled
     if LOAD_WTA_QUALIFYING:
