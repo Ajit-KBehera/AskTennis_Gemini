@@ -173,13 +173,13 @@ def load_matches_data():
         for data_dir in DATA_DIRS:
             print(f"\n--- Processing directory: {data_dir} ---")
             
-            # Determine tour based on directory (store as hint for transformers)
+            # Determine tour based on directory
             if 'atp' in data_dir.lower():
-                tour_hint = 'ATP'
+                tour = 'ATP'
             elif 'wta' in data_dir.lower():
-                tour_hint = 'WTA'
+                tour = 'WTA'
             else:
-                tour_hint = 'Unknown'
+                tour = 'Unknown'
             
             df_list = []
             for year in YEARS_MAIN_TOUR:
@@ -191,8 +191,8 @@ def load_matches_data():
                     file_path = matching_files[0] # Use the first match found
                     progress.update(1, f"Loading {os.path.basename(file_path)}...")
                     df = pd.read_csv(file_path, low_memory=False, index_col=False)
-                    # Store metadata for transformers
-                    df['_tour_hint'] = tour_hint
+                    # Add tour column directly (CSV files don't have tour column)
+                    df['tour'] = tour
                     df['_source_file'] = file_path
                     df_list.append(df)
                 else:
@@ -213,8 +213,8 @@ def load_matches_data():
             print(f"\n--- Loading Amateur Tennis Data (1877-1967) ---")
             print(f"Reading {amateur_file}...")
             amateur_df = pd.read_csv(amateur_file, low_memory=False, index_col=False)
-            # Store metadata for transformers
-            amateur_df['_tour_hint'] = 'ATP'  # Amateur data is from ATP source
+            # Add tour column directly (CSV files don't have tour column)
+            amateur_df['tour'] = 'ATP'  # Amateur data is from ATP source
             amateur_df['_source_file'] = amateur_file
             master_df_list.append(amateur_df)
             print(f"Amateur matches loaded: {len(amateur_df)}")
@@ -243,8 +243,8 @@ def load_matches_data():
                 try:
                     progress.update(1, f"Loading {os.path.basename(file_path)}...")
                     df = pd.read_csv(file_path, low_memory=False, index_col=False)
-                    # Store metadata for transformers
-                    df['_tour_hint'] = 'ATP'
+                    # Add tour column directly (CSV files don't have tour column)
+                    df['tour'] = 'ATP'
                     df['_source_file'] = file_path
                     atp_qual_chall_dfs.append(df)
                 except Exception as e:
@@ -275,9 +275,11 @@ def load_matches_data():
                 try:
                     progress.update(1, f"Loading {os.path.basename(file_path)}...")
                     df = pd.read_csv(file_path, low_memory=False, index_col=False)
-                    # Store metadata for transformers
-                    df['_tour_hint'] = 'ATP'
-                    df['_tournament_type_hint'] = 'ATP_Futures'
+                    # Add tour column directly (CSV files don't have tour column)
+                    df['tour'] = 'ATP'
+                    # Set tournament_type directly (Futures files contain only Futures matches)
+                    # categorize_match_types() won't overwrite existing tournament_type values
+                    df['tournament_type'] = 'ATP_Futures'
                     df['_source_file'] = file_path
                     atp_futures_dfs.append(df)
                 except Exception as e:
@@ -309,8 +311,8 @@ def load_matches_data():
                 try:
                     progress.update(1, f"Loading {os.path.basename(file_path)}...")
                     df = pd.read_csv(file_path, low_memory=False, index_col=False)
-                    # Store metadata for transformers
-                    df['_tour_hint'] = 'WTA'
+                    # Add tour column directly (CSV files don't have tour column)
+                    df['tour'] = 'WTA'
                     df['_source_file'] = file_path
                     wta_qual_itf_dfs.append(df)
                 except Exception as e:
@@ -366,9 +368,10 @@ def load_doubles_data():
         try:
             progress.update(1, f"Loading {os.path.basename(file_path)}...")
             df = pd.read_csv(file_path, low_memory=False, index_col=False)
-            # Store metadata for transformers
-            df['_tour_hint'] = 'ATP'
-            df['_match_type_hint'] = 'Doubles'
+            # Add tour column directly (CSV files don't have tour column)
+            df['tour'] = 'ATP'
+            # Set match_type directly (doubles files contain only doubles matches)
+            df['match_type'] = 'Doubles'
             df['_source_file'] = file_path
             doubles_dfs.append(df)
         except Exception as e:

@@ -144,7 +144,8 @@ def create_database_with_players():
     
     progress.update(1, "Enriching doubles data...")
     if not doubles_df.empty:
-        doubles_df = enrich_matches_data(doubles_df, match_type='Doubles')
+        # match_type already set by loader, just enrich other fields
+        doubles_df = enrich_matches_data(doubles_df)
     
     # 3. Continue with existing transformations
     progress.update(1, "Fixing surface data...")

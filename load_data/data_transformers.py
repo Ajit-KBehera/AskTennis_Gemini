@@ -189,7 +189,6 @@ def categorize_match_types(df):
     if atp_mask.sum() > 0:
         # Only categorize matches that don't already have a tournament_type set
         # OR matches with 'Main Tour' (which is a default/fallback that can be recategorized)
-        # This prevents overwriting explicit values from _tournament_type_hint or other sources
         # but allows fixing incorrectly categorized 'Main Tour' matches
         unset_mask = (df['tournament_type'].isna() | 
                      (df['tournament_type'] == '') | 
@@ -218,7 +217,6 @@ def categorize_match_types(df):
     if wta_mask.sum() > 0:
         # Only categorize matches that don't already have a tournament_type set
         # OR matches with 'Main Tour' (which is a default/fallback that can be recategorized)
-        # This prevents overwriting explicit values from _tournament_type_hint or other sources
         # but allows fixing incorrectly categorized 'Main Tour' matches
         unset_mask = (df['tournament_type'].isna() | 
                      (df['tournament_type'] == '') | 
@@ -248,12 +246,12 @@ def categorize_match_types(df):
 
 def set_tour_column(df, tour=None):
     """
-    Set tour column from hints or parameter. This is separated for optimization
+    Set tour column if not already present. This is separated for optimization
     so categorize_match_types() can run before full enrichment.
     
     Args:
-        df: DataFrame with match data (may have _tour_hint column)
-        tour: Tour name ('ATP' or 'WTA') if not already in DataFrame or _tour_hint
+        df: DataFrame with match data (should already have tour column from loader)
+        tour: Tour name ('ATP' or 'WTA') if tour column is missing
     
     Returns:
         DataFrame with tour column set
@@ -263,13 +261,20 @@ def set_tour_column(df, tour=None):
     
     df = df.copy()
     
-    # Use hints from loader if available
-    if '_tour_hint' in df.columns:
-        df['tour'] = df['_tour_hint']
-    elif tour and 'tour' not in df.columns:
-        df['tour'] = tour
+    # Tour column should already be set by loader, but handle edge cases
+    if 'tour' not in df.columns:
+        if tour:
+            df['tour'] = tour
+        else:
+            # Fallback: try to determine from _source_file if available
+            if '_source_file' in df.columns:
+                df['tour'] = df['_source_file'].apply(
+                    lambda x: 'ATP' if 'atp' in str(x).lower() else ('WTA' if 'wta' in str(x).lower() else 'Unknown')
+                )
+            else:
+                df['tour'] = 'Unknown'
     
-    # Fill missing tour
+    # Fill missing tour values
     if 'tour' in df.columns:
         df['tour'] = df['tour'].fillna('Unknown')
     
@@ -281,8 +286,8 @@ def enrich_matches_data(df, tour=None, tournament_type=None, match_type=None, fi
     Enrich match data with tour, tournament_type, era, and other metadata.
     
     Args:
-        df: DataFrame with match data (may have _tour_hint, _tournament_type_hint, _match_type_hint columns)
-        tour: Tour name ('ATP' or 'WTA') if not already in DataFrame or _tour_hint
+        df: DataFrame with match data (should already have tour column from loader, may have tournament_type and match_type columns set by loader)
+        tour: Tour name ('ATP' or 'WTA') if tour column is missing (fallback only)
         tournament_type: Tournament type if known (e.g., 'ATP_Futures', 'Main Tour')
         match_type: Match type (e.g., 'Doubles')
         fill_missing_tournament_type: If True, fill missing tournament_type with 'Main Tour' (default: True)
@@ -295,27 +300,17 @@ def enrich_matches_data(df, tour=None, tournament_type=None, match_type=None, fi
     
     df = df.copy()
     
-    # Set tour column if not already set (for cases where set_tour_column wasn't called)
-    if 'tour' not in df.columns:
-        if '_tour_hint' in df.columns:
-            df['tour'] = df['_tour_hint']
-            df = df.drop(columns=['_tour_hint'])
-        elif tour:
-            df['tour'] = tour
-        if 'tour' in df.columns:
-            df['tour'] = df['tour'].fillna('Unknown')
+    # Tour column should already be set by loader (or by set_tour_column if called earlier)
+    # Just ensure any missing values are filled
+    if 'tour' in df.columns:
+        df['tour'] = df['tour'].fillna('Unknown')
     
-    # Handle tournament_type hints (e.g., ATP_Futures)
-    if '_tournament_type_hint' in df.columns:
-        df['tournament_type'] = df['_tournament_type_hint']
-        df = df.drop(columns=['_tournament_type_hint'])
-    elif tournament_type and 'tournament_type' not in df.columns:
+    # Set tournament_type if provided as parameter (loader sets it directly for Futures)
+    if tournament_type and 'tournament_type' not in df.columns:
         df['tournament_type'] = tournament_type
     
-    if '_match_type_hint' in df.columns:
-        df['match_type'] = df['_match_type_hint']
-        df = df.drop(columns=['_match_type_hint'])
-    elif match_type and 'match_type' not in df.columns:
+    # Set match_type if provided as parameter (loader sets it directly for Doubles)
+    if match_type and 'match_type' not in df.columns:
         df['match_type'] = match_type
     
     # Remove _source_file column if present (used for debugging but not needed in final data)
