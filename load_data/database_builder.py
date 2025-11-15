@@ -11,13 +11,13 @@ import pandas as pd
 # Import configuration
 from .config import (
     DB_FILE,
-    CREATE_TABLE_MATCHES, CREATE_TABLE_PLAYERS, CREATE_TABLE_RANKINGS, CREATE_TABLE_DOUBLES
+    CREATE_TABLE_MATCHES, CREATE_TABLE_PLAYERS, CREATE_TABLE_RANKINGS
 )
 
 
-def build_database(matches_df, atp_players_df, wta_players_df, atp_rankings_df, wta_rankings_df, doubles_df):
+def build_database(matches_df, atp_players_df, wta_players_df, atp_rankings_df, wta_rankings_df):
     """
-    Builds SQLite database with matches, players, rankings, and doubles data.
+    Builds SQLite database with matches, players, and rankings data.
     
     Args:
         matches_df: DataFrame with match data
@@ -25,7 +25,6 @@ def build_database(matches_df, atp_players_df, wta_players_df, atp_rankings_df, 
         wta_players_df: DataFrame with WTA player data
         atp_rankings_df: DataFrame with ATP rankings data
         wta_rankings_df: DataFrame with WTA rankings data
-        doubles_df: DataFrame with doubles match data
     """
     print("\n--- Creating Enhanced Database ---")
     conn = sqlite3.connect(DB_FILE)
@@ -80,23 +79,11 @@ def build_database(matches_df, atp_players_df, wta_players_df, atp_rankings_df, 
     else:
         print("Skipping rankings table creation (CREATE_TABLE_RANKINGS = False)")
     
-    # Write doubles data
-    if CREATE_TABLE_DOUBLES:
-        if not doubles_df.empty:
-            print("Writing doubles data...")
-            doubles_df.to_sql('doubles_matches', conn, if_exists='replace', index=False)
-        else:
-            print("No doubles data to write.")
-    else:
-        print("Skipping doubles table creation (CREATE_TABLE_DOUBLES = False)")
-    
     conn.close()
     
     total_players = len(atp_players_df) + len(wta_players_df)
     print(f"\n✅ Successfully created enhanced database '{DB_FILE}' with:")
     print(f"   - {len(matches_df)} singles matches (COMPLETE tournament coverage: 1877-2024)")
-    if not doubles_df.empty:
-        print(f"   - {len(doubles_df)} doubles matches (2000-2020)")
     print(f"   - {total_players} players (ATP: {len(atp_players_df)}, WTA: {len(wta_players_df)})")
     if not atp_rankings_df.empty:
         print(f"   - {len(atp_rankings_df)} ATP ranking records")
@@ -109,5 +96,4 @@ def build_database(matches_df, atp_players_df, wta_players_df, atp_rankings_df, 
     print(f"   - Open Era tennis (1968-2024)")
     print(f"   - Main tour matches (Grand Slams, Masters, etc.)")
     print(f"   - Qualifying/Challenger/Futures matches")
-    print(f"   - Doubles matches (separate table)")
     print(f"   - COMPLETE tennis tournament database (147 years)")

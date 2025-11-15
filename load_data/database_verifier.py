@@ -201,27 +201,6 @@ def verify_enhancement():
     for surface, count in surface_counts:
         print(f"  {surface}: {count:,} matches")
     
-    # Check doubles data
-    try:
-        doubles_count = conn.execute("SELECT COUNT(*) FROM doubles_matches").fetchone()[0]
-        print(f"Doubles matches: {doubles_count:,} matches")
-        
-        if doubles_count > 0:
-            # Sample doubles query
-            doubles_sample = conn.execute("""
-                SELECT winner1_name, winner2_name, loser1_name, loser2_name, 
-                       tourney_name, event_year, event_month, event_date, surface
-                FROM doubles_matches 
-                ORDER BY event_year DESC, event_month DESC, event_date DESC 
-                LIMIT 3
-            """).fetchall()
-            
-            print("Sample doubles matches:")
-            for row in doubles_sample:
-                print(f"  {row[0]} & {row[1]} vs {row[2]} & {row[3]} - {row[4]} ({row[5]}-{row[6]:02d}-{row[7]:02d}) - {row[8]}")
-    except:
-        print("No doubles matches found")
-    
     
     # Sample query to test functionality
     print("\n--- Sample Player Query Test ---")

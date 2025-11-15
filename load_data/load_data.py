@@ -2,7 +2,7 @@
 Main orchestrator for tennis data loading and database creation.
 
 This module orchestrates the complete data loading pipeline:
-1. Load data from CSV files (players, rankings, matches, doubles)
+1. Load data from CSV files (players, rankings, matches)
 2. Transform data (parse dates, scores, fix surfaces, standardize levels)
 3. Build database (create tables)
 4. Verify database integrity
@@ -23,8 +23,7 @@ try:
     from .data_loaders import (
         load_players_data,
         load_rankings_data,
-        load_matches_data,
-        load_doubles_data
+        load_matches_data
     )
     from .data_transformers import (
         enrich_players_data,
@@ -51,8 +50,7 @@ except ImportError:
     from load_data.data_loaders import (
         load_players_data,
         load_rankings_data,
-        load_matches_data,
-        load_doubles_data
+        load_matches_data
     )
     from load_data.data_transformers import (
         enrich_players_data,
@@ -85,7 +83,7 @@ def create_database_with_players():
     print("=== Enhanced Data Loading with COMPLETE Tournament Coverage (1877-2024) ===")
     
     # Initialize progress tracker for main steps
-    main_steps = 12  # players_load, rankings_load, matches_load, doubles_load, players_enrich, rankings_enrich, matches_enrich, doubles_enrich, surface_fix, date_parsing, score_parsing, tourney_level_standardization, database_creation
+    main_steps = 10  # players_load, rankings_load, matches_load, players_enrich, rankings_enrich, matches_enrich, surface_fix, date_parsing, score_parsing, tourney_level_standardization, database_creation
     progress = ProgressTracker(main_steps, "Database Creation")
     
     # 1. Load raw data
@@ -98,25 +96,13 @@ def create_database_with_players():
     progress.update(1, "Loading match data...")
     matches_df = load_matches_data()
     
-    progress.update(1, "Loading doubles data...")
-    doubles_df = load_doubles_data()
-    
     # 2. Transform/enrich data
     progress.update(1, "Enriching player data...")
     if not atp_players_df.empty:
         atp_players_df = enrich_players_data(atp_players_df, tour='ATP')
     if not wta_players_df.empty:
         wta_players_df = enrich_players_data(wta_players_df, tour='WTA')
-    
-    # Combine players temporarily for rankings enrichment (for player name lookup)
-    # This is safe because player_id collisions are handled by tour separation in tables
-    combined_players_df = pd.DataFrame()
-    if not atp_players_df.empty and not wta_players_df.empty:
-        combined_players_df = pd.concat([atp_players_df, wta_players_df], ignore_index=True)
-    elif not atp_players_df.empty:
-        combined_players_df = atp_players_df
-    elif not wta_players_df.empty:
-        combined_players_df = wta_players_df
+
     
     progress.update(1, "Enriching rankings data...")
     # Enrich ATP rankings (with player names from ATP players)
@@ -142,11 +128,6 @@ def create_database_with_players():
         # Filter based on switches
         matches_df = filter_matches_by_switches(matches_df)
     
-    progress.update(1, "Enriching doubles data...")
-    if not doubles_df.empty:
-        # match_type already set by loader, just enrich other fields
-        doubles_df = enrich_matches_data(doubles_df)
-    
     # 3. Continue with existing transformations
     progress.update(1, "Fixing surface data...")
     matches_df = fix_missing_surface_data(matches_df)
@@ -159,22 +140,9 @@ def create_database_with_players():
     progress.update(1, "Parsing score data...")
     matches_df = parse_score_data(matches_df)
     
-    # Apply same parsing to doubles data if it exists
-    if not doubles_df.empty:
-        print("Parsing doubles data...")
-        doubles_df = parse_date_components(doubles_df)
-        # Only parse score data if 'score' column exists
-        if 'score' in doubles_df.columns:
-            doubles_df = parse_score_data(doubles_df)
-        else:
-            print("  No 'score' column found in doubles data, skipping score parsing.")
-    
     # Standardize tourney levels
     progress.update(1, "Standardizing tourney levels...")
     matches_df = standardize_tourney_levels(matches_df, 'Mixed')  # Mixed ATP/WTA data
-    
-    if not doubles_df.empty:
-        doubles_df = standardize_tourney_levels(doubles_df, 'ATP')  # ATP doubles data
     
     if (atp_players_df.empty and wta_players_df.empty) or matches_df.empty:
         print("Error: Could not load required data. Exiting.")
@@ -182,15 +150,13 @@ def create_database_with_players():
     
     # Build database (create tables)
     progress.update(1, "Building database...")
-    build_database(matches_df, atp_players_df, wta_players_df, atp_rankings_df, wta_rankings_df, doubles_df)
+    build_database(matches_df, atp_players_df, wta_players_df, atp_rankings_df, wta_rankings_df)
     
     progress.complete("Database creation completed!")
     
     total_players = len(atp_players_df) + len(wta_players_df)
     print(f"\n✅ Successfully created enhanced database '{DB_FILE}' with:")
     print(f"   - {len(matches_df)} singles matches (COMPLETE tournament coverage: 1877-2024)")
-    if not doubles_df.empty:
-        print(f"   - {len(doubles_df)} doubles matches (2000-2020)")
     print(f"   - {total_players} players (ATP: {len(atp_players_df)}, WTA: {len(wta_players_df)})")
     if not atp_rankings_df.empty:
         print(f"   - {len(atp_rankings_df)} ATP ranking records")
@@ -203,7 +169,6 @@ def create_database_with_players():
     print(f"   - Open Era tennis (1968-2024)")
     print(f"   - Main tour matches (Grand Slams, Masters, etc.)")
     print(f"   - Qualifying/Challenger/Futures matches")
-    print(f"   - Doubles matches (separate table)")
     print(f"   - COMPLETE tennis tournament database (147 years)")
 
 

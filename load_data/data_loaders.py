@@ -2,7 +2,7 @@
 Data loading functions for tennis match data.
 
 This module contains functions that load tennis data from CSV files,
-including players, rankings, matches, and doubles data.
+including players, rankings, and matches data.
 """
 
 import pandas as pd
@@ -16,8 +16,7 @@ from .config import (
     LOAD_ATP_RANKINGS, LOAD_WTA_RANKINGS,
     LOAD_MAIN_TOUR_MATCHES, LOAD_AMATEUR_MATCHES,
     LOAD_ATP_QUALIFYING, LOAD_ATP_CHALLENGER, LOAD_ATP_CHALLENGER_QUAL,
-    LOAD_ATP_FUTURES, LOAD_WTA_QUALIFYING, LOAD_WTA_ITF,
-    LOAD_DAVIS_CUP, LOAD_FED_CUP, LOAD_DOUBLES_MATCHES
+    LOAD_ATP_FUTURES, LOAD_WTA_QUALIFYING, LOAD_WTA_ITF
 )
 
 # Import utilities
@@ -277,9 +276,6 @@ def load_matches_data():
                     df = pd.read_csv(file_path, low_memory=False, index_col=False)
                     # Add tour column directly (CSV files don't have tour column)
                     df['tour'] = 'ATP'
-                    # Set tournament_type directly (Futures files contain only Futures matches)
-                    # categorize_match_types() won't overwrite existing tournament_type values
-                    df['tournament_type'] = 'ATP_Futures'
                     df['_source_file'] = file_path
                     atp_futures_dfs.append(df)
                 except Exception as e:
@@ -339,48 +335,3 @@ def load_matches_data():
 
     print(f"\nTotal matches loaded (Complete Tournament Coverage): {len(matches_df)}")
     return matches_df
-
-def load_doubles_data():
-    """
-    Loads doubles match data from ATP doubles files.
-    Returns raw DataFrames - enrichment happens in transformers.
-    """
-    if not LOAD_DOUBLES_MATCHES:
-        print("\nSkipping doubles matches (LOAD_DOUBLES_MATCHES = False)")
-        return pd.DataFrame()
-    
-    print("\n--- Loading Doubles Match Data ---")
-    
-    # Find all ATP doubles files
-    doubles_files = glob.glob(os.path.join(PROJECT_ROOT, "data/tennis_atp/atp_matches_doubles_*.csv"))
-    
-    if not doubles_files:
-        print("No doubles match files found.")
-        return pd.DataFrame()
-    
-    print(f"Loading ATP Doubles data ({len(doubles_files)} files)...")
-    doubles_dfs = []
-    
-    # Initialize progress tracker for doubles files
-    progress = ProgressTracker(len(doubles_files), "Doubles Loading")
-    
-    for file_path in sorted(doubles_files):
-        try:
-            progress.update(1, f"Loading {os.path.basename(file_path)}...")
-            df = pd.read_csv(file_path, low_memory=False, index_col=False)
-            # Add tour column directly (CSV files don't have tour column)
-            df['tour'] = 'ATP'
-            # Set match_type directly (doubles files contain only doubles matches)
-            df['match_type'] = 'Doubles'
-            df['_source_file'] = file_path
-            doubles_dfs.append(df)
-        except Exception as e:
-            print(f"  Error loading {file_path}: {e}")
-    
-    if doubles_dfs:
-        doubles_df = pd.concat(doubles_dfs, ignore_index=True)
-        print(f"  ATP Doubles matches loaded: {len(doubles_df)}")
-        return doubles_df
-    else:
-        print("  No doubles data could be loaded.")
-        return pd.DataFrame()

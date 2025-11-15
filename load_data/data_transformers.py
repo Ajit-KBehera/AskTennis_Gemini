@@ -201,12 +201,19 @@ def categorize_match_types(df):
         is_challenger_level = (df['tourney_level'] == 'C')
         is_satellite_level = (df['tourney_level'] == 'S')  # Level S = Satellites/ITFs
         
-        # ATP ITF Futures/Satellites (Level S = Satellites/ITFs, predecessor to Futures)
-        # These are ITF tournaments, so categorize as ITF_Futures
-        # IMPORTANT: Recategorize Level S matches even if they already have tournament_type set
+        # Check for numeric tournament levels (15, 25, etc.) - these are ITF Futures
+        # Convert to string and check if it's numeric (handles both string '15'/'25' and numeric 15/25)
+        tourney_level_str = df['tourney_level'].astype(str)
+        is_numeric_futures_level = tourney_level_str.str.match(r'^\d+$', na=False)  # Matches pure numeric strings
+        
+        # ATP ITF Futures/Satellites
+        # Level S = Satellites/ITFs (predecessor to Futures)
+        # Levels 15, 25, etc. = ITF Futures tournaments (numeric levels)
+        # These are all ITF tournaments, so categorize as ITF_Futures
+        # IMPORTANT: Recategorize these matches even if they already have tournament_type set
         # (e.g., from Futures files that set ATP_Futures during loading)
-        satellite_mask = atp_mask & is_satellite_level
-        df.loc[satellite_mask, 'tournament_type'] = 'ITF_Futures'
+        futures_mask = atp_mask & (is_satellite_level | is_numeric_futures_level)
+        df.loc[futures_mask, 'tournament_type'] = 'ITF_Futures'
         
         # ATP Challenger Qualifying (most specific - check first)
         chall_qual_mask = atp_unset_mask & is_challenger_level & is_qualifying_round
@@ -216,8 +223,8 @@ def categorize_match_types(df):
         chall_mask = atp_unset_mask & is_challenger_level & ~is_qualifying_round
         df.loc[chall_mask, 'tournament_type'] = 'ATP_Challenger'
         
-        # ATP Qualifying (qualifying rounds at non-challenger, non-satellite level)
-        qual_mask = atp_unset_mask & ~is_challenger_level & ~is_satellite_level & is_qualifying_round
+        # ATP Qualifying (qualifying rounds at non-challenger, non-satellite, non-futures level)
+        qual_mask = atp_unset_mask & ~is_challenger_level & ~is_satellite_level & ~is_numeric_futures_level & is_qualifying_round
         df.loc[qual_mask, 'tournament_type'] = 'ATP_Qualifying'
     
     # WTA Qualifying/ITF categorization
@@ -289,15 +296,14 @@ def set_tour_column(df, tour=None):
     return df
 
 
-def enrich_matches_data(df, tour=None, tournament_type=None, match_type=None, fill_missing_tournament_type=True):
+def enrich_matches_data(df, tour=None, tournament_type=None, fill_missing_tournament_type=True):
     """
     Enrich match data with tour, tournament_type, era, and other metadata.
     
     Args:
-        df: DataFrame with match data (should already have tour column from loader, may have tournament_type and match_type columns set by loader)
+        df: DataFrame with match data (should already have tour column from loader, may have tournament_type column set by loader)
         tour: Tour name ('ATP' or 'WTA') if tour column is missing (fallback only)
         tournament_type: Tournament type if known (e.g., 'ATP_Futures', 'Main Tour')
-        match_type: Match type (e.g., 'Doubles')
         fill_missing_tournament_type: If True, fill missing tournament_type with 'Main Tour' (default: True)
     
     Returns:
@@ -316,10 +322,6 @@ def enrich_matches_data(df, tour=None, tournament_type=None, match_type=None, fi
     # Set tournament_type if provided as parameter (loader sets it directly for Futures)
     if tournament_type and 'tournament_type' not in df.columns:
         df['tournament_type'] = tournament_type
-    
-    # Set match_type if provided as parameter (loader sets it directly for Doubles)
-    if match_type and 'match_type' not in df.columns:
-        df['match_type'] = match_type
     
     # Remove _source_file column if present (used for debugging but not needed in final data)
     if '_source_file' in df.columns:
@@ -389,8 +391,6 @@ def filter_matches_by_switches(df):
     if LOAD_ATP_CHALLENGER_QUAL:
         allowed_types.append('ATP_Challenger_Qualifying')
     if LOAD_ATP_FUTURES:
-        allowed_types.append('ATP_Futures')
-        # Also include ITF_Futures (Level S = Satellites/ITFs, predecessor to Futures)
         allowed_types.append('ITF_Futures')
     
     # Include WTA tournament types if enabled
@@ -464,9 +464,6 @@ def parse_date_components(df):
     if columns_to_remove:
         df_copy = df_copy.drop(columns=columns_to_remove)
         print(f"Removed existing columns to avoid duplicates: {columns_to_remove}")
-    
-    # Find the position of tourney_date column
-    tourney_date_pos = df_copy.columns.get_loc('tourney_date')
     
     # Create new column order with date components right after tourney_date
     new_columns = []

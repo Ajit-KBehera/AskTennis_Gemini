@@ -39,9 +39,6 @@ LOAD_WTA_ITF = True                # WTA ITF matches
 LOAD_DAVIS_CUP = True              # Davis Cup matches
 LOAD_FED_CUP = True                # Fed Cup (BJK Cup) matches
 
-# Doubles Data Switches
-LOAD_DOUBLES_MATCHES = False         # ATP Doubles matches
-
 # --- Database Creation Switches ---
 # Control which database structures are created
 # Set to True to create, False to skip
@@ -50,5 +47,4 @@ LOAD_DOUBLES_MATCHES = False         # ATP Doubles matches
 CREATE_TABLE_MATCHES = True          # Create matches table
 CREATE_TABLE_PLAYERS = True          # Create players table
 CREATE_TABLE_RANKINGS = True         # Create rankings table
-CREATE_TABLE_DOUBLES = False          # Create doubles_matches table
 
